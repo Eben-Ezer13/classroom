@@ -5,10 +5,14 @@ import { isRedirectError } from 'next/dist/client/components/redirect-error'
  */
 
 export class AppError extends Error {
-  constructor(
-    message: string,
-    readonly status: number = 400,
-    if (isRedirectError(error)) {
+  constructor(message: string, readonly status: number = 400) {
+    super(message)
+    this.name = 'AppError'
+  }
+}
+
+/** 401 - non authentifie. */
+export class UnauthorizedError extends AppError {
   constructor(message = 'Vous devez etre connecte.') {
     super(message, 401)
     this.name = 'UnauthorizedError'
@@ -49,14 +53,7 @@ export async function runAction(fn: () => Promise<ActionState>): Promise<ActionS
     return await fn()
   } catch (error) {
     // Les redirections Next.js sont propagees telles quelles.
-    if (
-      error &&
-      typeof error === 'object' &&
-      'digest' in error &&
-      typeof (error as { digest?: unknown }).digest === 'string' &&
-      ((error as { digest: string }).digest.startsWith('NEXT_REDIRECT') ||
-        (error as { digest: string }).digest === 'NEXT_NOT_FOUND')
-    ) {
+    if (isRedirectError(error)) {
       throw error
     }
     if (error instanceof AppError) {
