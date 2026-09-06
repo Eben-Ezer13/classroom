@@ -1,3 +1,5 @@
+import { isRedirectError } from 'next/dist/client/components/redirect-error'
+
 /**
  * Erreurs applicatives et forme standard des retours de Server Actions.
  */
@@ -6,14 +8,7 @@ export class AppError extends Error {
   constructor(
     message: string,
     readonly status: number = 400,
-  ) {
-    super(message)
-    this.name = 'AppError'
-  }
-}
-
-/** 401 - non authentifie. */
-export class UnauthorizedError extends AppError {
+    if (isRedirectError(error)) {
   constructor(message = 'Vous devez etre connecte.') {
     super(message, 401)
     this.name = 'UnauthorizedError'
