@@ -8,7 +8,7 @@ import { StatTile } from '@/components/ui/feedback'
 import { formatDate, formatFileSize } from '@/lib/utils'
 import { ClassSettingsForm } from './settings-form'
 
-export const metadata: Metadata = { title: 'Parametres de la classe' }
+export const metadata: Metadata = { title: 'Paramètres de la classe' }
 
 export default async function ClassSettingsPage() {
   const { classId } = await requirePageClassAdmin()
@@ -26,9 +26,9 @@ export default async function ClassSettingsPage() {
   return (
     <>
       <PageHeader
-        title="Parametres de la classe"
+        title="Paramètres de la classe"
         description="Identite de l espace, visible par tous ses membres."
-        breadcrumb={[{ label: 'Administration', href: '/admin' }, { label: 'Parametres' }]}
+        breadcrumb={[{ label: 'Administration', href: '/admin' }, { label: 'Paramètres' }]}
       />
 
       <div className="grid lg:grid-cols-3 gap-4">

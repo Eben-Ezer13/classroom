@@ -83,7 +83,7 @@ export function ScheduleForm({
           </Select>
         </Field>
 
-        <Field label="Type de seance" htmlFor="type" error={state.fieldErrors?.type} required>
+        <Field label="Type de séance" htmlFor="type" error={state.fieldErrors?.type} required>
           <Select id="type" name="type" defaultValue={entry?.type ?? 'COURS'} required>
             {Object.entries(SCHEDULE_TYPE_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
@@ -98,7 +98,7 @@ export function ScheduleForm({
         label="Module"
         htmlFor="moduleId"
         error={state.fieldErrors?.moduleId}
-        hint="Facultatif : laissez vide pour une seance hors module"
+        hint="Facultatif : laissez vide pour une séance hors module"
       >
         <Select id="moduleId" name="moduleId" defaultValue={entry?.moduleId ?? ''}>
           <option value="">Aucun module</option>
@@ -111,16 +111,16 @@ export function ScheduleForm({
       </Field>
 
       <Field
-        label="Intitule"
+        label="Intitulé"
         htmlFor="title"
         error={state.fieldErrors?.title}
-        hint="Utile si la seance n est pas rattachee a un module"
+        hint="Utile si la séance n’est pas rattachée à un module"
       >
         <Input
           id="title"
           name="title"
           defaultValue={entry?.title ?? ''}
-          placeholder="Reunion de rentree"
+          placeholder="Réunion de rentrée"
         />
       </Field>
 
@@ -180,7 +180,7 @@ export function ScheduleForm({
 
       <div className="flex justify-end gap-2 pt-1">
         <SubmitButton pendingLabel="Enregistrement...">
-          {isEdit ? 'Enregistrer' : 'Ajouter la seance'}
+          {isEdit ? 'Enregistrer' : 'Ajouter la séance'}
         </SubmitButton>
       </div>
     </form>

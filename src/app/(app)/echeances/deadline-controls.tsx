@@ -81,7 +81,7 @@ function DeadlineForm({
       </Field>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Categorie" htmlFor="category" error={state.fieldErrors?.category} required>
+        <Field label="Catégorie" htmlFor="category" error={state.fieldErrors?.category} required>
           <Select
             id="category"
             name="category"
@@ -136,7 +136,7 @@ function DeadlineForm({
 
       <div className="flex justify-end pt-1">
         <SubmitButton pendingLabel="Enregistrement...">
-          {isEdit ? 'Enregistrer' : "Ajouter l'echeance"}
+          {isEdit ? 'Enregistrer' : "Ajouter l’échéance"}
         </SubmitButton>
       </div>
     </form>
@@ -160,7 +160,7 @@ export function AddDeadlineButton({
         </>
       }
       triggerSize="sm"
-      title="Nouvelle echeance"
+      title="Nouvelle échéance"
       description="La classe recevra une notification."
       width="lg"
     >

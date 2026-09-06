@@ -19,7 +19,7 @@ const FEATURES = [
   {
     icon: IconCalendar,
     title: 'Programme hebdomadaire',
-    text: 'Seances, salles, professeurs et changements de dernière minute, publies par le delegue.',
+    text: 'Séances, salles, professeurs et changements de dernière minute, publiés par le délégué.',
   },
   {
     icon: IconFolder,
@@ -28,7 +28,7 @@ const FEATURES = [
   },
   {
     icon: IconClock,
-    title: 'Echeances et projets',
+    title: 'Échéances et projets',
     text: 'Chaque rendu avec son compte a rebours, ses consignes et ses documents.',
   },
   {
@@ -69,7 +69,7 @@ export default async function HomePage() {
             Connexion
           </Link>
           <Link href="/register" className={buttonClasses('primary', 'sm', 'hidden sm:inline-flex')}>
-            Creer un compte
+            Créer un compte
           </Link>
         </div>
       </header>

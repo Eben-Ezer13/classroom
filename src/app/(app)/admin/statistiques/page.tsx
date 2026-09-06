@@ -90,7 +90,7 @@ export default async function AdminStatsPage() {
         <StatTile label="Annonces" value={announcements} />
         <StatTile label="Sondages" value={polls} />
         <StatTile
-          label="Reclamations ouvertes"
+          label="Réclamations ouvertes"
           value={complaintCount('EN_ATTENTE') + complaintCount('EN_COURS')}
           tone={complaintCount('EN_ATTENTE') > 0 ? 'danger' : 'neutral'}
         />

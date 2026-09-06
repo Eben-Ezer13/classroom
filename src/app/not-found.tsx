@@ -13,7 +13,7 @@ export default function NotFound() {
           Page introuvable
         </h1>
         <p className="mt-2 text-[14px] text-[var(--text-2)] leading-relaxed">
-          Cette page n existe pas, ou l element demande ne fait pas partie de votre
+          Cette page n’existe pas, ou l’élément demandé ne fait pas partie de votre
           classe.
         </p>
         <Link href="/dashboard" className={buttonClasses('primary', 'md', 'mt-6')}>

@@ -76,7 +76,7 @@ export async function createComplaintAction(
       classGroupId,
       {
         type: 'RECLAMATION',
-        title: 'Nouvelle reclamation',
+        title: 'Nouvelle réclamation',
         body: `${complaint.title} — ${user.firstName} ${user.lastName}`,
         url: `/reclamations/${complaint.id}`,
         entityType: 'Complaint',
@@ -86,7 +86,7 @@ export async function createComplaintAction(
     )
 
     revalidatePath('/reclamations')
-    return { ok: true, message: 'Reclamation envoyee.' }
+    return { ok: true, message: 'Réclamation envoyée.' }
   })
 }
 
@@ -104,7 +104,7 @@ export async function addComplaintMessageAction(
     const { complaint, isStaff } = await loadComplaintFor(user, parsed.data.complaintId)
 
     if (complaint.status === 'FERME') {
-      throw new ForbiddenError('Cette reclamation est fermee.')
+      throw new ForbiddenError('Cette réclamation est fermée.')
     }
 
     await prisma.complaintMessage.create({

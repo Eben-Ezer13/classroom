@@ -31,12 +31,12 @@ export default async function ClassesPage({
     <>
       <PageHeader
         title="Mes classes"
-        description="Creez votre espace de classe ou rejoignez celui de votre delegue."
+        description="Créez votre espace de classe ou rejoignez celui de votre délégué."
       />
 
       {welcome ? (
         <Alert tone="success" className="mb-4">
-          Votre compte est cree. Creez maintenant votre classe si vous etes delegue,
+          Votre compte est créé. Créez maintenant votre classe si vous êtes délégué,
           ou rejoignez la votre avec le code fourni.
         </Alert>
       ) : null}
@@ -56,7 +56,7 @@ export default async function ClassesPage({
               <EmptyState
                 icon={<IconGraduation />}
                 title="Aucune classe pour le moment"
-                description="Creez votre classe si vous etes delegue, ou saisissez le code d invitation recu."
+                description="Créez votre classe si vous êtes délégué, ou saisissez le code d’invitation reçu."
               />
             ) : (
               <ul className="divide-y divide-[var(--border)]">

@@ -67,7 +67,7 @@ export default async function DashboardPage() {
               {data.nextSession ? (
                 <div className="mb-4">
                   <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-3)]">
-                    Prochaine seance
+                    Prochaine séance
                   </p>
                   <ScheduleItem entry={data.nextSession} highlight />
                   <p className="mt-1.5 text-[12px] text-[var(--text-3)]">
@@ -89,7 +89,7 @@ export default async function DashboardPage() {
               ) : (
                 <EmptyState
                   icon={<IconCalendar />}
-                  title="Aucune seance aujourd hui"
+                  title="Aucune séance aujourd’hui"
                   description="Profitez-en, ou consultez le programme de la semaine."
                   action={
                     <LinkButton href="/programme" variant="secondary" size="sm">
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
                 <EmptyState
                   icon={<IconMegaphone />}
                   title="Aucune annonce"
-                  description="Les annonces publiees par le delegue apparaitront ici."
+                  description="Les annonces publiées par le délégué apparaîtront ici."
                 />
               )}
             </CardBody>
@@ -147,7 +147,7 @@ export default async function DashboardPage() {
                 <EmptyState
                   icon={<IconFolder />}
                   title="Aucune ressource"
-                  description="Les cours, TD et TP deposes apparaitront ici."
+                  description="Les cours, TD et TP déposés apparaîtront ici."
                 />
               )}
             </CardBody>
@@ -173,8 +173,8 @@ export default async function DashboardPage() {
               ) : (
                 <EmptyState
                   icon={<IconClock />}
-                  title="Aucune echeance"
-                  description="Rien a rendre pour le moment."
+                  title="Aucune échéance"
+                  description="Rien à rendre pour le moment."
                 />
               )}
             </CardBody>

@@ -60,7 +60,7 @@ function ModuleForm({
         <Field label="Code" htmlFor="code" error={state.fieldErrors?.code} required>
           <Input id="code" name="code" defaultValue={module?.code ?? ''} required placeholder="CAO" />
         </Field>
-        <Field label="Intitule" htmlFor="name" error={state.fieldErrors?.name} required>
+        <Field label="Intitulé" htmlFor="name" error={state.fieldErrors?.name} required>
           <Input
             id="name"
             name="name"

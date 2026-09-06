@@ -173,7 +173,7 @@ export async function leaveClassAction(formData: FormData): Promise<void> {
 
   if (membership.role === 'ADMIN' && (await countClassAdmins(classGroupId)) <= 1) {
     throw new AppError(
-      'Vous etes le seul delegue de cette classe : nommez un autre delegue avant de la quitter.',
+      'Vous êtes le seul délégué de cette classe : nommez un autre délégué avant de la quitter.',
     )
   }
 
@@ -241,11 +241,11 @@ export async function updateClassAction(
       entityId: classId,
       entityLabel: updated.name,
       classGroupId: classId,
-      summary: `${user.firstName} ${user.lastName} a modifie les parametres de la classe.`,
+      summary: `${user.firstName} ${user.lastName} a modifié les paramètres de la classe.`,
     })
 
     revalidatePath('/', 'layout')
-    return { ok: true, message: 'Parametres de la classe mis a jour.' }
+    return { ok: true, message: 'Paramètres de la classe mis à jour.' }
   })
 }
 

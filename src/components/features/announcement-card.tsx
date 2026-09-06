@@ -63,7 +63,7 @@ export function AnnouncementCard({
             >
               {announcement.title}
             </h3>
-            {announcement.isPinned ? <Badge tone="accent">Epinglee</Badge> : null}
+            {announcement.isPinned ? <Badge tone="accent">Épinglée</Badge> : null}
           </div>
 
           <p

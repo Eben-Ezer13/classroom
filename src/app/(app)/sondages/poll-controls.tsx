@@ -107,12 +107,12 @@ function PollForm({ onDone }: { onDone?: () => void }) {
       </Field>
 
       <div className="space-y-2">
-        <Checkbox name="allowMultiple" label="Autoriser plusieurs reponses par etudiant" />
+        <Checkbox name="allowMultiple" label="Autoriser plusieurs réponses par étudiant" />
         <Checkbox name="isAnonymous" label="Masquer le detail des votants" />
       </div>
 
       <div className="flex justify-end pt-1">
-        <SubmitButton pendingLabel="Creation...">Creer le sondage</SubmitButton>
+        <SubmitButton pendingLabel="Création...">Créer le sondage</SubmitButton>
       </div>
     </form>
   )

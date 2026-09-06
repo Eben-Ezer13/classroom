@@ -73,7 +73,7 @@ export async function createScheduleEntryAction(
       },
     })
 
-    const label = entry.module?.name ?? entry.title ?? 'Seance'
+    const label = entry.module?.name ?? entry.title ?? 'Séance'
 
     await recordAudit({
       actor: user,
@@ -82,7 +82,7 @@ export async function createScheduleEntryAction(
       entityId: entry.id,
       entityLabel: label,
       classGroupId,
-      summary: `${user.firstName} ${user.lastName} a ajoute une seance (${label}) le ${formatDateShort(entry.date)}.`,
+      summary: `${user.firstName} ${user.lastName} a ajouté une séance (${label}) le ${formatDateShort(entry.date)}.`,
     })
 
     if (entry.isPublished) {
@@ -102,7 +102,7 @@ export async function createScheduleEntryAction(
 
     revalidatePath('/programme')
     revalidatePath('/dashboard')
-    return { ok: true, message: 'Seance ajoutee.' }
+    return { ok: true, message: 'Séance ajoutée.' }
   })
 }
 

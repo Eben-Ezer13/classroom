@@ -57,7 +57,7 @@ export function ScheduleDocuments({
                   ? ` par ${current.uploadedBy.firstName} ${current.uploadedBy.lastName}`
                   : ''
               }`
-            : 'Televersez le planning recu de votre etablissement.'
+            : 'Téléversez le planning reçu de votre établissement.'
         }
         action={
           canManage ? (
@@ -90,7 +90,7 @@ export function ScheduleDocuments({
                 className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[var(--accent)] hover:underline underline-offset-2"
               >
                 <IconDownload className="size-4" />
-                Telecharger
+                Télécharger
               </Link>
               {canManage ? (
                 <ScheduleDocumentActions

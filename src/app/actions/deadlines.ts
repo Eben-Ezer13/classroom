@@ -53,14 +53,14 @@ export async function createDeadlineAction(
       entityId: deadline.id,
       entityLabel: deadline.title,
       classGroupId,
-      summary: `${user.firstName} ${user.lastName} a ajoute une echeance (${deadline.title}).`,
+      summary: `${user.firstName} ${user.lastName} a ajouté une échéance (${deadline.title}).`,
     })
 
     await notifyClass(
       classGroupId,
       {
         type: 'DEADLINE',
-        title: 'Nouvelle echeance',
+        title: 'Nouvelle échéance',
         body: `${DEADLINE_CATEGORY_LABELS[deadline.category]} : ${deadline.title} — ${formatDateTime(deadline.dueAt)}.`,
         url: '/echeances',
         entityType: 'Deadline',
@@ -71,7 +71,7 @@ export async function createDeadlineAction(
 
     revalidatePath('/echeances')
     revalidatePath('/dashboard')
-    return { ok: true, message: 'Echeance ajoutee.' }
+    return { ok: true, message: 'Échéance ajoutée.' }
   })
 }
 

@@ -25,16 +25,16 @@ export default function GlobalError({
           Une erreur est survenue
         </h1>
         <p className="mt-2 text-[14px] text-[var(--text-2)] leading-relaxed">
-          L operation n a pas pu aboutir. Reessayez ; si le probleme persiste,
-          signalez-le a votre administrateur.
+          L’opération n’a pas pu aboutir. Réessayez ; si le problème persiste,
+          signalez-le à votre administrateur.
         </p>
         {error.digest ? (
           <p className="mt-2 text-[12px] text-[var(--text-3)] font-mono">
-            Reference : {error.digest}
+            Référence : {error.digest}
           </p>
         ) : null}
         <Button onClick={reset} className="mt-6">
-          Reessayer
+          Réessayer
         </Button>
       </div>
     </div>

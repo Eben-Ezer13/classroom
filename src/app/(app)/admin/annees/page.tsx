@@ -15,7 +15,7 @@ import {
 } from '@/app/actions/admin'
 import { AddSemesterButton, AddYearButton } from '../admin-forms'
 
-export const metadata: Metadata = { title: 'Annees et semestres' }
+export const metadata: Metadata = { title: 'Années et semestres' }
 
 export default async function AdminYearsPage() {
   // Le calendrier appartient a la classe : la lecture comme l'ecriture
@@ -26,9 +26,9 @@ export default async function AdminYearsPage() {
   return (
     <>
       <PageHeader
-        title="Annees et semestres"
+        title="Années et semestres"
         description={`Calendrier de ${user.className ?? 'votre classe'}. L annee et le semestre courants servent de valeurs par defaut partout.`}
-        breadcrumb={[{ label: 'Administration', href: '/admin' }, { label: 'Annees' }]}
+        breadcrumb={[{ label: 'Administration', href: '/admin' }, { label: 'Années' }]}
         actions={
           <div className="flex items-center gap-2 flex-wrap">
             <AddYearButton />

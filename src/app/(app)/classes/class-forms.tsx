@@ -25,7 +25,7 @@ export function CreateClassForm() {
       </Field>
 
       <Field
-        label="Ecole / etablissement"
+        label="École / établissement"
         htmlFor="schoolName"
         error={state.fieldErrors?.schoolName}
         required
@@ -40,21 +40,21 @@ export function CreateClassForm() {
       </Field>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Filiere" htmlFor="programName" error={state.fieldErrors?.programName}>
+        <Field label="Filière" htmlFor="programName" error={state.fieldErrors?.programName}>
           <Input
             id="programName"
             name="programName"
-            placeholder="Genie mecanique"
+            placeholder="Génie mécanique"
             maxLength={140}
           />
         </Field>
         <Field label="Niveau" htmlFor="levelName" error={state.fieldErrors?.levelName}>
-          <Input id="levelName" name="levelName" placeholder="4eme annee" maxLength={80} />
+          <Input id="levelName" name="levelName" placeholder="4e année" maxLength={80} />
         </Field>
       </div>
 
       <Field
-        label="Annee academique"
+        label="Année académique"
         htmlFor="academicYearLabel"
         error={state.fieldErrors?.academicYearLabel}
         hint="Deux semestres sont crees automatiquement ; vous pourrez les ajuster."
@@ -78,8 +78,8 @@ export function CreateClassForm() {
         <Textarea id="description" name="description" rows={3} maxLength={500} />
       </Field>
 
-      <SubmitButton className="w-full" pendingLabel="Creation de l espace...">
-        Creer ma classe
+      <SubmitButton className="w-full" pendingLabel="Création de l’espace...">
+        Créer ma classe
       </SubmitButton>
     </form>
   )
@@ -93,10 +93,10 @@ export function JoinClassForm() {
       {state.message && !state.ok ? <Alert tone="danger">{state.message}</Alert> : null}
 
       <Field
-        label="Code de la classe ou d invitation"
+        label="Code de la classe ou d’invitation"
         htmlFor="code"
         error={state.fieldErrors?.code}
-        hint="Fourni par votre delegue"
+        hint="Fourni par votre délégué"
         required
       >
         <Input

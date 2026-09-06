@@ -55,7 +55,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'Suivi',
     items: [
       { href: '/projets', label: 'Projets', icon: IconProject, roles: ALL },
-      { href: '/echeances', label: 'Echeances', icon: IconClock, roles: ALL },
+      { href: '/echeances', label: 'Échéances', icon: IconClock, roles: ALL },
       { href: '/annonces', label: 'Annonces', icon: IconMegaphone, roles: ALL },
       { href: '/sondages', label: 'Sondages', icon: IconPoll, roles: ALL },
     ],
@@ -70,7 +70,7 @@ export const NAV_SECTIONS: NavSection[] = [
         roles: ALL,
         badge: 'notifications',
       },
-      { href: '/reclamations', label: 'Reclamations', icon: IconComplaint, roles: ALL },
+      { href: '/reclamations', label: 'Réclamations', icon: IconComplaint, roles: ALL },
       { href: '/membres', label: 'Membres', icon: IconUsers, roles: ALL },
     ],
   },
@@ -80,10 +80,10 @@ export const NAV_SECTIONS: NavSection[] = [
 export const ADMIN_SECTION: NavSection = {
   title: 'Administration',
   items: [
-    { href: '/admin', label: 'Vue generale', icon: IconShield, roles: STAFF },
+    { href: '/admin', label: 'Vue générale', icon: IconShield, roles: STAFF },
     { href: '/admin/membres', label: 'Membres et invitations', icon: IconUsers, roles: STAFF },
-    { href: '/admin/parametres', label: 'Parametres de la classe', icon: IconBuilding, roles: STAFF },
-    { href: '/admin/annees', label: 'Annees et semestres', icon: IconLayers, roles: STAFF },
+    { href: '/admin/parametres', label: 'Paramètres de la classe', icon: IconBuilding, roles: STAFF },
+    { href: '/admin/annees', label: 'Années et semestres', icon: IconLayers, roles: STAFF },
     { href: '/admin/archives', label: 'Archives', icon: IconArchive, roles: STAFF },
     { href: '/admin/statistiques', label: 'Statistiques', icon: IconActivity, roles: STAFF },
     { href: '/admin/audit', label: "Journal d'audit", icon: IconShield, roles: STAFF },
@@ -113,7 +113,7 @@ export const MOBILE_NAV: NavItem[] = [
   { href: '/dashboard', label: 'Accueil', icon: IconDashboard, roles: ALL },
   { href: '/programme', label: 'Programme', icon: IconCalendar, roles: ALL },
   { href: '/ressources', label: 'Ressources', icon: IconFolder, roles: ALL },
-  { href: '/echeances', label: 'Echeances', icon: IconClock, roles: ALL },
+  { href: '/echeances', label: 'Échéances', icon: IconClock, roles: ALL },
   {
     href: '/notifications',
     label: 'Alertes',

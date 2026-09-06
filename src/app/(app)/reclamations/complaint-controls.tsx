@@ -43,7 +43,7 @@ function ComplaintForm({ onDone }: { onDone?: () => void }) {
       </Field>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Categorie" htmlFor="category" error={state.fieldErrors?.category} required>
+        <Field label="Catégorie" htmlFor="category" error={state.fieldErrors?.category} required>
           <Select id="category" name="category" defaultValue="AUTRE" required>
             {Object.entries(COMPLAINT_CATEGORY_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
@@ -53,7 +53,7 @@ function ComplaintForm({ onDone }: { onDone?: () => void }) {
           </Select>
         </Field>
 
-        <Field label="Priorite" htmlFor="priority" error={state.fieldErrors?.priority} required>
+        <Field label="Priorité" htmlFor="priority" error={state.fieldErrors?.priority} required>
           <Select id="priority" name="priority" defaultValue="NORMALE" required>
             {Object.entries(COMPLAINT_PRIORITY_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
@@ -68,14 +68,14 @@ function ComplaintForm({ onDone }: { onDone?: () => void }) {
         label="Description"
         htmlFor="description"
         error={state.fieldErrors?.description}
-        hint="Decrivez precisement la difficulte rencontree."
+        hint="Décrivez précisément la difficulté rencontrée."
         required
       >
         <Textarea id="description" name="description" rows={5} required />
       </Field>
 
       <Field
-        label="Pieces jointes"
+        label="Pièces jointes"
         htmlFor="attachments"
         hint={`Facultatif · ${MAX_FILE_SIZE / 1024 / 1024} Mo maximum par fichier`}
       >

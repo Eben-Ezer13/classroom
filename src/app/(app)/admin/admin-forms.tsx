@@ -56,7 +56,7 @@ export function AddYearButton() {
   return (
     <FormModal
       label="Annee"
-      title="Nouvelle annee academique"
+      title="Nouvelle année académique"
       description="Les modules et ressources sont rattaches aux semestres de cette annee."
     >
       {(close) => <YearForm onDone={close} />}
@@ -86,7 +86,7 @@ function YearForm({ onDone }: { onDone: () => void }) {
       </div>
       <Checkbox name="isCurrent" label="Definir comme annee courante" defaultChecked />
       <div className="flex justify-end">
-        <SubmitButton pendingLabel="Creation...">Creer</SubmitButton>
+        <SubmitButton pendingLabel="Création...">Créer</SubmitButton>
       </div>
     </form>
   )

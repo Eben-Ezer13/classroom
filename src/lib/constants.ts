@@ -5,14 +5,14 @@
 
 export const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrateur',
-  DELEGUE: 'Delegue',
-  ETUDIANT: 'Etudiant',
+  DELEGUE: 'Délégué',
+  ETUDIANT: 'Étudiant',
 }
 
 /** Roles au sein d'une classe : seule hierarchie qui compte pour les droits. */
 export const CLASS_ROLE_LABELS: Record<string, string> = {
-  ADMIN: 'Delegue',
-  MEMBER: 'Etudiant',
+  ADMIN: 'Délégué',
+  MEMBER: 'Étudiant',
 }
 
 export const CLASS_ROLE_TONE: Record<string, string> = {
@@ -45,7 +45,7 @@ export const RESOURCE_KIND_LABELS: Record<string, string> = {
   EXAMEN: 'Examen',
   PROJET: 'Projet',
   CORRECTION: 'Correction',
-  PRESENTATION: 'Presentation',
+  PRESENTATION: 'Présentation',
   ADMINISTRATIF: 'Document administratif',
   AUTRE: 'Autre',
 }
@@ -63,21 +63,21 @@ export const ANNOUNCEMENT_LEVEL_TONE: Record<string, string> = {
 }
 
 export const ANNOUNCEMENT_CATEGORY_LABELS: Record<string, string> = {
-  GENERALE: 'Annonce generale',
-  MODULE: 'Liee a un module',
+  GENERALE: 'Annonce générale',
+  MODULE: 'Liée à un module',
   ADMINISTRATIF: 'Information administrative',
   CHANGEMENT_SALLE: 'Changement de salle',
   CHANGEMENT_HORAIRE: "Changement d'horaire",
   ABSENCE_PROFESSEUR: 'Absence professeur',
-  REUNION: 'Reunion',
-  EVENEMENT: 'Evenement',
+  REUNION: 'Réunion',
+  EVENEMENT: 'Événement',
 }
 
 export const DEADLINE_CATEGORY_LABELS: Record<string, string> = {
   EXAMEN: 'Examen',
   DEVOIR: 'Devoir',
   PROJET: 'Projet',
-  PRESENTATION: 'Presentation',
+  PRESENTATION: 'Présentation',
   RAPPORT: 'Rapport',
   AUTRE: 'Autre',
 }
@@ -108,8 +108,8 @@ export const COMPLAINT_PRIORITY_TONE: Record<string, string> = {
 export const COMPLAINT_STATUS_LABELS: Record<string, string> = {
   EN_ATTENTE: 'En attente',
   EN_COURS: 'En cours',
-  RESOLU: 'Resolu',
-  FERME: 'Ferme',
+  RESOLU: 'Résolu',
+  FERME: 'Fermé',
 }
 
 export const COMPLAINT_STATUS_TONE: Record<string, string> = {
@@ -123,13 +123,13 @@ export const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
   RESSOURCE: 'Ressource',
   ANNONCE: 'Annonce',
   PROJET: 'Projet',
-  DEADLINE: 'Echeance',
+  DEADLINE: 'Échéance',
   PROGRAMME: 'Programme',
   SONDAGE: 'Sondage',
-  RECLAMATION: 'Reclamation',
+  RECLAMATION: 'Réclamation',
   MENTION: 'Mention',
   MEMBRE: 'Membre',
-  SYSTEME: 'Systeme',
+  SYSTEME: 'Système',
 }
 
 /** Palette utilisee pour differencier visuellement les modules. */

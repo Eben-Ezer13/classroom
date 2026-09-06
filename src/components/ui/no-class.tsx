@@ -14,10 +14,10 @@ export function NoClassState() {
       <EmptyState
         icon={<IconGraduation />}
         title="Aucune classe active"
-        description="Creez votre classe si vous etes delegue, ou rejoignez celle de votre classe avec le code d invitation fourni."
+        description="Créez votre classe si vous êtes délégué, ou rejoignez votre classe avec le code d’invitation fourni."
         action={
           <LinkButton href="/classes" size="sm">
-            Creer ou rejoindre une classe
+            Créer ou rejoindre une classe
           </LinkButton>
         }
       />

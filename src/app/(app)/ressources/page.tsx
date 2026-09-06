@@ -124,7 +124,7 @@ export default async function ResourcesPage({
         {canManage ? (
           <FilterField label="Archives" htmlFor="archives" className="min-w-[120px]">
             <Select id="archives" name="archives" defaultValue={includeArchived ? '1' : ''}>
-              <option value="">Masquees</option>
+              <option value="">Masquées</option>
               <option value="1">Incluses</option>
             </Select>
           </FilterField>

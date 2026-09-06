@@ -56,8 +56,8 @@ export async function registerAction(
     if (existing) {
       return {
         ok: false,
-        message: 'Un compte existe deja avec cette adresse email.',
-        fieldErrors: { email: ['Adresse deja utilisee.'] },
+        message: 'Un compte existe déjà avec cette adresse e-mail.',
+        fieldErrors: { email: ['Adresse déjà utilisée.'] },
       }
     }
 

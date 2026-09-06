@@ -29,12 +29,12 @@ export function AddScheduleButton({
       trigger={
         <>
           <IconPlus className="size-4" />
-          Ajouter une seance
+          Ajouter une séance
         </>
       }
       triggerSize="sm"
-      title="Nouvelle seance"
-      description="Elle apparaitra dans le programme de la classe."
+      title="Nouvelle séance"
+      description="Elle apparaîtra dans le programme de la classe."
       width="lg"
     >
       {(close) => (
@@ -61,7 +61,7 @@ export function ScheduleEntryActions({
         trigger={<IconPencil className="size-[17px]" />}
         triggerVariant="ghost"
         triggerSize="icon"
-        title="Modifier la seance"
+        title="Modifier la séance"
         width="lg"
       >
         {(close) => (
@@ -78,7 +78,7 @@ export function ScheduleEntryActions({
       <ConfirmForm
         action={deleteScheduleEntryAction}
         hidden={{ entryId: entry.id }}
-        message="Supprimer cette seance ? La classe sera prevenue."
+        message="Supprimer cette séance ? La classe sera prévenue."
       >
         <IconSubmit label="Supprimer la seance" tone="danger">
           <IconTrash className="size-[17px]" />

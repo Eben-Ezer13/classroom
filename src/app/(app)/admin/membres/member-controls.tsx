@@ -52,15 +52,15 @@ function InvitationForm({ onDone }: { onDone: () => void }) {
         <Alert tone={state.ok ? 'success' : 'danger'}>{state.message}</Alert>
       ) : null}
 
-      <Field label="Intitule" htmlFor="label" hint="Pour vous y retrouver (facultatif)">
+      <Field label="Intitulé" htmlFor="label" hint="Pour vous y retrouver (facultatif)">
         <Input id="label" name="label" placeholder="Groupe TD 2" maxLength={80} />
       </Field>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Role attribue" htmlFor="role" required>
+        <Field label="Rôle attribué" htmlFor="role" required>
           <Select id="role" name="role" defaultValue="MEMBER">
-            <option value="MEMBER">Etudiant</option>
-            <option value="ADMIN">Delegue (administrateur)</option>
+            <option value="MEMBER">Étudiant</option>
+            <option value="ADMIN">Délégué (administrateur)</option>
           </Select>
         </Field>
         <Field label="Validite (jours)" htmlFor="days" required>
@@ -77,7 +77,7 @@ function InvitationForm({ onDone }: { onDone: () => void }) {
       </Field>
 
       <div className="flex justify-end">
-        <SubmitButton pendingLabel="Creation...">Creer le lien</SubmitButton>
+        <SubmitButton pendingLabel="Création...">Créer le lien</SubmitButton>
       </div>
     </form>
   )

@@ -15,7 +15,7 @@ export function RegisterForm() {
       {state.message && !state.ok ? <Alert tone="danger">{state.message}</Alert> : null}
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Prenom" htmlFor="firstName" error={state.fieldErrors?.firstName} required>
+        <Field label="Prénom" htmlFor="firstName" error={state.fieldErrors?.firstName} required>
           <Input id="firstName" name="firstName" autoComplete="given-name" required />
         </Field>
         <Field label="Nom" htmlFor="lastName" error={state.fieldErrors?.lastName} required>
@@ -32,13 +32,13 @@ export function RegisterForm() {
           label="Code de la classe"
           htmlFor="classCode"
           error={state.fieldErrors?.classCode}
-          hint="Fourni par le delegue"
+          hint="Fourni par le délégué"
           required
         >
           <Input id="classCode" name="classCode" required placeholder="GSMI4A" />
         </Field>
         <Field
-          label="Numero etudiant"
+          label="Numéro étudiant"
           htmlFor="studentId"
           error={state.fieldErrors?.studentId}
           hint="Facultatif"
@@ -51,7 +51,7 @@ export function RegisterForm() {
         label="Mot de passe"
         htmlFor="password"
         error={state.fieldErrors?.password}
-        hint="10 caracteres minimum, avec majuscule, minuscule et chiffre"
+        hint="10 caractères minimum, avec majuscule, minuscule et chiffre"
         required
       >
         <Input
@@ -78,8 +78,8 @@ export function RegisterForm() {
         />
       </Field>
 
-      <SubmitButton className="w-full" size="lg" pendingLabel="Creation...">
-        Creer mon compte
+      <SubmitButton className="w-full" size="lg" pendingLabel="Création...">
+        Créer mon compte
       </SubmitButton>
     </form>
   )

@@ -22,7 +22,7 @@ import {
 import { formatRelative } from '@/lib/utils'
 import { AddComplaintButton } from './complaint-controls'
 
-export const metadata: Metadata = { title: 'Reclamations' }
+export const metadata: Metadata = { title: 'Réclamations' }
 
 export default async function ComplaintsPage({
   searchParams,
@@ -35,7 +35,7 @@ export default async function ComplaintsPage({
   if (!user.classGroupId && user.role !== 'ADMIN') {
     return (
       <>
-        <PageHeader title="Reclamations" />
+        <PageHeader title="Réclamations" />
         <NoClassState />
       </>
     )
@@ -54,11 +54,11 @@ export default async function ComplaintsPage({
   return (
     <>
       <PageHeader
-        title="Reclamations"
+        title="Réclamations"
         description={
           isStaff
-            ? `Difficultes signalees par la classe. ${result.pending} en attente.`
-            : 'Vos signalements. Seuls vous et les responsables de votre classe y ont acces.'
+            ? `Difficultés signalées par la classe. ${result.pending} en attente.`
+            : 'Vos signalements. Seuls vous et les responsables de votre classe y ont accès.'
         }
         actions={
           user.classGroupId ? <AddComplaintButton autoOpen={raw.nouveau === '1'} /> : null
@@ -76,7 +76,7 @@ export default async function ComplaintsPage({
             ))}
           </Select>
         </FilterField>
-        <FilterField label="Categorie" htmlFor="category">
+        <FilterField label="Catégorie" htmlFor="category">
           <Select id="category" name="category" defaultValue={category ?? ''}>
             <option value="">Toutes</option>
             {Object.entries(COMPLAINT_CATEGORY_LABELS).map(([value, label]) => (

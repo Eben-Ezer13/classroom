@@ -17,7 +17,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
       <div className="space-y-4">
         <Alert tone="success">{state.message}</Alert>
         <Link href="/login?reason=reset" className={buttonClasses('primary', 'lg', 'w-full')}>
-          Aller a la connexion
+          Aller à la connexion
         </Link>
       </div>
     )
@@ -32,7 +32,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         label="Nouveau mot de passe"
         htmlFor="password"
         error={state.fieldErrors?.password}
-        hint="10 caracteres minimum, avec majuscule, minuscule et chiffre"
+        hint="10 caractères minimum, avec majuscule, minuscule et chiffre"
         required
       >
         <Input
@@ -59,8 +59,8 @@ export function ResetPasswordForm({ token }: { token: string }) {
         />
       </Field>
 
-      <SubmitButton className="w-full" size="lg" pendingLabel="Mise a jour...">
-        Definir le mot de passe
+      <SubmitButton className="w-full" size="lg" pendingLabel="Mise à jour...">
+        Définir le mot de passe
       </SubmitButton>
     </form>
   )

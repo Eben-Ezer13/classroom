@@ -46,7 +46,7 @@ export function ResourceItem({
           <span className="text-[12px] text-[var(--text-3)]">
             {formatFileSize(resource.fileSize)} · {formatRelative(resource.createdAt)}
             {typeof resource.downloadCount === 'number'
-              ? ` · ${resource.downloadCount} telechargement${resource.downloadCount > 1 ? 's' : ''}`
+              ? ` · ${resource.downloadCount} téléchargement${resource.downloadCount > 1 ? 's' : ''}`
               : ''}
           </span>
         </div>
@@ -56,8 +56,8 @@ export function ResourceItem({
         <a
           href={`/api/resources/${resource.id}/download`}
           className="size-8 grid place-items-center rounded-lg text-[var(--text-3)] hover:bg-[var(--surface-3)] hover:text-[var(--accent)] transition-colors"
-          title="Telecharger"
-          aria-label={`Telecharger ${resource.title}`}
+          title="Télécharger"
+          aria-label={`Télécharger ${resource.title}`}
         >
           <IconDownload className="size-[17px]" />
         </a>

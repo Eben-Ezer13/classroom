@@ -14,13 +14,13 @@ import { cn, endOfDay } from '@/lib/utils'
 import { AddDeadlineButton, DeadlineActions } from './deadline-controls'
 import type { Prisma } from '@prisma/client'
 
-export const metadata: Metadata = { title: 'Echeances' }
+export const metadata: Metadata = { title: 'Échéances' }
 
 const VIEWS = [
-  { key: 'a-venir', label: 'A venir' },
+  { key: 'a-venir', label: 'À venir' },
   { key: 'semaine', label: 'Cette semaine' },
   { key: 'mois', label: 'Ce mois' },
-  { key: 'depassees', label: 'Depassees' },
+  { key: 'depassees', label: 'Dépassées' },
 ] as const
 
 export default async function DeadlinesPage({
@@ -34,7 +34,7 @@ export default async function DeadlinesPage({
   if (!user.classGroupId) {
     return (
       <>
-        <PageHeader title="Echeances" />
+        <PageHeader title="Échéances" />
         <NoClassState />
       </>
     )
@@ -84,8 +84,8 @@ export default async function DeadlinesPage({
   return (
     <>
       <PageHeader
-        title="Echeances"
-        description="Examens, devoirs, projets et rapports a rendre."
+        title="Échéances"
+        description="Examens, devoirs, projets et rapports à rendre."
         actions={
           canManage ? (
             <AddDeadlineButton modules={moduleOptions} autoOpen={params.nouveau === '1'} />
@@ -94,7 +94,7 @@ export default async function DeadlinesPage({
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <StatTile label="Aujourd hui" value={buckets.today} tone="danger" />
+        <StatTile label="Aujourd’hui" value={buckets.today} tone="danger" />
         <StatTile label="Cette semaine" value={buckets.week} tone="warning" />
         <StatTile label="Ce mois" value={buckets.month} tone="info" />
         <StatTile

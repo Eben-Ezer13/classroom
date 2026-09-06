@@ -99,7 +99,7 @@ export default async function SearchPage({
         )}
       >
         <input type="hidden" name="scope" value={scope} />
-        <FilterField label="Mots-cles" htmlFor="q" className="min-w-[220px] flex-[2]">
+        <FilterField label="Mots-clés" htmlFor="q" className="min-w-[220px] flex-[2]">
           <Input id="q" name="q" defaultValue={q} placeholder="Rechercher..." autoFocus />
         </FilterField>
         <FilterField label="Module" htmlFor="moduleId">

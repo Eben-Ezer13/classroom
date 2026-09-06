@@ -30,14 +30,14 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             Toute la vie de la classe, au meme endroit.
           </h2>
           <p className="mt-3.5 text-[14.5px] leading-relaxed text-[var(--text-2)]">
-            Programme, ressources, annonces, projets et echeances. Le delegue
+            Programme, ressources, annonces, projets et échéances. Le délégué
             publie une fois, toute la classe est informee.
           </p>
           <ul className="mt-7 space-y-2.5">
             {[
               'Emploi du temps et prochaines seances',
               'Cours, TD, TP et corrections telechargeables',
-              'Echeances, projets et rappels',
+              'Échéances, projets et rappels',
               'Annonces urgentes, sondages et reclamations',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2.5 text-[13.5px] text-[var(--text-2)]">

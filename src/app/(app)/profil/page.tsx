@@ -46,7 +46,7 @@ export default async function ProfilePage() {
 
   return (
     <>
-      <PageHeader title="Mon profil" description="Vos informations et votre securite." />
+      <PageHeader title="Mon profil" description="Vos informations et votre sécurité." />
 
       <div className="grid lg:grid-cols-[300px_1fr] gap-4">
         <div className="space-y-4">
@@ -73,11 +73,11 @@ export default async function ProfilePage() {
           <Card>
             <CardHeader
               title="Classe active"
-              description="Le numero etudiant est propre a chaque classe."
+              description="Le numéro étudiant est propre à chaque classe."
             />
             <CardBody className="space-y-3">
-              <Row label="Etablissement" value={user.schoolName ?? '—'} />
-              <Row label="Filiere" value={user.programName ?? '—'} />
+              <Row label="Établissement" value={user.schoolName ?? '—'} />
+              <Row label="Filière" value={user.programName ?? '—'} />
               <Row label="Niveau" value={user.levelName ?? '—'} />
               <Row
                 label="Classe"
@@ -85,8 +85,8 @@ export default async function ProfilePage() {
                   user.className ? `${user.className} (${user.classCode ?? ''})` : '—'
                 }
               />
-              <Row label="Role" value={CLASS_ROLE_LABELS[user.role]} />
-              <Row label="Numero etudiant" value={user.studentId ?? '—'} />
+              <Row label="Rôle" value={CLASS_ROLE_LABELS[user.role]} />
+              <Row label="Numéro étudiant" value={user.studentId ?? '—'} />
               <Row label="Classes rejointes" value={String(user.memberships.length)} />
             </CardBody>
           </Card>

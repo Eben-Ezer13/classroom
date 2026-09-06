@@ -13,14 +13,14 @@ const trimmed = (min: number, max: number, label: string) =>
   z
     .string()
     .trim()
-    .min(min, `${label} : ${min} caractere(s) minimum.`)
-    .max(max, `${label} : ${max} caracteres maximum.`)
+    .min(min, `${label} : ${min} caractère(s) minimum.`)
+    .max(max, `${label} : ${max} caractères maximum.`)
 
 const optionalText = (max: number) =>
   z
     .string()
     .trim()
-    .max(max, `${max} caracteres maximum.`)
+    .max(max, `${max} caractères maximum.`)
     .optional()
     .transform((v) => (v === '' ? undefined : v))
 
@@ -51,7 +51,7 @@ const timeField = (label: string) =>
   z
     .string()
     .trim()
-    .regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/, `${label} doit etre au format HH:MM.`)
+    .regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/, `${label} doit être au format HH:MM.`)
 
 const booleanField = z
   .union([z.literal('on'), z.literal('true'), z.literal('false'), z.literal('')])
@@ -64,7 +64,7 @@ const booleanField = z
 
 export const passwordSchema = z
   .string()
-  .min(10, 'Le mot de passe doit contenir au moins 10 caracteres.')
+  .min(10, 'Le mot de passe doit contenir au moins 10 caractères.')
   .max(128, 'Mot de passe trop long.')
   .regex(/[a-z]/, 'Le mot de passe doit contenir une minuscule.')
   .regex(/[A-Z]/, 'Le mot de passe doit contenir une majuscule.')
@@ -84,7 +84,7 @@ export const loginSchema = z.object({
 
 export const registerSchema = z
   .object({
-    firstName: trimmed(2, 60, 'Prenom'),
+    firstName: trimmed(2, 60, 'Prénom'),
     lastName: trimmed(2, 60, 'Nom'),
     email: emailSchema,
     studentId: optionalText(40),
@@ -113,7 +113,7 @@ export const resetPasswordSchema = z
   })
 
 export const updateProfileSchema = z.object({
-  firstName: trimmed(2, 60, 'Prenom'),
+  firstName: trimmed(2, 60, 'Prénom'),
   lastName: trimmed(2, 60, 'Nom'),
   phone: optionalText(30),
   studentId: optionalText(40),
@@ -137,16 +137,16 @@ export const changePasswordSchema = z
 /** Creation d'une classe par un delegue : son espace de travail complet. */
 export const classCreateSchema = z.object({
   name: trimmed(1, 80, 'Nom de la classe'),
-  schoolName: trimmed(2, 140, 'Ecole / etablissement'),
+  schoolName: trimmed(2, 140, 'École / établissement'),
   programName: optionalText(140),
   levelName: optionalText(80),
-  academicYearLabel: trimmed(4, 20, 'Annee academique'),
+  academicYearLabel: trimmed(4, 20, 'Année académique'),
   description: optionalText(500),
 })
 
 export const classUpdateSchema = z.object({
   name: trimmed(1, 80, 'Nom de la classe'),
-  schoolName: trimmed(2, 140, 'Ecole / etablissement'),
+  schoolName: trimmed(2, 140, 'École / établissement'),
   programName: optionalText(140),
   levelName: optionalText(80),
   description: optionalText(500),

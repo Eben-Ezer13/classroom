@@ -90,7 +90,7 @@ function AnnouncementForm({
           </Select>
         </Field>
 
-        <Field label="Categorie" htmlFor="category" error={state.fieldErrors?.category} required>
+        <Field label="Catégorie" htmlFor="category" error={state.fieldErrors?.category} required>
           <Select
             id="category"
             name="category"

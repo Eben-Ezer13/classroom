@@ -31,7 +31,7 @@ export function ClassSettingsForm({
       </Field>
 
       <Field
-        label="Ecole / etablissement"
+        label="École / établissement"
         htmlFor="schoolName"
         error={state.fieldErrors?.schoolName}
         required

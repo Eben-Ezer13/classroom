@@ -12,9 +12,9 @@ export default async function LoginPage({
   const params = await searchParams
   const notice =
     params.reason === 'password-changed'
-      ? 'Mot de passe modifie. Reconnectez-vous.'
+      ? 'Mot de passe modifié. Reconnectez-vous.'
       : params.reason === 'reset'
-        ? 'Mot de passe reinitialise. Vous pouvez vous connecter.'
+        ? 'Mot de passe réinitialisé. Vous pouvez vous connecter.'
         : null
 
   return (
@@ -24,7 +24,7 @@ export default async function LoginPage({
           Connexion
         </h1>
         <p className="text-[13.5px] text-[var(--text-3)] mt-1.5">
-          Accedez a votre espace de classe.
+          Accédez à votre espace de classe.
         </p>
       </div>
 
@@ -36,7 +36,7 @@ export default async function LoginPage({
           href="/register"
           className="text-[var(--accent)] font-medium hover:underline underline-offset-2"
         >
-          Creer un compte
+          Créer un compte
         </Link>
       </p>
     </div>

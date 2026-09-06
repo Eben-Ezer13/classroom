@@ -54,7 +54,7 @@ export default async function NotificationsPage({
         description={
           unread > 0
             ? `${unread} notification${unread > 1 ? 's' : ''} non lue${unread > 1 ? 's' : ''}.`
-            : 'Tout est a jour.'
+            : 'Tout est à jour.'
         }
         actions={
           unread > 0 ? (

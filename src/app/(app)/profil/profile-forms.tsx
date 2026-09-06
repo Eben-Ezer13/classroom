@@ -31,7 +31,7 @@ export function ProfileForm({
       ) : null}
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Prenom" htmlFor="firstName" error={state.fieldErrors?.firstName} required>
+        <Field label="Prénom" htmlFor="firstName" error={state.fieldErrors?.firstName} required>
           <Input
             id="firstName"
             name="firstName"
@@ -53,7 +53,7 @@ export function ProfileForm({
 
       <div className="grid sm:grid-cols-2 gap-3">
         <Field
-          label="Numero etudiant"
+          label="Numéro étudiant"
           htmlFor="studentId"
           error={state.fieldErrors?.studentId}
         >

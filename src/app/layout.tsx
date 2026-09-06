@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     template: '%s · Gestion de classe',
   },
   description:
-    'Programme, ressources, annonces, projets et echeances centralises pour toute la classe.',
+    'Programme, ressources, annonces, projets et échéances centralisés pour toute la classe.',
   robots: { index: false, follow: false },
 }
 
