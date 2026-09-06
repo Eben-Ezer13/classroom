@@ -50,10 +50,16 @@ export async function registerAction(
     }
     const data = parsed.data
 
-    const existing = await prisma.user.findUnique({
-      where: { email: data.email },
-      select: { id: true },
-    })
+    let existing: { id: string } | null
+    try {
+      existing = await prisma.user.findUnique({
+        where: { email: data.email },
+        select: { id: true },
+      })
+    } catch (error) {
+      console.error('[register:lookup]', error)
+      throw new AppError('La base de données est momentanément indisponible. Réessayez.')
+    }
     if (existing) {
       return {
         ok: false,
@@ -104,7 +110,8 @@ export async function registerAction(
           fieldErrors: { email: ['Adresse e-mail déjà utilisée.'] },
         }
       }
-      throw error
+      console.error('[register:create-user]', error)
+      throw new AppError('Le compte n’a pas pu être créé. Vérifiez les migrations de la base.')
     }
 
     if (target) {
@@ -117,7 +124,12 @@ export async function registerAction(
       }
     }
 
-    await createSession(user.id)
+    try {
+      await createSession(user.id)
+    } catch (error) {
+      console.error('[register:create-session]', error)
+      throw new AppError('Le compte a été créé, mais la connexion automatique a échoué.')
+    }
     redirect(target ? '/dashboard' : '/classes?bienvenue=1')
   })
 }
