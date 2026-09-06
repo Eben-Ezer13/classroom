@@ -1,0 +1,906 @@
+// =====================================================================
+// Plateforme de gestion de classe - Schema Prisma
+// Base : PostgreSQL (Neon)
+//
+// MODELE MULTI-TENANT
+// -------------------
+// Le tenant est la CLASSE (ClassGroup). Chaque delegue cree sa propre
+// classe, qui forme un espace de donnees totalement independant :
+// membres, modules, semestres, ressources, programme, annonces...
+//
+// L'appartenance passe UNIQUEMENT par Membership(userId, classGroupId,
+// role). Un etudiant ne peut appartenir qu'a une seule classe active ; un
+// delegue peut administrer plusieurs classes. `User.activeClassGroupId` ne
+// designe que la classe affichee : il ne donne aucun droit par lui-meme,
+// toute lecture et toute ecriture verifient le Membership correspondant.
+// =====================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// =====================================================================
+// ENUMS
+// =====================================================================
+
+/// Role de plateforme. Reserve a l'exploitation (support, maintenance) :
+/// il ne donne acces au contenu d'AUCUNE classe.
+enum Role {
+  ADMIN
+  DELEGUE
+  ETUDIANT
+}
+
+/// Role au sein d'une classe. Seule source d'autorisation sur les donnees.
+/// ADMIN = delegue de la classe. MEMBER = etudiant.
+enum ClassRole {
+  ADMIN
+  MEMBER
+}
+
+enum ScheduleType {
+  COURS
+  TD
+  TP
+  EXAMEN
+  SOUTENANCE
+  AUTRE
+}
+
+enum ResourceKind {
+  COURS
+  TD
+  TP
+  EXAMEN
+  PROJET
+  CORRECTION
+  PRESENTATION
+  ADMINISTRATIF
+  AUTRE
+}
+
+enum AnnouncementLevel {
+  NORMAL
+  IMPORTANT
+  URGENT
+}
+
+enum AnnouncementCategory {
+  GENERALE
+  MODULE
+  ADMINISTRATIF
+  CHANGEMENT_SALLE
+  CHANGEMENT_HORAIRE
+  ABSENCE_PROFESSEUR
+  REUNION
+  EVENEMENT
+}
+
+enum DeadlineCategory {
+  EXAMEN
+  DEVOIR
+  PROJET
+  PRESENTATION
+  RAPPORT
+  AUTRE
+}
+
+enum ComplaintCategory {
+  COURS
+  PROFESSEUR
+  SALLE
+  PROGRAMME
+  ADMINISTRATIF
+  AUTRE
+}
+
+enum ComplaintPriority {
+  BASSE
+  NORMALE
+  HAUTE
+  CRITIQUE
+}
+
+enum ComplaintStatus {
+  EN_ATTENTE
+  EN_COURS
+  RESOLU
+  FERME
+}
+
+enum NotificationType {
+  RESSOURCE
+  ANNONCE
+  MENTION
+  PROJET
+  DEADLINE
+  PROGRAMME
+  SONDAGE
+  RECLAMATION
+  MEMBRE
+  SYSTEME
+}
+
+// =====================================================================
+// TENANT : LA CLASSE
+// =====================================================================
+
+model ClassGroup {
+  id   String @id @default(cuid())
+  name String
+  /// Code d'inscription partage aux etudiants. Rotable par le delegue.
+  code String @unique
+
+  // Identite academique saisie par le delegue a la creation. Denormalisee
+  // sur la classe : deux classes de la meme ecole restent independantes.
+  schoolName  String
+  programName String?
+  levelName   String?
+  description String?
+
+  /// Volume de fichiers stocke par la classe, en octets (compteur maintenu
+  /// a chaque upload / suppression). Sert au quota et aux statistiques.
+  storageUsed  BigInt @default(0)
+  /// Quota de stockage de la classe, en octets.
+  storageQuota BigInt @default(2147483648)
+
+  isActive    Boolean   @default(true)
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  /// Rattachement historique a la hierarchie Etablissement > Filiere >
+  /// Niveau. Conserve pour les classes creees avant le multi-tenant ;
+  /// les nouvelles classes n'en dependent plus.
+  levelId String?
+  level   Level?  @relation(fields: [levelId], references: [id], onDelete: SetNull)
+
+  createdBy         User?              @relation("ClassCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  memberships       Membership[]
+  invitations       Invitation[]
+  activeForUsers    User[]             @relation("ActiveClass")
+  academicYears     AcademicYear[]
+  modules           Module[]
+  resources         Resource[]
+  schedule          ScheduleEntry[]
+  scheduleDocuments ScheduleDocument[]
+  announcements     Announcement[]
+  projects          Project[]
+  deadlines         Deadline[]
+  polls             Poll[]
+  complaints        Complaint[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+
+  @@index([levelId])
+  @@index([isActive])
+  @@index([createdById])
+  @@map("classes")
+}
+
+/// Appartenance d'un utilisateur a une classe. Table pivot du multi-tenant :
+/// aucune donnee de classe n'est lisible sans une ligne ACTIVE ici.
+/// PostgreSQL impose une seule appartenance active de role MEMBER par
+/// utilisateur et un maximum de 60 etudiants actifs par classe.
+model Membership {
+  id           String    @id @default(cuid())
+  userId       String
+  classGroupId String
+  role         ClassRole @default(MEMBER)
+  /// Numero etudiant, propre a la classe.
+  studentId    String?
+  isActive     Boolean   @default(true)
+  joinedAt     DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classGroup ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, classGroupId])
+  @@unique([classGroupId, studentId], name: "unique_student_id_per_class")
+  @@index([classGroupId, role])
+  @@index([classGroupId, isActive])
+  @@index([userId, isActive])
+  @@map("memberships")
+}
+
+/// Lien ou code d'invitation a une classe, avec expiration et quota d'usage.
+model Invitation {
+  id           String    @id @default(cuid())
+  classGroupId String
+  code         String    @unique
+  role         ClassRole @default(MEMBER)
+  /// Restreint l'invitation a une adresse precise (facultatif).
+  email        String?
+  label        String?
+  maxUses      Int       @default(0)
+  usedCount    Int       @default(0)
+  expiresAt    DateTime?
+  revokedAt    DateTime?
+  createdById  String?
+  createdAt    DateTime  @default(now())
+
+  classGroup ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  createdBy  User?      @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([classGroupId, createdAt])
+  @@map("invitations")
+}
+
+// =====================================================================
+// STRUCTURE ACADEMIQUE (heritage)
+// Etablissement > Filiere > Niveau : conserve pour les donnees creees
+// avant le passage au multi-tenant. Les nouvelles classes portent
+// directement schoolName / programName / levelName.
+// =====================================================================
+
+model Institution {
+  id        String    @id @default(cuid())
+  name      String
+  code      String    @unique
+  address   String?
+  city      String?
+  country   String?
+  logoUrl   String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  programs      Program[]
+  academicYears AcademicYear[]
+
+  @@index([isActive])
+  @@map("institutions")
+}
+
+model Program {
+  id            String    @id @default(cuid())
+  institutionId String
+  name          String
+  code          String
+  description   String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  levels      Level[]
+
+  @@unique([institutionId, code])
+  @@index([institutionId])
+  @@map("programs")
+}
+
+model Level {
+  id        String    @id @default(cuid())
+  programId String
+  name      String
+  rank      Int
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  program Program      @relation(fields: [programId], references: [id], onDelete: Cascade)
+  classes ClassGroup[]
+
+  @@unique([programId, rank])
+  @@index([programId])
+  @@map("levels")
+}
+
+// =====================================================================
+// CALENDRIER ACADEMIQUE - PROPRE A CHAQUE CLASSE
+// Chaque classe possede ses annees et ses semestres : le decoupage d'une
+// classe n'a aucun effet sur une autre, meme dans la meme ecole.
+// =====================================================================
+
+model AcademicYear {
+  id            String   @id @default(cuid())
+  classGroupId  String
+  label         String
+  startsAt      DateTime
+  endsAt        DateTime
+  isCurrent     Boolean  @default(false)
+  isArchived    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  /// Etablissement d'origine des donnees anterieures au multi-tenant.
+  institutionId String?
+
+  classGroup  ClassGroup   @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  institution Institution? @relation(fields: [institutionId], references: [id], onDelete: SetNull)
+  semesters   Semester[]
+  users       User[]
+
+  @@unique([classGroupId, label])
+  @@index([classGroupId, isCurrent])
+  @@map("academic_years")
+}
+
+model Semester {
+  id             String   @id @default(cuid())
+  academicYearId String
+  number         Int
+  label          String
+  startsAt       DateTime
+  endsAt         DateTime
+  isCurrent      Boolean  @default(false)
+  isArchived     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  academicYear      AcademicYear       @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  modules           Module[]
+  resources         Resource[]
+  schedule          ScheduleEntry[]
+  scheduleDocuments ScheduleDocument[]
+  projects          Project[]
+  users             User[]
+
+  @@unique([academicYearId, number])
+  @@index([academicYearId, isCurrent])
+  @@map("semesters")
+}
+
+model Module {
+  id           String    @id @default(cuid())
+  classGroupId String
+  semesterId   String
+  code         String
+  name         String
+  description  String?
+  teacherName  String?
+  teacherEmail String?
+  credits      Int?
+  color        String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  classGroup    ClassGroup      @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  semester      Semester        @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  resources     Resource[]
+  schedule      ScheduleEntry[]
+  announcements Announcement[]
+  projects      Project[]
+  deadlines     Deadline[]
+
+  @@unique([classGroupId, semesterId, code])
+  @@index([classGroupId])
+  @@index([semesterId])
+  @@map("modules")
+}
+
+// =====================================================================
+// UTILISATEURS / AUTHENTIFICATION
+// Un compte est global a la plateforme ; ses droits sont portes par ses
+// Membership. Aucun champ de ce modele ne donne acces a une classe.
+// =====================================================================
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  role            Role      @default(ETUDIANT)
+  studentId       String?
+  avatarUrl       String?
+  phone           String?
+  isActive        Boolean   @default(true)
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  /// Derniere activite constatee : sert au statut "en ligne".
+  lastSeenAt      DateTime?
+  /// Classe affichee par defaut. Simple preference : les droits viennent
+  /// toujours de Membership.
+  activeClassGroupId String?  @map("classGroupId")
+  academicYearId     String?
+  semesterId         String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  activeClass  ClassGroup?   @relation("ActiveClass", fields: [activeClassGroupId], references: [id], onDelete: SetNull)
+  academicYear AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+  semester     Semester?     @relation(fields: [semesterId], references: [id], onDelete: SetNull)
+
+  memberships         Membership[]
+  createdClasses      ClassGroup[]         @relation("ClassCreator")
+  createdInvitations  Invitation[]
+  sessions            Session[]
+  accounts            Account[]
+  passwordResetTokens PasswordResetToken[]
+  notifications       Notification[]
+  downloads           Download[]
+  uploadedResources   Resource[]             @relation("ResourceUploader")
+  createdSchedule     ScheduleEntry[]        @relation("ScheduleAuthor")
+  scheduleDocuments   ScheduleDocument[]     @relation("ScheduleDocAuthor")
+  announcements       Announcement[]         @relation("AnnouncementAuthor")
+  mentions            AnnouncementMention[]
+  createdProjects     Project[]              @relation("ProjectAuthor")
+  createdDeadlines    Deadline[]             @relation("DeadlineAuthor")
+  createdPolls        Poll[]                 @relation("PollAuthor")
+  pollVotes           PollVote[]
+  complaints          Complaint[]            @relation("ComplaintAuthor")
+  assignedComplaints  Complaint[]            @relation("ComplaintAssignee")
+  complaintMessages   ComplaintMessage[]
+  attachments         Attachment[]
+  auditLogs           AuditLog[]
+
+  @@index([role])
+  @@index([activeClassGroupId])
+  @@index([isActive])
+  @@index([lastSeenAt])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+/// Prepare l ajout futur de Google / Microsoft / SSO institutionnel.
+model Account {
+  id                String    @id @default(cuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         DateTime?
+  createdAt         DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// =====================================================================
+// PROGRAMME / EMPLOI DU TEMPS
+// Les horaires sont stockes en minutes depuis minuit : aucun probleme
+// de fuseau horaire, tri et detection de chevauchement triviaux.
+// =====================================================================
+
+model ScheduleEntry {
+  id           String       @id @default(cuid())
+  classGroupId String
+  semesterId   String
+  moduleId     String?
+  type         ScheduleType @default(COURS)
+  title        String?
+  date         DateTime     @db.Date
+  startMinutes Int
+  endMinutes   Int
+  room         String?
+  teacherName  String?
+  note         String?
+  isPublished  Boolean      @default(true)
+  createdById  String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+
+  classGroup ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  semester   Semester   @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  module     Module?    @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  createdBy  User?      @relation("ScheduleAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([classGroupId, date])
+  @@index([semesterId])
+  @@index([moduleId])
+  @@map("schedule_entries")
+}
+
+/// Emploi du temps officiel televerse (image ou PDF), en complement ou en
+/// remplacement de la saisie manuelle.
+model ScheduleDocument {
+  id           String    @id @default(cuid())
+  classGroupId String
+  semesterId   String?
+  title        String
+  note         String?
+  fileName     String
+  filePath     String
+  fileSize     Int
+  mimeType     String
+  isCurrent    Boolean   @default(true)
+  uploadedById String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  classGroup ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  semester   Semester?  @relation(fields: [semesterId], references: [id], onDelete: SetNull)
+  uploadedBy User?      @relation("ScheduleDocAuthor", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([classGroupId, createdAt])
+  @@map("schedule_documents")
+}
+
+// =====================================================================
+// RESSOURCES ACADEMIQUES
+// PostgreSQL ne stocke que les metadonnees : le binaire vit dans le
+// stockage cloud, reference par filePath.
+// =====================================================================
+
+model Resource {
+  id            String       @id @default(cuid())
+  classGroupId  String
+  semesterId    String
+  moduleId      String?
+  projectId     String?
+  title         String
+  description   String?
+  kind          ResourceKind @default(COURS)
+  fileName      String
+  filePath      String
+  fileSize      Int
+  mimeType      String
+  downloadCount Int          @default(0)
+  isArchived    Boolean      @default(false)
+  uploadedById  String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?
+
+  classGroup ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  semester   Semester   @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  module     Module?    @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  project    Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  uploadedBy User?      @relation("ResourceUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  downloads  Download[]
+
+  @@index([classGroupId, createdAt])
+  @@index([classGroupId, kind])
+  @@index([moduleId])
+  @@index([semesterId])
+  @@index([kind])
+  @@index([projectId])
+  @@map("resources")
+}
+
+model Download {
+  id         String   @id @default(cuid())
+  resourceId String
+  userId     String
+  createdAt  DateTime @default(now())
+
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+  @@index([userId, createdAt])
+  @@map("downloads")
+}
+
+// =====================================================================
+// COMMUNICATION
+// =====================================================================
+
+model Announcement {
+  id           String               @id @default(cuid())
+  classGroupId String
+  moduleId     String?
+  title        String
+  content      String
+  level        AnnouncementLevel    @default(NORMAL)
+  category     AnnouncementCategory @default(GENERALE)
+  isPinned     Boolean              @default(false)
+  /// Mention explicite de toute la classe (@tous).
+  mentionsAll  Boolean              @default(false)
+  publishedAt  DateTime             @default(now())
+  expiresAt    DateTime?
+  authorId     String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  deletedAt    DateTime?
+
+  classGroup ClassGroup            @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  module     Module?               @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  author     User?                 @relation("AnnouncementAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  mentions   AnnouncementMention[]
+
+  @@index([classGroupId, publishedAt])
+  @@index([level])
+  @@index([moduleId])
+  @@map("announcements")
+}
+
+/// Membre explicitement mentionne dans une annonce (@prenom nom).
+/// Reference un vrai compte, jamais du texte libre.
+model AnnouncementMention {
+  id             String   @id @default(cuid())
+  announcementId String
+  userId         String
+  createdAt      DateTime @default(now())
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([userId])
+  @@map("announcement_mentions")
+}
+
+model Notification {
+  id           String           @id @default(cuid())
+  userId       String
+  /// Classe a l'origine de la notification : permet de n'afficher que
+  /// celles de l'espace actif.
+  classGroupId String?
+  type         NotificationType
+  title        String
+  body         String?
+  url          String?
+  entityType   String?
+  entityId     String?
+  readAt       DateTime?
+  createdAt    DateTime         @default(now())
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classGroup ClassGroup? @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@index([userId, classGroupId, readAt])
+  @@map("notifications")
+}
+
+// =====================================================================
+// SONDAGES
+// =====================================================================
+
+model Poll {
+  id            String    @id @default(cuid())
+  classGroupId  String
+  title         String
+  description   String?
+  allowMultiple Boolean   @default(false)
+  isAnonymous   Boolean   @default(false)
+  startsAt      DateTime  @default(now())
+  endsAt        DateTime
+  closedAt      DateTime?
+  createdById   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  classGroup ClassGroup   @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  createdBy  User?        @relation("PollAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  options    PollOption[]
+  votes      PollVote[]
+
+  @@index([classGroupId, endsAt])
+  @@map("polls")
+}
+
+model PollOption {
+  id       String @id @default(cuid())
+  pollId   String
+  label    String
+  position Int    @default(0)
+
+  poll  Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes PollVote[]
+
+  @@index([pollId])
+  @@map("poll_options")
+}
+
+model PollVote {
+  id        String   @id @default(cuid())
+  pollId    String
+  optionId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Empeche de voter deux fois pour la meme option.
+  // Le choix unique est verrouille en plus dans une transaction serveur.
+  @@unique([pollId, userId, optionId])
+  @@index([pollId])
+  @@index([optionId])
+  @@map("poll_votes")
+}
+
+// =====================================================================
+// PROJETS / ECHEANCES
+// =====================================================================
+
+model Project {
+  id           String    @id @default(cuid())
+  classGroupId String
+  semesterId   String
+  moduleId     String?
+  title        String
+  description  String?
+  instructions String?
+  teacherName  String?
+  startsAt     DateTime?
+  dueAt        DateTime
+  createdById  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  classGroup ClassGroup    @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  semester   Semester      @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  module     Module?       @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  createdBy  User?         @relation("ProjectAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  links      ProjectLink[]
+  documents  Resource[]
+  deadlines  Deadline[]
+
+  @@index([classGroupId, dueAt])
+  @@index([moduleId])
+  @@map("projects")
+}
+
+model ProjectLink {
+  id        String @id @default(cuid())
+  projectId String
+  label     String
+  url       String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_links")
+}
+
+model Deadline {
+  id           String           @id @default(cuid())
+  classGroupId String
+  moduleId     String?
+  projectId    String?
+  title        String
+  description  String?
+  category     DeadlineCategory @default(AUTRE)
+  dueAt        DateTime
+  reminderAt   DateTime?
+  reminderSent Boolean          @default(false)
+  createdById  String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  deletedAt    DateTime?
+
+  classGroup ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  module     Module?    @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  project    Project?   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy  User?      @relation("DeadlineAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([classGroupId, dueAt])
+  @@index([moduleId])
+  @@map("deadlines")
+}
+
+// =====================================================================
+// RECLAMATIONS
+// =====================================================================
+
+model Complaint {
+  id           String            @id @default(cuid())
+  classGroupId String
+  authorId     String
+  title        String
+  category     ComplaintCategory @default(AUTRE)
+  description  String
+  priority     ComplaintPriority @default(NORMALE)
+  status       ComplaintStatus   @default(EN_ATTENTE)
+  assignedToId String?
+  resolvedAt   DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  deletedAt    DateTime?
+
+  classGroup  ClassGroup         @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  author      User               @relation("ComplaintAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  assignedTo  User?              @relation("ComplaintAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  messages    ComplaintMessage[]
+  attachments Attachment[]
+
+  @@index([classGroupId, status])
+  @@index([authorId])
+  @@map("complaints")
+}
+
+model ComplaintMessage {
+  id          String   @id @default(cuid())
+  complaintId String
+  authorId    String?
+  body        String
+  isInternal  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  author    User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([complaintId, createdAt])
+  @@map("complaint_messages")
+}
+
+model Attachment {
+  id           String   @id @default(cuid())
+  complaintId  String?
+  fileName     String
+  filePath     String
+  fileSize     Int
+  mimeType     String
+  uploadedById String?
+  createdAt    DateTime @default(now())
+
+  complaint  Complaint? @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  uploadedBy User?      @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([complaintId])
+  @@map("attachments")
+}
+
+// =====================================================================
+// AUDIT
+// =====================================================================
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorId      String?
+  actorLabel   String
+  action       String
+  entityType   String
+  entityId     String?
+  entityLabel  String?
+  classGroupId String?
+  summary      String
+  metadata     Json?
+  ip           String?
+  createdAt    DateTime @default(now())
+
+  actor      User?       @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  classGroup ClassGroup? @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+
+  @@index([classGroupId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}

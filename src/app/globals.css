@@ -1,0 +1,265 @@
+@import 'tailwindcss';
+
+/* Le theme sombre est pilote par une classe sur <html>, posee avant le
+   premier rendu par un script inline (voir ThemeScript). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ===================================================================
+   TOKENS DE DESIGN
+   Une seule source de verite pour les couleurs. Le mode sombre ne
+   redefinit que les valeurs, jamais les regles.
+   =================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Pile systeme : aucun telechargement de police, donc aucun decalage de
+     mise en page au chargement et un build qui ne depend pas du reseau. */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+  --surface-0: #f6f7f9;
+  --surface-1: #ffffff;
+  --surface-2: #fbfbfd;
+  --surface-3: #f1f3f7;
+  --surface-inset: #eef1f6;
+
+  --text-1: #10131a;
+  --text-2: #4a5265;
+  --text-3: #737d92;
+
+  --border: #e3e7ee;
+  --border-strong: #cdd4e0;
+
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-contrast: #ffffff;
+  --accent-soft: #eef0fe;
+  --accent-border: #d6d9fb;
+  --accent-strong: #3730a3;
+
+  --success: #059669;
+  --success-soft: #e7f7f1;
+  --success-border: #c3ebdc;
+  --success-strong: #036c4c;
+
+  --warning: #d97706;
+  --warning-soft: #fdf3e4;
+  --warning-border: #f5e0bd;
+  --warning-strong: #92500a;
+
+  --danger: #dc2626;
+  --danger-soft: #fdecec;
+  --danger-border: #f7cfcf;
+  --danger-strong: #991b1b;
+
+  --info: #0284c7;
+  --info-soft: #e6f4fd;
+  --info-border: #c2e2f7;
+  --info-strong: #075985;
+
+  --ring: #4f46e5;
+  --shadow-sm: 0 1px 2px rgb(16 19 26 / 0.06);
+  --shadow-md: 0 4px 16px -4px rgb(16 19 26 / 0.1), 0 1px 3px rgb(16 19 26 / 0.05);
+  --shadow-lg: 0 20px 40px -16px rgb(16 19 26 / 0.18), 0 2px 8px rgb(16 19 26 / 0.06);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --surface-0: #0a0c11;
+  --surface-1: #12151c;
+  --surface-2: #161a23;
+  --surface-3: #1d222c;
+  --surface-inset: #0e1116;
+
+  --text-1: #eef1f6;
+  --text-2: #a4adbe;
+  --text-3: #737d92;
+
+  --border: #242a35;
+  --border-strong: #333b49;
+
+  --accent: #7c7bf0;
+  --accent-hover: #8f8ef5;
+  --accent-contrast: #0a0c11;
+  --accent-soft: #1c1e35;
+  --accent-border: #2e3157;
+  --accent-strong: #b3b2fa;
+
+  --success: #34d399;
+  --success-soft: #10261f;
+  --success-border: #1c4235;
+  --success-strong: #6ee7b7;
+
+  --warning: #fbbf24;
+  --warning-soft: #2a2010;
+  --warning-border: #47371a;
+  --warning-strong: #fcd34d;
+
+  --danger: #f87171;
+  --danger-soft: #2c1516;
+  --danger-border: #4d2325;
+  --danger-strong: #fca5a5;
+
+  --info: #38bdf8;
+  --info-soft: #0d2430;
+  --info-border: #17414f;
+  --info-strong: #7dd3fc;
+
+  --ring: #7c7bf0;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 16px -4px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 20px 40px -16px rgb(0 0 0 / 0.65), 0 2px 8px rgb(0 0 0 / 0.4);
+}
+
+/* ===================================================================
+   BASE
+   =================================================================== */
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--surface-0);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Barres de defilement discretes, coherentes avec le theme. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 8px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ===================================================================
+   UTILITAIRES APPLICATIFS
+   =================================================================== */
+
+@utility card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+@utility surface-muted {
+  background: var(--surface-3);
+}
+
+/* Animations d'entree, volontairement courtes pour ne pas ralentir l'usage. */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease both;
+}
+.animate-scale-in {
+  animation: scale-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-3);
+  border-radius: 8px;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.12),
+    transparent
+  );
+  animation: shimmer 1.4s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Masque le contenu tant que le theme n'est pas applique : evite le flash
+   blanc au chargement en mode sombre. */
+html.theme-pending body {
+  visibility: hidden;
+}
