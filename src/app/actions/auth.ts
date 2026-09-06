@@ -3,6 +3,7 @@
 import { createHash, randomBytes } from 'crypto'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { hashPassword, verifyPassword } from '@/lib/auth/password'
 import {
@@ -82,17 +83,29 @@ export async function registerAction(
       }
     }
 
-    const user = await prisma.user.create({
-      data: {
-        email: data.email,
-        passwordHash: await hashPassword(data.password),
-        firstName: data.firstName,
-        lastName: data.lastName,
-        role: data.accountType,
-        studentId: data.accountType === 'ETUDIANT' ? data.studentId ?? null : null,
-      },
-      select: { id: true },
-    })
+    let user: { id: string }
+    try {
+      user = await prisma.user.create({
+        data: {
+          email: data.email,
+          passwordHash: await hashPassword(data.password),
+          firstName: data.firstName,
+          lastName: data.lastName,
+          role: data.accountType,
+          studentId: data.accountType === 'ETUDIANT' ? data.studentId ?? null : null,
+        },
+        select: { id: true },
+      })
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return {
+          ok: false,
+          message: 'Cette adresse e-mail est déjà utilisée.',
+          fieldErrors: { email: ['Adresse e-mail déjà utilisée.'] },
+        }
+      }
+      throw error
+    }
 
     if (target) {
       try {
