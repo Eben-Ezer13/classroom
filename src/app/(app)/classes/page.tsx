@@ -48,7 +48,7 @@ export default async function ClassesPage({
               title="Espaces auxquels vous appartenez"
               description={
                 user.memberships.length > 0
-                  ? "Les donnees de chaque classe sont totalement independantes."
+                  ? "Les données de chaque classe sont totalement indépendantes."
                   : undefined
               }
             />
@@ -117,7 +117,7 @@ export default async function ClassesPage({
 
           <Card>
             <CardHeader
-              title="Creer une classe"
+              title="Créer une classe"
               description="Vous devenez automatiquement delegue (administrateur) de cet espace."
             />
             <CardBody>
@@ -130,7 +130,7 @@ export default async function ClassesPage({
           <Card>
             <CardHeader
               title="Rejoindre une classe"
-              description="Avec le code de classe ou un lien d invitation."
+              description="Avec le code de classe ou un lien d’invitation."
             />
             <CardBody>
               <JoinClassForm />
@@ -146,7 +146,7 @@ export default async function ClassesPage({
                 meme si elles appartiennent a la meme ecole.
               </p>
               <p>
-                Le delegue qui cree la classe en devient l administrateur : il invite les
+                Le délégué qui crée la classe en devient l’administrateur : il invite les
                 etudiants, gere le programme et les ressources.
               </p>
             </CardBody>

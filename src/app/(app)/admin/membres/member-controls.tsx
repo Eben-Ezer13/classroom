@@ -30,11 +30,11 @@ export function NewInvitationButton() {
       trigger={
         <>
           <IconPlus className="size-4" />
-          Lien d invitation
+          Lien d’invitation
         </>
       }
       triggerSize="sm"
-      title="Nouveau lien d invitation"
+      title="Nouveau lien d’invitation"
       description="Partagez-le par message : il rejoint directement votre classe."
     >
       {(close) => <InvitationForm onDone={close} />}
@@ -108,7 +108,7 @@ export function CopyButton({ value, label = 'Copier' }: { value: string; label?:
   )
 }
 
-/** Changement de role : ADMIN (delegue) ou MEMBER (etudiant). */
+/** Changement de rôle : ADMIN (délégué) ou MEMBER (étudiant). */
 export function RoleSelect({
   membershipId,
   role,

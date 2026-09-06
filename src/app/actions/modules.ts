@@ -161,7 +161,7 @@ export async function deleteModuleAction(formData: FormData): Promise<void> {
     // module ne doit pas faire disparaitre des ressources par surprise.
     throw new AppError(
       `Ce module est encore utilise (${existing._count.resources} ressource(s), ` +
-        `${existing._count.schedule} seance(s), ${existing._count.projects} projet(s)). ` +
+        `${existing._count.schedule} séance(s), ${existing._count.projects} projet(s)). ` +
         `Detachez-les avant de le supprimer.`,
     )
   }

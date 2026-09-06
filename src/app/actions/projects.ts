@@ -43,7 +43,7 @@ export async function createProjectAction(
         startsAt: data.startsAt ?? null,
         dueAt: data.dueAt,
         createdById: user.id,
-        // Un projet cree systematiquement son echeance : les etudiants
+        // Un projet crée systématiquement son échéance : les étudiants
         // retrouvent ainsi tous leurs rendus au meme endroit.
         deadlines: {
           create: {
@@ -74,7 +74,7 @@ export async function createProjectAction(
       {
         type: 'PROJET',
         title: 'Nouveau projet',
-        body: `${project.title} — a rendre avant le ${formatDateShort(project.dueAt)}.`,
+        body: `${project.title} — à rendre avant le ${formatDateShort(project.dueAt)}.`,
         url: `/projets/${project.id}`,
         entityType: 'Project',
         entityId: project.id,

@@ -46,7 +46,7 @@ export default async function AdminYearsPage() {
           <EmptyState
             icon={<IconLayers />}
             title="Aucune annee academique"
-            description="Creez une annee academique puis ses semestres."
+            description="Créez une année académique puis ses semestres."
           />
         </Card>
       ) : (
@@ -94,7 +94,7 @@ export default async function AdminYearsPage() {
               <CardBody>
                 {year.semesters.length === 0 ? (
                   <p className="text-[13px] text-[var(--text-3)]">
-                    Aucun semestre. Ajoutez-en un pour pouvoir creer des modules.
+                    Aucun semestre. Ajoutez-en un pour pouvoir créer des modules.
                   </p>
                 ) : (
                   <div className="grid sm:grid-cols-2 gap-2.5">

@@ -100,7 +100,7 @@ export default async function ProgrammePage({
               </Link>
             ) : (
               <p className="text-[12px] text-[var(--text-3)]">
-                {entries.length} seance{entries.length > 1 ? 's' : ''}
+                {entries.length} séance{entries.length > 1 ? 's' : ''}
               </p>
             )}
           </div>
@@ -112,11 +112,11 @@ export default async function ProgrammePage({
         <Card>
           <EmptyState
             icon={<IconCalendar />}
-            title="Aucune seance cette semaine"
+            title="Aucune séance cette semaine"
             description={
               canManage
-                ? 'Ajoutez une seance pour construire le programme de la classe.'
-                : 'Le programme de cette semaine n a pas encore ete publie.'
+                ? 'Ajoutez une séance pour construire le programme de la classe.'
+                : 'Le programme de cette semaine n’a pas encore été publié.'
             }
           />
         </Card>
@@ -136,7 +136,7 @@ export default async function ProgrammePage({
                       {DAY_LABELS[index]}
                       {isToday ? (
                         <span className="rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--accent-contrast)]">
-                          Aujourd hui
+                          Aujourd’hui
                         </span>
                       ) : null}
                     </span>

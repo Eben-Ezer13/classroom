@@ -80,7 +80,7 @@ export function ScheduleEntryActions({
         hidden={{ entryId: entry.id }}
         message="Supprimer cette séance ? La classe sera prévenue."
       >
-        <IconSubmit label="Supprimer la seance" tone="danger">
+        <IconSubmit label="Supprimer la séance" tone="danger">
           <IconTrash className="size-[17px]" />
         </IconSubmit>
       </ConfirmForm>

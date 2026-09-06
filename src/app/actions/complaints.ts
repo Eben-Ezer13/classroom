@@ -120,7 +120,7 @@ export async function addComplaintMessageAction(
     if (isStaff && complaint.authorId !== user.id) {
       await notifyUser(complaint.authorId, {
         type: 'RECLAMATION',
-        title: 'Reponse a votre reclamation',
+        title: 'Réponse à votre réclamation',
         body: truncate(parsed.data.body, 160),
         url: `/reclamations/${complaint.id}`,
         entityType: 'Complaint',
@@ -131,7 +131,7 @@ export async function addComplaintMessageAction(
         complaint.classGroupId,
         {
           type: 'RECLAMATION',
-          title: 'Nouveau message sur une reclamation',
+          title: 'Nouveau message sur une réclamation',
           body: `${complaint.title} — ${truncate(parsed.data.body, 120)}`,
           url: `/reclamations/${complaint.id}`,
           entityType: 'Complaint',
@@ -161,7 +161,7 @@ export async function updateComplaintStatusAction(
       where: { id: parsed.data.complaintId, deletedAt: null },
       select: { id: true, classGroupId: true, authorId: true, title: true, status: true },
     })
-    if (!existing) throw new NotFoundError('Reclamation introuvable.')
+    if (!existing) throw new NotFoundError('Réclamation introuvable.')
     assertCanManageClass(user, existing.classGroupId)
 
     const status = parsed.data.status
@@ -181,14 +181,14 @@ export async function updateComplaintStatusAction(
       entityId: existing.id,
       entityLabel: existing.title,
       classGroupId: existing.classGroupId,
-      summary: `${user.firstName} ${user.lastName} a passe la reclamation ${existing.title} en ${COMPLAINT_STATUS_LABELS[status]}.`,
+      summary: `${user.firstName} ${user.lastName} a passé la réclamation ${existing.title} en ${COMPLAINT_STATUS_LABELS[status]}.`,
       metadata: { from: existing.status, to: status },
     })
 
     if (existing.authorId !== user.id) {
       await notifyUser(existing.authorId, {
         type: 'RECLAMATION',
-        title: `Reclamation ${COMPLAINT_STATUS_LABELS[status]}`,
+        title: `Réclamation ${COMPLAINT_STATUS_LABELS[status]}`,
         body: existing.title,
         url: `/reclamations/${existing.id}`,
         entityType: 'Complaint',

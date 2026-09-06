@@ -175,7 +175,7 @@ export function ScheduleForm({
       <Checkbox
         name="isPublished"
         defaultChecked={entry?.isPublished ?? true}
-        label="Publier immediatement (visible par les etudiants)"
+        label="Publier immédiatement (visible par les étudiants)"
       />
 
       <div className="flex justify-end gap-2 pt-1">

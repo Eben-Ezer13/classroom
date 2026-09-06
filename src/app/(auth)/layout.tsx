@@ -6,7 +6,7 @@ import { ThemeToggle } from '@/components/layout/theme'
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh grid lg:grid-cols-[1fr_minmax(420px,44%)]">
-      {/* Panneau de presentation, masque sur mobile pour laisser la place
+      {/* Panneau de présentation, masqué sur mobile pour laisser la place
           au formulaire. */}
       <aside className="hidden lg:flex flex-col justify-between p-10 bg-[var(--surface-1)] border-r border-[var(--border)] relative overflow-hidden">
         <div
@@ -27,18 +27,18 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
         <div className="relative max-w-md">
           <h2 className="text-[30px] leading-[1.2] font-semibold tracking-[-0.02em] text-[var(--text-1)]">
-            Toute la vie de la classe, au meme endroit.
+            Toute la vie de la classe, au même endroit.
           </h2>
           <p className="mt-3.5 text-[14.5px] leading-relaxed text-[var(--text-2)]">
             Programme, ressources, annonces, projets et échéances. Le délégué
-            publie une fois, toute la classe est informee.
+            publie une fois, toute la classe est informée.
           </p>
           <ul className="mt-7 space-y-2.5">
             {[
-              'Emploi du temps et prochaines seances',
-              'Cours, TD, TP et corrections telechargeables',
+              'Emploi du temps et prochaines séances',
+              'Cours, TD, TP et corrections téléchargeables',
               'Échéances, projets et rappels',
-              'Annonces urgentes, sondages et reclamations',
+              'Annonces urgentes, sondages et réclamations',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2.5 text-[13.5px] text-[var(--text-2)]">
                 <span className="mt-1.5 size-1.5 rounded-full bg-[var(--accent)] shrink-0" />
@@ -49,7 +49,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         </div>
 
         <p className="relative text-[12px] text-[var(--text-3)]">
-          Plateforme academique privee.
+          Plateforme académique privée.
         </p>
       </aside>
 

@@ -142,7 +142,7 @@ function ModuleForm({
 
       <div className="flex justify-end pt-1">
         <SubmitButton pendingLabel="Enregistrement...">
-          {isEdit ? 'Enregistrer' : 'Creer le module'}
+          {isEdit ? 'Enregistrer' : 'Créer le module'}
         </SubmitButton>
       </div>
     </form>
@@ -214,7 +214,7 @@ export function ModuleActions({
       <ConfirmForm
         action={deleteModuleAction}
         hidden={{ moduleId: module.id }}
-        message="Supprimer ce module ? Il doit d abord etre detache de ses ressources et seances."
+        message="Supprimer ce module ? Il doit d’abord être détaché de ses ressources et séances."
       >
         <IconSubmit label="Supprimer le module" tone="danger">
           <IconTrash className="size-[17px]" />

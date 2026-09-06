@@ -20,7 +20,7 @@ import {
 import { formatDateTime, formatFileSize, formatRelative } from '@/lib/utils'
 import { ComplaintMessageForm, ComplaintStatusForm } from '../complaint-controls'
 
-export const metadata: Metadata = { title: 'Reclamation' }
+export const metadata: Metadata = { title: 'Réclamation' }
 
 export default async function ComplaintDetailPage({
   params,
@@ -51,7 +51,7 @@ export default async function ComplaintDetailPage({
       <PageHeader
         title={complaint.title}
         breadcrumb={[
-          { label: 'Reclamations', href: '/reclamations' },
+          { label: 'Réclamations', href: '/reclamations' },
           { label: 'Detail' },
         ]}
       />
@@ -140,7 +140,7 @@ export default async function ComplaintDetailPage({
               <div className="pt-2 border-t border-[var(--border)]">
                 {isClosed ? (
                   <Alert tone="neutral">
-                    Cette reclamation est fermee : elle n accepte plus de nouveaux messages.
+                    Cette réclamation est fermée : elle n’accepte plus de nouveaux messages.
                   </Alert>
                 ) : (
                   <ComplaintMessageForm complaintId={complaint.id} />

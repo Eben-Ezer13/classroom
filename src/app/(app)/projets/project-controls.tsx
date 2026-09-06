@@ -72,7 +72,7 @@ function ProjectForm({
           name="title"
           defaultValue={project?.title ?? ''}
           required
-          placeholder="Modelisation d une suspension de vehicule electrique"
+          placeholder="Modélisation d’une suspension de véhicule électrique"
         />
       </Field>
 
@@ -160,13 +160,13 @@ function ProjectForm({
 
       {!isEdit ? (
         <p className="text-[12.5px] text-[var(--text-3)]">
-          Une echeance de rendu sera creee automatiquement a la date limite.
+          Une échéance de rendu sera créée automatiquement à la date limite.
         </p>
       ) : null}
 
       <div className="flex justify-end pt-1">
         <SubmitButton pendingLabel="Enregistrement...">
-          {isEdit ? 'Enregistrer' : 'Creer le projet'}
+          {isEdit ? 'Enregistrer' : 'Créer le projet'}
         </SubmitButton>
       </div>
     </form>
@@ -240,7 +240,7 @@ export function ProjectActions({
       <ConfirmForm
         action={deleteProjectAction}
         hidden={{ projectId: project.id }}
-        message="Supprimer ce projet et son echeance de rendu ?"
+        message="Supprimer ce projet et son échéance de rendu ?"
       >
         <IconSubmit label="Supprimer le projet" tone="danger">
           <IconTrash className="size-[17px]" />

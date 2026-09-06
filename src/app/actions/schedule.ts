@@ -113,7 +113,7 @@ export async function updateScheduleEntryAction(
   return runAction(async () => {
     const { user } = await requireClassAdmin()
     const entryId = String(formData.get('entryId') ?? '')
-    if (!entryId) throw new NotFoundError('Seance introuvable.')
+    if (!entryId) throw new NotFoundError('Séance introuvable.')
 
     const parsed = parseForm(scheduleSchema, formData)
     if (!parsed.success) {
@@ -127,7 +127,7 @@ export async function updateScheduleEntryAction(
     })
     // Verifier aussi la classe empeche de modifier la seance d'une autre
     // classe en changeant l'identifiant dans le formulaire.
-    if (!existing) throw new NotFoundError('Seance introuvable.')
+    if (!existing) throw new NotFoundError('Séance introuvable.')
     assertCanManageClass(user, existing.classGroupId)
 
     await assertSemesterInClass(data.semesterId, existing.classGroupId)
@@ -156,7 +156,7 @@ export async function updateScheduleEntryAction(
       },
     })
 
-    const label = updated.module?.name ?? updated.title ?? 'Seance'
+    const label = updated.module?.name ?? updated.title ?? 'Séance'
 
     await recordAudit({
       actor: user,
@@ -183,7 +183,7 @@ export async function updateScheduleEntryAction(
 
     revalidatePath('/programme')
     revalidatePath('/dashboard')
-    return { ok: true, message: 'Seance mise a jour.' }
+    return { ok: true, message: 'Séance mise à jour.' }
   })
 }
 
@@ -201,7 +201,7 @@ export async function deleteScheduleEntryAction(formData: FormData): Promise<voi
       module: { select: { name: true } },
     },
   })
-  if (!existing) throw new NotFoundError('Seance introuvable.')
+  if (!existing) throw new NotFoundError('Séance introuvable.')
   assertCanManageClass(user, existing.classGroupId)
 
   // Suppression douce : la seance disparait de l'affichage mais reste
@@ -211,7 +211,7 @@ export async function deleteScheduleEntryAction(formData: FormData): Promise<voi
     data: { deletedAt: new Date() },
   })
 
-  const label = existing.module?.name ?? existing.title ?? 'Seance'
+  const label = existing.module?.name ?? existing.title ?? 'Séance'
   await recordAudit({
     actor: user,
     action: 'SCHEDULE_DELETED',
@@ -219,14 +219,14 @@ export async function deleteScheduleEntryAction(formData: FormData): Promise<voi
     entityId: existing.id,
     entityLabel: label,
     classGroupId: existing.classGroupId,
-    summary: `${user.firstName} ${user.lastName} a supprime une seance (${label}) du ${formatDateShort(existing.date)}.`,
+    summary: `${user.firstName} ${user.lastName} a supprimé une séance (${label}) du ${formatDateShort(existing.date)}.`,
   })
 
   await notifyClass(
     existing.classGroupId,
     {
       type: 'PROGRAMME',
-      title: 'Seance annulee',
+      title: 'Séance annulée',
       body: `${label} du ${formatDateShort(existing.date)} a ete retiree du programme.`,
       url: '/programme',
     },

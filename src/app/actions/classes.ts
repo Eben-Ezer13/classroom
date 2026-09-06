@@ -59,7 +59,7 @@ export async function createClassAction(
     if (owned >= MAX_CLASSES_PER_USER) {
       return {
         ok: false,
-        message: `Vous administrez deja ${MAX_CLASSES_PER_USER} classes, la limite est atteinte.`,
+        message: `Vous administrez déjà ${MAX_CLASSES_PER_USER} classes, la limite est atteinte.`,
       }
     }
 
@@ -79,7 +79,7 @@ export async function createClassAction(
       entityId: created.id,
       entityLabel: `${created.name} (${created.code})`,
       classGroupId: created.id,
-      summary: `${user.firstName} ${user.lastName} a cree la classe ${created.name}.`,
+      summary: `${user.firstName} ${user.lastName} a créé la classe ${created.name}.`,
     })
 
     revalidatePath('/', 'layout')
@@ -200,7 +200,7 @@ export async function leaveClassAction(formData: FormData): Promise<void> {
     entityId: classGroupId,
     entityLabel: membership.classGroup.name,
     classGroupId,
-    summary: `${user.firstName} ${user.lastName} a quitte la classe ${membership.classGroup.name}.`,
+    summary: `${user.firstName} ${user.lastName} a quitté la classe ${membership.classGroup.name}.`,
   })
 
   revalidatePath('/', 'layout')
@@ -303,12 +303,12 @@ export async function createInvitationAction(
       entityType: 'Invitation',
       entityLabel: parsed.data.label ?? code,
       classGroupId: classId,
-      summary: `${user.firstName} ${user.lastName} a cree un lien d invitation.`,
+      summary: `${user.firstName} ${user.lastName} a créé un lien d’invitation.`,
       metadata: { role: parsed.data.role, days: parsed.data.days },
     })
 
     revalidatePath('/admin/membres')
-    return { ok: true, message: 'Lien d invitation cree.' }
+    return { ok: true, message: 'Lien d’invitation créé.' }
   })
 }
 
@@ -330,7 +330,7 @@ export async function revokeInvitationAction(formData: FormData): Promise<void> 
     entityType: 'Invitation',
     entityId: invitationId,
     classGroupId: classId,
-    summary: `${user.firstName} ${user.lastName} a revoque un lien d invitation.`,
+    summary: `${user.firstName} ${user.lastName} a révoqué un lien d’invitation.`,
   })
 
   revalidatePath('/admin/membres')
@@ -505,7 +505,7 @@ export async function removeMemberAction(formData: FormData): Promise<void> {
     {
       type: 'MEMBRE',
       title: 'Retrait de la classe',
-      body: 'Votre acces a cette classe a ete retire par le delegue.',
+      body: 'Votre accès à cette classe a été retiré par le délégué.',
     },
     null,
   )

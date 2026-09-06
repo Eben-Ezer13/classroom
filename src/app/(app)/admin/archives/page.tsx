@@ -76,7 +76,7 @@ export default async function AdminArchivesPage() {
         <Card>
           <CardHeader
             title="Annees en cours"
-            description="Visibles par les etudiants et les delegues."
+            description="Visibles par les étudiants et les délégués."
           />
           <CardBody className="space-y-2.5">
             {active.length === 0 ? (

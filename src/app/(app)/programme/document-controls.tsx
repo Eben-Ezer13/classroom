@@ -85,7 +85,7 @@ function DocumentForm({
           name="title"
           required
           defaultValue=""
-          placeholder="Intitule du document"
+          placeholder="Intitulé du document"
           maxLength={140}
         />
       </Field>

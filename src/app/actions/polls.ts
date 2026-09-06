@@ -31,8 +31,8 @@ export async function createPollAction(
     if (data.endsAt.getTime() <= Date.now()) {
       return {
         ok: false,
-        message: 'La date de cloture doit etre dans le futur.',
-        fieldErrors: { endsAt: ['Date de cloture deja passee.'] },
+        message: 'La date de clôture doit être dans le futur.',
+        fieldErrors: { endsAt: ['Date de clôture déjà passée.'] },
       }
     }
 
@@ -67,7 +67,7 @@ export async function createPollAction(
       {
         type: 'SONDAGE',
         title: 'Nouveau sondage',
-        body: `${poll.title} — a repondre avant le ${formatDateShort(poll.endsAt)}.`,
+        body: `${poll.title} — à répondre avant le ${formatDateShort(poll.endsAt)}.`,
         url: '/sondages',
         entityType: 'Poll',
         entityId: poll.id,

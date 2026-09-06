@@ -101,7 +101,7 @@ export default async function NotificationsPage({
             description={
               onlyUnread
                 ? 'Vous avez tout consulte.'
-                : 'Les nouvelles ressources, annonces et echeances apparaitront ici.'
+                : 'Les nouvelles ressources, annonces et échéances apparaîtront ici.'
             }
           />
         ) : (

@@ -80,7 +80,7 @@ export default async function DashboardPage() {
               {data.todayEntries.length > 0 ? (
                 <>
                   <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-3)]">
-                    Toutes les seances du jour
+                    Toutes les séances du jour
                   </p>
                   {data.todayEntries.map((entry) => (
                     <ScheduleItem key={entry.id} entry={entry} />
@@ -158,7 +158,7 @@ export default async function DashboardPage() {
         <div className="space-y-4">
           <Card>
             <CardHeader
-              title="Prochaines echeances"
+              title="Prochaines échéances"
               action={
                 <LinkButton href="/echeances" variant="ghost" size="sm">
                   Tout voir
@@ -208,7 +208,7 @@ export default async function DashboardPage() {
                       )}
                     </div>
                     <p className="mt-1.5 text-[12px] text-[var(--text-3)]">
-                      Cloture {formatRelative(poll.endsAt)} · {poll._count.votes} vote
+                      Clôture {formatRelative(poll.endsAt)} · {poll._count.votes} vote
                       {poll._count.votes > 1 ? 's' : ''}
                     </p>
                   </Link>
@@ -238,7 +238,7 @@ function Greeting({ firstName, className }: { firstName: string; className?: str
       </h1>
       <p className="text-[13.5px] text-[var(--text-3)] mt-1">
         {className
-          ? `Voici l essentiel pour ${className} aujourd hui.`
+          ? `Voici l’essentiel pour ${className} aujourd’hui.`
           : "Voici l essentiel de votre journee."}
       </p>
     </div>
@@ -253,9 +253,9 @@ function DelegatePanel({
   const actions = [
     { href: '/ressources?nouveau=1', label: 'Ajouter une ressource', icon: IconFolder },
     { href: '/annonces?nouveau=1', label: 'Publier une annonce', icon: IconMegaphone },
-    { href: '/programme?nouveau=1', label: 'Ajouter une seance', icon: IconCalendar },
-    { href: '/echeances?nouveau=1', label: 'Ajouter une echeance', icon: IconClock },
-    { href: '/sondages?nouveau=1', label: 'Creer un sondage', icon: IconPoll },
+    { href: '/programme?nouveau=1', label: 'Ajouter une séance', icon: IconCalendar },
+    { href: '/echeances?nouveau=1', label: 'Ajouter une échéance', icon: IconClock },
+    { href: '/sondages?nouveau=1', label: 'Créer un sondage', icon: IconPoll },
   ]
 
   return (
@@ -280,7 +280,7 @@ function DelegatePanel({
           icon={<IconMegaphone className="size-4" />}
         />
         <StatTile
-          label="Echeances / 7j"
+          label="Échéances / 7j"
           value={data.upcomingDeadlines}
           tone="danger"
           icon={<IconClock className="size-4" />}
@@ -292,7 +292,7 @@ function DelegatePanel({
           icon={<IconPoll className="size-4" />}
         />
         <StatTile
-          label="Reclamations"
+          label="Réclamations"
           value={data.pendingComplaints}
           hint="en attente"
           tone={data.pendingComplaints > 0 ? 'danger' : 'neutral'}

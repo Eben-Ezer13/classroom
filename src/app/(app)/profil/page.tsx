@@ -103,7 +103,7 @@ export default async function ProfilePage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <StatTile label="Telechargements" value={downloads} tone="accent" />
             <StatTile label="Sondages" value={votes.length} tone="info" />
-            <StatTile label="Reclamations" value={complaints} tone="warning" />
+            <StatTile label="Réclamations" value={complaints} tone="warning" />
             <StatTile label="Sessions actives" value={sessions} tone="success" />
           </div>
 

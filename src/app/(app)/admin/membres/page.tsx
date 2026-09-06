@@ -113,7 +113,7 @@ export default async function AdminMembersPage({
       {invitations.length > 0 ? (
         <Card className="mb-4">
           <CardHeader
-            title="Liens d invitation actifs"
+            title="Liens d’invitation actifs"
             description="Chaque lien peut porter un role, une expiration et un quota d usage."
           />
           <Table>
@@ -166,7 +166,7 @@ export default async function AdminMembersPage({
                         <ConfirmForm
                           action={revokeInvitationAction}
                           hidden={{ invitationId: invitation.id }}
-                          message="Revoquer ce lien d invitation ?"
+                          message="Révoquer ce lien d’invitation ?"
                         >
                           <Button type="submit" size="sm" variant="ghost">
                             Revoquer
@@ -199,7 +199,7 @@ export default async function AdminMembersPage({
             description={
               q
                 ? 'Aucun membre ne correspond a cette recherche.'
-                : 'Partagez le code de la classe ou creez un lien d invitation.'
+                : 'Partagez le code de la classe ou créez un lien d’invitation.'
             }
           />
         ) : (

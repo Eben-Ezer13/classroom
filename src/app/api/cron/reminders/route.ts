@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server'
 import { dispatchDeadlineRemindersAction } from '@/app/actions/deadlines'
 
 /**
- * Envoi des rappels d'echeance.
+ * Envoi des rappels d’échéance.
  *
  * Declenchee par un Cron Vercel (voir vercel.json). Vercel signe ses appels
  * avec CRON_SECRET : sans en-tete valide, la route repond 401, ce qui evite
  * que n'importe qui puisse declencher une vague de notifications.
  *
- * L'operation est idempotente : chaque echeance porte un drapeau
+ * L’opération est idempotente : chaque échéance porte un drapeau
  * `reminderSent`, un second appel n'envoie donc rien de plus.
  */
 export async function GET(request: Request) {

@@ -125,7 +125,7 @@ export default async function ProjectsPage({
               showPast
                 ? 'Les projets dont la date de rendu est passee apparaitront ici.'
                 : canManage
-                  ? 'Creez un projet pour donner les consignes a la classe.'
+                  ? 'Créez un projet pour donner les consignes à la classe.'
                   : 'Aucun projet n est en cours pour le moment.'
             }
           />

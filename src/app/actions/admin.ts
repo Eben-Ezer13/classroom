@@ -21,7 +21,7 @@ async function loadYear(yearId: string, classGroupId: string) {
     where: { id: yearId, classGroupId },
     select: { id: true, label: true, isArchived: true },
   })
-  if (!year) throw new NotFoundError('Annee introuvable dans cette classe.')
+  if (!year) throw new NotFoundError('Année introuvable dans cette classe.')
   return year
 }
 
@@ -85,7 +85,7 @@ export async function createAcademicYearAction(
     })
 
     revalidatePath('/admin/annees')
-    return { ok: true, message: 'Annee academique creee.' }
+    return { ok: true, message: 'Année académique créée.' }
   })
 }
 

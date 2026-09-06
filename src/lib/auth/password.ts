@@ -17,7 +17,7 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
  */
 export function passwordIssues(password: string): string[] {
   const issues: string[] = []
-  if (password.length < 10) issues.push('au moins 10 caracteres')
+  if (password.length < 10) issues.push('au moins 10 caractères')
   if (!/[a-z]/.test(password)) issues.push('une minuscule')
   if (!/[A-Z]/.test(password)) issues.push('une majuscule')
   if (!/[0-9]/.test(password)) issues.push('un chiffre')

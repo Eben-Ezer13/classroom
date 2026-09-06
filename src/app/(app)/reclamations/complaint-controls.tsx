@@ -90,7 +90,7 @@ function ComplaintForm({ onDone }: { onDone?: () => void }) {
       </Field>
 
       <div className="flex justify-end pt-1">
-        <SubmitButton pendingLabel="Envoi...">Envoyer la reclamation</SubmitButton>
+        <SubmitButton pendingLabel="Envoi...">Envoyer la réclamation</SubmitButton>
       </div>
     </form>
   )
@@ -108,7 +108,7 @@ export function AddComplaintButton({ autoOpen }: { autoOpen?: boolean }) {
       }
       triggerSize="sm"
       title="Signaler une difficulte"
-      description="Seuls vous et les responsables de votre classe verrez cette reclamation."
+      description="Seuls vous et les responsables de votre classe verrez cette réclamation."
       width="lg"
     >
       {(close) => <ComplaintForm onDone={close} />}

@@ -15,8 +15,8 @@ export const metadata: Metadata = { title: 'Rejoindre une classe' }
 
 /**
  * Ecran d'atterrissage d'un lien d'invitation.
- * Le code est resolu cote serveur AVANT d'etre propose : l'etudiant voit
- * quelle classe il s'apprete a rejoindre, et une invitation expiree donne
+ * Le code est résolu côté serveur AVANT d’être proposé : l’étudiant voit
+ * quelle classe il s’apprête à rejoindre, et une invitation expirée donne
  * un message clair plutot qu'un echec technique.
  */
 export default async function JoinPage({
@@ -80,7 +80,7 @@ export default async function JoinPage({
 
           {!alreadyMember ? (
             <form action={joinClassFormAction} className="space-y-4">
-              <Field label="Code d invitation" htmlFor="code" required>
+              <Field label="Code d’invitation" htmlFor="code" required>
                 <Input
                   id="code"
                   name="code"

@@ -136,7 +136,7 @@ export function PasswordForm() {
         label="Nouveau mot de passe"
         htmlFor="password"
         error={state.fieldErrors?.password}
-        hint="10 caracteres minimum, avec majuscule, minuscule et chiffre"
+        hint="10 caractères minimum, avec majuscule, minuscule et chiffre"
         required
       >
         <Input

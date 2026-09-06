@@ -122,7 +122,7 @@ function DeadlineForm({
         <Field
           label="Rappel"
           htmlFor="reminderAt"
-          hint="Facultatif : notifie la classe a cette date"
+          hint="Facultatif : notifie la classe à cette date"
           error={state.fieldErrors?.reminderAt}
         >
           <Input
@@ -156,7 +156,7 @@ export function AddDeadlineButton({
       trigger={
         <>
           <IconPlus className="size-4" />
-          Ajouter une echeance
+          Ajouter une échéance
         </>
       }
       triggerSize="sm"
@@ -182,7 +182,7 @@ export function DeadlineActions({
         trigger={<IconPencil className="size-[17px]" />}
         triggerVariant="ghost"
         triggerSize="icon"
-        title="Modifier l echeance"
+        title="Modifier l’échéance"
         width="lg"
       >
         {(close) => (
@@ -193,9 +193,9 @@ export function DeadlineActions({
       <ConfirmForm
         action={deleteDeadlineAction}
         hidden={{ deadlineId: deadline.id }}
-        message="Supprimer cette echeance ?"
+        message="Supprimer cette échéance ?"
       >
-        <IconSubmit label="Supprimer l echeance" tone="danger">
+        <IconSubmit label="Supprimer l’échéance" tone="danger">
           <IconTrash className="size-[17px]" />
         </IconSubmit>
       </ConfirmForm>

@@ -92,7 +92,7 @@ export default async function ComplaintsPage({
         {result.items.length === 0 ? (
           <EmptyState
             icon={<IconComplaint />}
-            title={status || category ? 'Aucun resultat' : 'Aucune reclamation'}
+            title={status || category ? 'Aucun résultat' : 'Aucune réclamation'}
             description={
               isStaff
                 ? 'Aucune difficulte signalee pour le moment.'

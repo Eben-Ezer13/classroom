@@ -98,7 +98,7 @@ function PollForm({ onDone }: { onDone?: () => void }) {
       </div>
 
       <Field
-        label="Date de cloture"
+        label="Date de clôture"
         htmlFor="endsAt"
         error={state.fieldErrors?.endsAt}
         required
@@ -125,12 +125,12 @@ export function AddPollButton({ autoOpen }: { autoOpen?: boolean }) {
       trigger={
         <>
           <IconPlus className="size-4" />
-          Creer un sondage
+          Créer un sondage
         </>
       }
       triggerSize="sm"
       title="Nouveau sondage"
-      description="La classe sera notifiee et pourra repondre jusqu a la cloture."
+      description="La classe sera notifiée et pourra répondre jusqu’à la clôture."
       width="lg"
     >
       {(close) => <PollForm onDone={close} />}

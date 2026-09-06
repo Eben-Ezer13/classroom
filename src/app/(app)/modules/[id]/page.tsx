@@ -332,7 +332,7 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
           </Card>
 
           <Card>
-            <CardHeader title="Prochaines seances" />
+            <CardHeader title="Prochaines séances" />
             <CardBody className="space-y-2.5">
               {schedule.length > 0 ? (
                 schedule.map((entry) => (
@@ -346,8 +346,8 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
               ) : (
                 <EmptyState
                   icon={<IconClock />}
-                  title="Aucune seance"
-                  description="Aucune seance a venir pour ce module."
+                  title="Aucune séance"
+                  description="Aucune séance à venir pour ce module."
                   className="py-8"
                 />
               )}

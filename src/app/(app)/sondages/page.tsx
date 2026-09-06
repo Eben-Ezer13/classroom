@@ -83,7 +83,7 @@ export default async function PollsPage({
             title="Aucun sondage"
             description={
               canManage
-                ? 'Creez un sondage pour decider collectivement.'
+                ? 'Créez un sondage pour décider collectivement.'
                 : 'Aucune consultation en cours pour le moment.'
             }
           />
@@ -166,7 +166,7 @@ export default async function PollsPage({
                     {' · '}
                     {isClosed
                       ? `Clos le ${formatDateTime(poll.closedAt ?? poll.endsAt)}`
-                      : `Cloture ${formatRelative(poll.endsAt)}`}
+                      : `Clôture ${formatRelative(poll.endsAt)}`}
                     {poll.createdBy
                       ? ` · ${poll.createdBy.firstName} ${poll.createdBy.lastName}`
                       : ''}

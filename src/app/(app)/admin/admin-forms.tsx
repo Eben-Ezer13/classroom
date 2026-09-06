@@ -144,7 +144,7 @@ function SemesterForm({ years, onDone }: { years: Option[]; onDone: () => void }
       </div>
       <Checkbox name="isCurrent" label="Definir comme semestre courant" />
       <div className="flex justify-end">
-        <SubmitButton pendingLabel="Creation...">Creer</SubmitButton>
+        <SubmitButton pendingLabel="Création...">Créer</SubmitButton>
       </div>
     </form>
   )

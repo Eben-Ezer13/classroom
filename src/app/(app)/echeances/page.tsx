@@ -98,7 +98,7 @@ export default async function DeadlinesPage({
         <StatTile label="Cette semaine" value={buckets.week} tone="warning" />
         <StatTile label="Ce mois" value={buckets.month} tone="info" />
         <StatTile
-          label="Depassees"
+            label="Dépassées"
           value={buckets.overdue}
           tone={buckets.overdue > 0 ? 'danger' : 'neutral'}
         />
@@ -124,8 +124,8 @@ export default async function DeadlinesPage({
       {view === 'a-venir' && todayItems.length > 0 ? (
         <Card className="mb-4 border-[var(--danger-border)]">
           <CardHeader
-            title="A rendre aujourd hui"
-            description={`${todayItems.length} echeance(s) dans la journee`}
+            title="À rendre aujourd’hui"
+            description={`${todayItems.length} échéance(s) dans la journée`}
           />
           <CardBody className="space-y-2.5">
             {todayItems.map((deadline) => (
@@ -139,13 +139,13 @@ export default async function DeadlinesPage({
         {deadlines.length === 0 ? (
           <EmptyState
             icon={<IconClock />}
-            title="Aucune echeance"
+            title="Aucune échéance"
             description={
               view === 'depassees'
-                ? 'Aucune echeance depassee. Tout est a jour.'
+                ? 'Aucune échéance dépassée. Tout est à jour.'
                 : canManage
-                  ? 'Ajoutez une echeance pour prevenir la classe.'
-                  : 'Rien a rendre sur cette periode.'
+                  ? 'Ajoutez une échéance pour prévenir la classe.'
+                  : 'Rien à rendre sur cette période.'
             }
           />
         ) : (

@@ -61,9 +61,9 @@ export default async function AdminHomePage({
 
       {params.bienvenue === '1' ? (
         <Alert tone="success" className="mb-4">
-          Votre classe est creee. Partagez le code{' '}
+          Votre classe est créée. Partagez le code{' '}
           <strong className="font-mono tracking-wider">{profile?.code}</strong> a vos
-          etudiants, ou generez un lien d invitation depuis{' '}
+          étudiants, ou générez un lien d’invitation depuis{' '}
           <Link href="/admin/membres" className="underline">
             Membres et invitations
           </Link>
@@ -87,7 +87,7 @@ export default async function AdminHomePage({
         <StatTile label="Ressources" value={resources} tone="info" />
         <StatTile label="Annonces" value={announcements} />
         <StatTile
-          label="Reclamations"
+          label="Réclamations"
           value={complaints}
           hint="en attente"
           tone={complaints > 0 ? 'danger' : 'neutral'}

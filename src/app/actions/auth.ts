@@ -61,8 +61,8 @@ export async function registerAction(
       }
     }
 
-    // Le code de classe est facultatif : on peut creer son compte puis
-    // creer sa propre classe ou en rejoindre une ensuite. S'il est fourni,
+    // Le code de classe est facultatif : on peut créer son compte puis
+    // créer sa propre classe ou en rejoindre une ensuite. S’il est fourni,
     // il est valide AVANT la creation du compte pour ne pas laisser un
     // compte orphelin derriere une erreur de saisie.
     let target: JoinTarget | null = null
@@ -98,7 +98,7 @@ export async function registerAction(
       try {
         await joinClass(user.id, target, data.studentId ?? null)
       } catch {
-        // Numero etudiant deja pris dans la classe : on rattache quand meme
+        // Numéro étudiant déjà pris dans la classe : on rattache quand même
         // le compte, sans numero, plutot que de perdre l'inscription.
         await joinClass(user.id, target, null)
       }

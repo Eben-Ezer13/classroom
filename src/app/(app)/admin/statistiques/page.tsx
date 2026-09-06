@@ -94,7 +94,7 @@ export default async function AdminStatsPage() {
           value={complaintCount('EN_ATTENTE') + complaintCount('EN_COURS')}
           tone={complaintCount('EN_ATTENTE') > 0 ? 'danger' : 'neutral'}
         />
-        <StatTile label="Reclamations resolues" value={complaintCount('RESOLU')} tone="success" />
+        <StatTile label="Réclamations résolues" value={complaintCount('RESOLU')} tone="success" />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">

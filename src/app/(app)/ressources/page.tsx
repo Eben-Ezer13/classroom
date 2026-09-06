@@ -141,7 +141,7 @@ export default async function ResourcesPage({
                 ? 'Aucune ressource ne correspond a ces filtres.'
                 : canManage
                   ? 'Deposez le premier document de la classe.'
-                  : 'Les documents deposes par le delegue apparaitront ici.'
+                  : 'Les documents déposés par le délégué apparaîtront ici.'
             }
           />
         ) : (

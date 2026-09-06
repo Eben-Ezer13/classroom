@@ -92,7 +92,7 @@ export async function updateDeadlineAction(
       where: { id: deadlineId, deletedAt: null },
       select: { id: true, classGroupId: true, dueAt: true },
     })
-    if (!existing) throw new NotFoundError('Echeance introuvable.')
+    if (!existing) throw new NotFoundError('Échéance introuvable.')
     assertCanManageClass(user, existing.classGroupId)
     await assertModuleInClass(data.moduleId, existing.classGroupId)
 
@@ -118,7 +118,7 @@ export async function updateDeadlineAction(
       entityId: updated.id,
       entityLabel: updated.title,
       classGroupId: existing.classGroupId,
-      summary: `${user.firstName} ${user.lastName} a modifie l echeance ${updated.title}.`,
+      summary: `${user.firstName} ${user.lastName} a modifié l’échéance ${updated.title}.`,
     })
 
     if (existing.dueAt.getTime() !== data.dueAt.getTime()) {
@@ -126,7 +126,7 @@ export async function updateDeadlineAction(
         existing.classGroupId,
         {
           type: 'DEADLINE',
-          title: 'Echeance modifiee',
+          title: 'Échéance modifiée',
           body: `${updated.title} — nouvelle date : ${formatDateTime(updated.dueAt)}.`,
           url: '/echeances',
           entityType: 'Deadline',
@@ -138,7 +138,7 @@ export async function updateDeadlineAction(
 
     revalidatePath('/echeances')
     revalidatePath('/dashboard')
-    return { ok: true, message: 'Echeance mise a jour.' }
+    return { ok: true, message: 'Échéance mise à jour.' }
   })
 }
 
@@ -150,7 +150,7 @@ export async function deleteDeadlineAction(formData: FormData): Promise<void> {
     where: { id: deadlineId, deletedAt: null },
     select: { id: true, classGroupId: true, title: true },
   })
-  if (!existing) throw new NotFoundError('Echeance introuvable.')
+  if (!existing) throw new NotFoundError('Échéance introuvable.')
   assertCanManageClass(user, existing.classGroupId)
 
   await prisma.deadline.update({
@@ -165,7 +165,7 @@ export async function deleteDeadlineAction(formData: FormData): Promise<void> {
     entityId: existing.id,
     entityLabel: existing.title,
     classGroupId: existing.classGroupId,
-    summary: `${user.firstName} ${user.lastName} a supprime l echeance ${existing.title}.`,
+    summary: `${user.firstName} ${user.lastName} a supprimé l’échéance ${existing.title}.`,
   })
 
   revalidatePath('/echeances')
@@ -200,7 +200,7 @@ export async function dispatchDeadlineRemindersAction(): Promise<number> {
   for (const deadline of due) {
     await notifyClass(deadline.classGroupId, {
       type: 'DEADLINE',
-      title: 'Rappel d echeance',
+      title: 'Rappel d’échéance',
       body: `${DEADLINE_CATEGORY_LABELS[deadline.category]} : ${deadline.title} — ${formatDateTime(deadline.dueAt)}.`,
       url: '/echeances',
       entityType: 'Deadline',

@@ -120,7 +120,7 @@ export function ScheduleDocuments({
                     href={`/api/schedule-documents/${current.id}?telecharger=1`}
                     className="text-[var(--accent)] underline"
                   >
-                    Telecharger le document
+                    Télécharger le document
                   </Link>
                 </p>
               </object>

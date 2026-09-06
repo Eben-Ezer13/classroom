@@ -101,7 +101,7 @@ export default async function ModulesPage({
             title="Aucun module"
             description={
               canManage
-                ? 'Creez les modules du semestre pour structurer ressources et programme.'
+                ? 'Créez les modules du semestre pour structurer les ressources et le programme.'
                 : 'Les modules du semestre apparaitront ici une fois crees.'
             }
           />
@@ -168,7 +168,7 @@ export default async function ModulesPage({
 
                       <div className="mt-3 flex items-center gap-1.5 flex-wrap">
                         <Badge tone="accent">{mod._count.resources} ressource(s)</Badge>
-                        <Badge tone="info">{mod._count.schedule} seance(s)</Badge>
+                        <Badge tone="info">{mod._count.schedule} séance(s)</Badge>
                         {mod._count.projects > 0 ? (
                           <Badge tone="warning">{mod._count.projects} projet(s)</Badge>
                         ) : null}
