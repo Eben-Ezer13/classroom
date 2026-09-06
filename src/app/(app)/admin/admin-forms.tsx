@@ -55,9 +55,9 @@ function FormModal({
 export function AddYearButton() {
   return (
     <FormModal
-      label="Annee"
+      label="Année"
       title="Nouvelle année académique"
-      description="Les modules et ressources sont rattaches aux semestres de cette annee."
+      description="Les modules et ressources sont rattachés aux semestres de cette année."
     >
       {(close) => <YearForm onDone={close} />}
     </FormModal>
@@ -84,7 +84,7 @@ function YearForm({ onDone }: { onDone: () => void }) {
           <Input id="endsAt" name="endsAt" type="date" required />
         </Field>
       </div>
-      <Checkbox name="isCurrent" label="Definir comme annee courante" defaultChecked />
+      <Checkbox name="isCurrent" label="Définir comme année courante" defaultChecked />
       <div className="flex justify-end">
         <SubmitButton pendingLabel="Création...">Créer</SubmitButton>
       </div>
@@ -110,7 +110,7 @@ function SemesterForm({ years, onDone }: { years: Option[]; onDone: () => void }
         <Alert tone={state.ok ? 'success' : 'danger'}>{state.message}</Alert>
       ) : null}
       <Field
-        label="Annee academique"
+        label="Année académique"
         htmlFor="academicYearId"
         error={state.fieldErrors?.academicYearId}
         required
@@ -127,15 +127,15 @@ function SemesterForm({ years, onDone }: { years: Option[]; onDone: () => void }
         </Select>
       </Field>
       <div className="grid grid-cols-[110px_1fr] gap-3">
-        <Field label="Numero" htmlFor="number" error={state.fieldErrors?.number} required>
+        <Field label="Numéro" htmlFor="number" error={state.fieldErrors?.number} required>
           <Input id="number" name="number" type="number" min={1} max={12} required />
         </Field>
-        <Field label="Libelle" htmlFor="label" error={state.fieldErrors?.label} required>
+        <Field label="Libellé" htmlFor="label" error={state.fieldErrors?.label} required>
           <Input id="label" name="label" required placeholder="Semestre 7" />
         </Field>
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Debut" htmlFor="startsAt" error={state.fieldErrors?.startsAt} required>
+        <Field label="Début" htmlFor="startsAt" error={state.fieldErrors?.startsAt} required>
           <Input id="startsAt" name="startsAt" type="date" required />
         </Field>
         <Field label="Fin" htmlFor="endsAt" error={state.fieldErrors?.endsAt} required>

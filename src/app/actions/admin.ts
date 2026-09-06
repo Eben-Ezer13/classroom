@@ -48,7 +48,7 @@ export async function createAcademicYearAction(
     if (exists) {
       return {
         ok: false,
-        message: 'Cette annee existe deja pour votre classe.',
+        message: 'Cette année existe déjà pour votre classe.',
         fieldErrors: { label: ['Libelle deja utilise.'] },
       }
     }
@@ -81,7 +81,7 @@ export async function createAcademicYearAction(
       entityId: created.id,
       entityLabel: created.label,
       classGroupId: classId,
-      summary: `${user.firstName} ${user.lastName} a cree l annee ${created.label}.`,
+      summary: `${user.firstName} ${user.lastName} a créé l’année ${created.label}.`,
     })
 
     revalidatePath('/admin/annees')
@@ -112,8 +112,8 @@ export async function createSemesterAction(
     if (exists) {
       return {
         ok: false,
-        message: 'Ce numero de semestre existe deja pour cette annee.',
-        fieldErrors: { number: ['Numero deja utilise.'] },
+        message: 'Ce numéro de semestre existe déjà pour cette année.',
+        fieldErrors: { number: ['Numéro déjà utilisé.'] },
       }
     }
 
@@ -144,11 +144,11 @@ export async function createSemesterAction(
       entityId: created.id,
       entityLabel: created.label,
       classGroupId: classId,
-      summary: `${user.firstName} ${user.lastName} a cree le semestre ${created.label}.`,
+      summary: `${user.firstName} ${user.lastName} a créé le semestre ${created.label}.`,
     })
 
     revalidatePath('/admin/annees')
-    return { ok: true, message: 'Semestre cree.' }
+    return { ok: true, message: 'Semestre créé.' }
   })
 }
 
@@ -192,7 +192,7 @@ export async function toggleYearArchiveAction(formData: FormData): Promise<void>
     entityId: year.id,
     entityLabel: year.label,
     classGroupId: classId,
-    summary: `${user.firstName} ${user.lastName} a ${archived ? 'archive' : 'desarchive'} l annee ${year.label}.`,
+    summary: `${user.firstName} ${user.lastName} a ${archived ? 'archivé' : 'désarchivé'} l’année ${year.label}.`,
   })
 
   revalidatePath('/admin/archives')
@@ -205,7 +205,7 @@ export async function setCurrentYearAction(formData: FormData): Promise<void> {
   const year = await loadYear(yearId, classId)
 
   if (year.isArchived) {
-    throw new AppError('Desarchivez cette annee avant de la definir comme courante.')
+    throw new AppError('Désarchivez cette année avant de la définir comme courante.')
   }
 
   await prisma.$transaction([
@@ -223,7 +223,7 @@ export async function setCurrentYearAction(formData: FormData): Promise<void> {
     entityId: year.id,
     entityLabel: year.label,
     classGroupId: classId,
-    summary: `${user.firstName} ${user.lastName} a defini ${year.label} comme annee courante.`,
+    summary: `${user.firstName} ${user.lastName} a défini ${year.label} comme année courante.`,
   })
 
   revalidatePath('/admin/annees')

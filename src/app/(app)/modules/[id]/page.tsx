@@ -194,7 +194,7 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
               semesters={semesterOptions}
               defaultSemesterId={defaultSemesterId ?? mod.semesterId}
               defaultModuleId={mod.id}
-              label="Deposer un document"
+              label="Déposer un document"
             />
           ) : null
         }
@@ -268,7 +268,7 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
                 <EmptyState
                   icon={<IconMegaphone />}
                   title="Aucune annonce"
-                  description="Aucune annonce liee a ce module."
+                  description="Aucune annonce liée à ce module."
                 />
               )
             ) : resources.length > 0 ? (
@@ -283,7 +283,7 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
                 title="Aucun document"
                 description={
                   canManage
-                    ? 'Deposez le premier document de cette rubrique.'
+                    ? 'Déposez le premier document de cette rubrique.'
                     : 'Rien n a encore ete depose dans cette rubrique.'
                 }
               />

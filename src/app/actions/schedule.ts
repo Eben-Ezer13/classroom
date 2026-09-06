@@ -90,7 +90,7 @@ export async function createScheduleEntryAction(
         classGroupId,
         {
           type: 'PROGRAMME',
-          title: 'Programme mis a jour',
+          title: 'Programme mis à jour',
           body: `${label} le ${formatDateShort(entry.date)} a ${minutesToTime(startMinutes)}.`,
           url: '/programme',
           entityType: 'ScheduleEntry',
@@ -165,7 +165,7 @@ export async function updateScheduleEntryAction(
       entityId: updated.id,
       entityLabel: label,
       classGroupId: existing.classGroupId,
-      summary: `${user.firstName} ${user.lastName} a modifie le programme (${label}).`,
+      summary: `${user.firstName} ${user.lastName} a modifié le programme (${label}).`,
     })
 
     await notifyClass(
@@ -260,7 +260,7 @@ export async function uploadScheduleDocumentAction(
 
     const file = formData.get('file')
     if (!(file instanceof File) || file.size === 0) {
-      return { ok: false, message: 'Selectionnez une image ou un PDF.' }
+      return { ok: false, message: 'Sélectionnez une image ou un PDF.' }
     }
     assertValidScheduleDocument(file)
     await assertClassQuota(classId, file.size)

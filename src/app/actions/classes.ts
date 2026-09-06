@@ -366,14 +366,14 @@ export async function changeMemberRoleAction(formData: FormData): Promise<void> 
   // Personne ne modifie son propre role : ni auto-promotion, ni retrait
   // accidentel du dernier delegue.
   if (membership.userId === user.id) {
-    throw new AppError('Vous ne pouvez pas modifier votre propre role.')
+    throw new AppError('Vous ne pouvez pas modifier votre propre rôle.')
   }
   if (
     membership.role === 'ADMIN' &&
     parsed.data.role === 'MEMBER' &&
     (await countClassAdmins(classId)) <= 1
   ) {
-    throw new AppError('La classe doit conserver au moins un delegue.')
+    throw new AppError('La classe doit conserver au moins un délégué.')
   }
 
   await prisma.membership.update({
@@ -385,7 +385,7 @@ export async function changeMemberRoleAction(formData: FormData): Promise<void> 
     membership.userId,
     {
       type: 'MEMBRE',
-      title: parsed.data.role === 'ADMIN' ? 'Vous etes delegue' : 'Role mis a jour',
+      title: parsed.data.role === 'ADMIN' ? 'Vous êtes délégué' : 'Rôle mis à jour',
       body:
         parsed.data.role === 'ADMIN'
           ? 'Vous pouvez desormais administrer la classe.'
@@ -433,8 +433,8 @@ export async function updateMemberStudentIdAction(
       if (duplicate) {
         return {
           ok: false,
-          message: 'Ce numero etudiant est deja utilise dans la classe.',
-          fieldErrors: { studentId: ['Numero deja utilise.'] },
+          message: 'Ce numéro étudiant est déjà utilisé dans la classe.',
+          fieldErrors: { studentId: ['Numéro déjà utilisé.'] },
         }
       }
     }
@@ -455,7 +455,7 @@ export async function updateMemberStudentIdAction(
     })
 
     revalidatePath('/admin/membres')
-    return { ok: true, message: 'Numero etudiant mis a jour.' }
+    return { ok: true, message: 'Numéro étudiant mis à jour.' }
   })
 }
 

@@ -101,7 +101,7 @@ export default async function ClassesPage({
                         <ConfirmForm
                           action={leaveClassAction}
                           hidden={{ classGroupId: membership.classGroupId }}
-                          message={`Quitter la classe ${membership.className} ? Vous perdrez l acces a ses donnees.`}
+                          message={`Quitter la classe ${membership.className} ? Vous perdrez l’accès à ses données.`}
                         >
                           <Button type="submit" size="sm" variant="ghost">
                             Quitter
@@ -118,7 +118,7 @@ export default async function ClassesPage({
           <Card>
             <CardHeader
               title="Créer une classe"
-              description="Vous devenez automatiquement delegue (administrateur) de cet espace."
+              description="Vous devenez automatiquement délégué (administrateur) de cet espace."
             />
             <CardBody>
               <CreateClassForm />
@@ -139,15 +139,15 @@ export default async function ClassesPage({
 
           <Card>
             <CardBody className="space-y-2 text-[13px] text-[var(--text-3)] leading-relaxed">
-              <p className="font-medium text-[var(--text-2)]">Comment ca marche</p>
+              <p className="font-medium text-[var(--text-2)]">Comment ça marche</p>
               <p>
-                Chaque classe possede son propre espace : membres, programme, ressources,
-                annonces et notifications. Aucune donnee n est partagee entre deux classes,
-                meme si elles appartiennent a la meme ecole.
+                Chaque classe possède son propre espace : membres, programme, ressources,
+                annonces et notifications. Aucune donnée n’est partagée entre deux classes,
+                même si elles appartiennent à la même école.
               </p>
               <p>
                 Le délégué qui crée la classe en devient l’administrateur : il invite les
-                etudiants, gere le programme et les ressources.
+                étudiants, gère le programme et les ressources.
               </p>
             </CardBody>
           </Card>

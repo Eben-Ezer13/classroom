@@ -27,7 +27,7 @@ export default async function ClassSettingsPage() {
     <>
       <PageHeader
         title="Paramètres de la classe"
-        description="Identite de l espace, visible par tous ses membres."
+        description="Identité de l’espace, visible par tous ses membres."
         breadcrumb={[{ label: 'Administration', href: '/admin' }, { label: 'Paramètres' }]}
       />
 
@@ -52,7 +52,7 @@ export default async function ClassSettingsPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <StatTile label="Membres" value={members.total} tone="accent" />
-            <StatTile label="Delegues" value={members.admins} tone="info" />
+            <StatTile label="Délégués" value={members.admins} tone="info" />
           </div>
 
           <Card>
@@ -70,7 +70,7 @@ export default async function ClassSettingsPage() {
               </p>
               <p className="text-[12.5px] text-[var(--text-3)] leading-relaxed">
                 Le quota est propre a votre classe : les fichiers des autres classes ne
-                l entament pas, et vos ressources ne sont accessibles qu a vos membres.
+                l’entament pas, et vos ressources ne sont accessibles qu’à vos membres.
               </p>
             </CardBody>
           </Card>
@@ -82,7 +82,7 @@ export default async function ClassSettingsPage() {
                 Code d inscription :{' '}
                 <code className="font-mono tracking-wider">{profile.code}</code>
               </p>
-              <p>Creee le {formatDate(profile.createdAt)}</p>
+              <p>Créée le {formatDate(profile.createdAt)}</p>
               {profile.createdBy ? (
                 <p>
                   Delegue principal : {profile.createdBy.firstName}{' '}

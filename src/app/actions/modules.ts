@@ -60,11 +60,11 @@ export async function createModuleAction(
       entityId: created.id,
       entityLabel: `${created.code} — ${created.name}`,
       classGroupId,
-      summary: `${user.firstName} ${user.lastName} a cree le module ${created.code} (${created.name}).`,
+      summary: `${user.firstName} ${user.lastName} a créé le module ${created.code} (${created.name}).`,
     })
 
     revalidatePath('/modules')
-    return { ok: true, message: 'Module cree.' }
+    return { ok: true, message: 'Module créé.' }
   })
 }
 
@@ -128,12 +128,12 @@ export async function updateModuleAction(
       entityId: updated.id,
       entityLabel: `${updated.code} — ${updated.name}`,
       classGroupId: existing.classGroupId,
-      summary: `${user.firstName} ${user.lastName} a modifie le module ${updated.code}.`,
+      summary: `${user.firstName} ${user.lastName} a modifié le module ${updated.code}.`,
     })
 
     revalidatePath('/modules')
     revalidatePath(`/modules/${moduleId}`)
-    return { ok: true, message: 'Module mis a jour.' }
+    return { ok: true, message: 'Module mis à jour.' }
   })
 }
 

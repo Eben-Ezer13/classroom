@@ -65,8 +65,8 @@ export default async function MembersPage({
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <StatTile label="Etudiants" value={stats.students} tone="accent" />
-        <StatTile label="Delegues" value={stats.admins} tone="info" />
+        <StatTile label="Étudiants" value={stats.students} tone="accent" />
+        <StatTile label="Délégués" value={stats.admins} tone="info" />
         <StatTile
           label="En ligne"
           value={stats.online}
@@ -78,7 +78,7 @@ export default async function MembersPage({
 
       <FilterBar action="/membres" hasFilters={Boolean(q)}>
         <FilterField label="Recherche" htmlFor="q" className="min-w-[220px] flex-1">
-          <Input id="q" name="q" defaultValue={q} placeholder="Nom, email, numero..." />
+          <Input id="q" name="q" defaultValue={q} placeholder="Nom, e-mail, numéro..." />
         </FilterField>
       </FilterBar>
 
@@ -90,14 +90,14 @@ export default async function MembersPage({
             description={
               q
                 ? 'Aucun membre ne correspond a cette recherche.'
-                : 'Les etudiants apparaitront ici des qu ils auront rejoint la classe.'
+                : 'Les étudiants apparaîtront ici dès qu’ils auront rejoint la classe.'
             }
           />
         ) : (
           <Table>
             <THead>
               <TH>Membre</TH>
-              <TH>Numero</TH>
+              <TH>Numéro</TH>
               <TH>Role</TH>
               <TH>Statut</TH>
               <TH align="right">Derniere activite</TH>

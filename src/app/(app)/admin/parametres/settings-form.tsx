@@ -46,7 +46,7 @@ export function ClassSettingsForm({
       </Field>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Filiere" htmlFor="programName" error={state.fieldErrors?.programName}>
+        <Field label="Filière" htmlFor="programName" error={state.fieldErrors?.programName}>
           <Input
             id="programName"
             name="programName"

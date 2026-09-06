@@ -48,7 +48,7 @@ export function LoginForm({ notice }: { notice: string | null }) {
           href="/forgot-password"
           className="text-[12.5px] text-[var(--text-3)] hover:text-[var(--accent)] transition-colors"
         >
-          Mot de passe oublie ?
+          Mot de passe oublié ?
         </Link>
       </div>
 

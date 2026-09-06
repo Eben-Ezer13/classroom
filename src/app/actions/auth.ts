@@ -222,7 +222,7 @@ export async function forgotPasswordAction(
     const confirmation: ActionState = {
       ok: true,
       message:
-        'Si un compte correspond a cette adresse, un lien de reinitialisation vient d etre envoye.',
+        'Si un compte correspond à cette adresse, un lien de réinitialisation vient d’être envoyé.',
     }
 
     if (!user || !user.isActive || user.deletedAt) return confirmation
@@ -240,11 +240,11 @@ export async function forgotPasswordAction(
 
     await sendMail({
       to: parsed.data.email,
-      subject: 'Reinitialisation de votre mot de passe',
+      subject: 'Réinitialisation de votre mot de passe',
       text: [
         `Bonjour ${user.firstName},`,
         '',
-        'Vous avez demande la reinitialisation de votre mot de passe.',
+        'Vous avez demandé la réinitialisation de votre mot de passe.',
         `Ce lien est valable ${RESET_TOKEN_DURATION_MINUTES} minutes :`,
         '',
         link,
@@ -305,7 +305,7 @@ export async function resetPasswordAction(
 
     return {
       ok: true,
-      message: 'Mot de passe mis a jour. Vous pouvez maintenant vous connecter.',
+      message: 'Mot de passe mis à jour. Vous pouvez maintenant vous connecter.',
     }
   })
 }
@@ -339,8 +339,8 @@ export async function updateProfileAction(
       if (duplicate) {
         return {
           ok: false,
-          message: 'Ce numero etudiant est deja utilise dans votre classe.',
-          fieldErrors: { studentId: ['Numero deja utilise.'] },
+          message: 'Ce numéro étudiant est déjà utilisé dans votre classe.',
+          fieldErrors: { studentId: ['Numéro déjà utilisé.'] },
         }
       }
     }
@@ -364,7 +364,7 @@ export async function updateProfileAction(
     })
 
     revalidatePath('/profil')
-    return { ok: true, message: 'Profil mis a jour.' }
+    return { ok: true, message: 'Profil mis à jour.' }
   })
 }
 
@@ -423,7 +423,7 @@ export async function updateAvatarAction(
     const file = formData.get('avatar')
 
     if (!(file instanceof File) || file.size === 0) {
-      return { ok: false, message: 'Selectionnez une image.' }
+      return { ok: false, message: 'Sélectionnez une image.' }
     }
     assertValidAvatar(file)
 

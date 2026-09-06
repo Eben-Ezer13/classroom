@@ -84,7 +84,7 @@ export async function createAnnouncementAction(
       entityId: created.id,
       entityLabel: created.title,
       classGroupId,
-      summary: `${user.firstName} ${user.lastName} a publie une annonce (${created.title}).`,
+      summary: `${user.firstName} ${user.lastName} a publié une annonce (${created.title}).`,
       metadata: { level: created.level, mentions: mentioned.length },
     })
 
@@ -132,8 +132,8 @@ export async function createAnnouncementAction(
       ok: true,
       message:
         mentioned.length > 0
-          ? `Annonce publiee. ${mentioned.length} membre(s) mentionne(s) notifie(s).`
-          : 'Annonce publiee.',
+          ? `Annonce publiée. ${mentioned.length} membre(s) mentionné(s) notifié(s).`
+          : 'Annonce publiée.',
     }
   })
 }
@@ -192,7 +192,7 @@ export async function updateAnnouncementAction(
       entityId: updated.id,
       entityLabel: updated.title,
       classGroupId: existing.classGroupId,
-      summary: `${user.firstName} ${user.lastName} a modifie l annonce ${updated.title}.`,
+      summary: `${user.firstName} ${user.lastName} a modifié l’annonce ${updated.title}.`,
     })
 
     // Une annonce qui devient urgente merite d'etre repoussee a la classe.
@@ -215,7 +215,7 @@ export async function updateAnnouncementAction(
     revalidatePath('/dashboard')
     return {
       ok: true,
-      message: `Annonce mise a jour (${ANNOUNCEMENT_LEVEL_LABELS[updated.level]}).`,
+      message: `Annonce mise à jour (${ANNOUNCEMENT_LEVEL_LABELS[updated.level]}).`,
     }
   })
 }

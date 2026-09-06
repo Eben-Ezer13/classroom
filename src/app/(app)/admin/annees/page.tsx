@@ -27,7 +27,7 @@ export default async function AdminYearsPage() {
     <>
       <PageHeader
         title="Années et semestres"
-        description={`Calendrier de ${user.className ?? 'votre classe'}. L annee et le semestre courants servent de valeurs par defaut partout.`}
+        description={`Calendrier de ${user.className ?? 'votre classe'}. L’année et le semestre courants servent de valeurs par défaut partout.`}
         breadcrumb={[{ label: 'Administration', href: '/admin' }, { label: 'Années' }]}
         actions={
           <div className="flex items-center gap-2 flex-wrap">
@@ -45,7 +45,7 @@ export default async function AdminYearsPage() {
         <Card>
           <EmptyState
             icon={<IconLayers />}
-            title="Aucune annee academique"
+            title="Aucune année académique"
             description="Créez une année académique puis ses semestres."
           />
         </Card>
@@ -57,7 +57,7 @@ export default async function AdminYearsPage() {
                 title={
                   <span className="flex items-center gap-2 flex-wrap">
                     {year.label}
-                    {year.isCurrent ? <Badge tone="success">Annee courante</Badge> : null}
+                    {year.isCurrent ? <Badge tone="success">Année courante</Badge> : null}
                     {year.isArchived ? <Badge tone="warning">Archivee</Badge> : null}
                   </span>
                 }
@@ -68,7 +68,7 @@ export default async function AdminYearsPage() {
                       <ConfirmForm
                         action={setCurrentYearAction}
                         hidden={{ yearId: year.id }}
-                        message={`Definir ${year.label} comme annee courante ?`}
+                        message={`Définir ${year.label} comme année courante ?`}
                       >
                         <IconSubmit label="Definir comme annee courante">
                           <IconCheck className="size-[17px]" />

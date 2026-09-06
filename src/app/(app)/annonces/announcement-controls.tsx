@@ -121,7 +121,7 @@ function AnnouncementForm({
         <Field
           label="Expire le"
           htmlFor="expiresAt"
-          hint="Facultatif : l annonce disparait apres cette date"
+          hint="Facultatif : l’annonce disparaît après cette date"
           error={state.fieldErrors?.expiresAt}
         >
           <Input

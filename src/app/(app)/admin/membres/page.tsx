@@ -79,8 +79,8 @@ export default async function AdminMembersPage({
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <StatTile label="Membres" value={stats.total} tone="accent" />
-        <StatTile label="Etudiants" value={stats.students} />
-        <StatTile label="Delegues" value={stats.admins} tone="info" />
+        <StatTile label="Étudiants" value={stats.students} />
+        <StatTile label="Délégués" value={stats.admins} tone="info" />
         <StatTile
           label="En ligne"
           value={stats.online}
@@ -92,7 +92,7 @@ export default async function AdminMembersPage({
       <Card className="mb-4">
         <CardHeader
           title="Code d inscription"
-          description="Les etudiants saisissent ce code pour rejoindre la classe."
+          description="Les étudiants saisissent ce code pour rejoindre la classe."
         />
         <CardBody className="flex flex-wrap items-center gap-3">
           <code className="rounded-lg bg-[var(--surface-3)] px-3 py-2 text-[16px] font-mono tracking-[0.2em] text-[var(--text-1)]">
@@ -101,7 +101,7 @@ export default async function AdminMembersPage({
           <CopyButton value={profile?.code ?? ''} label="Copier le code" />
           <ConfirmForm
             action={rotateClassCodeAction}
-            message="Regenerer le code ? L ancien code ne fonctionnera plus."
+            message="Régénérer le code ? L’ancien code ne fonctionnera plus."
           >
             <Button type="submit" size="sm" variant="ghost">
               Regenerer
@@ -114,12 +114,12 @@ export default async function AdminMembersPage({
         <Card className="mb-4">
           <CardHeader
             title="Liens d’invitation actifs"
-            description="Chaque lien peut porter un role, une expiration et un quota d usage."
+            description="Chaque lien peut porter un rôle, une expiration et un quota d’usage."
           />
           <Table>
             <THead>
               <TH>Lien</TH>
-              <TH>Role</TH>
+              <TH>Rôle</TH>
               <TH>Utilisations</TH>
               <TH>Expiration</TH>
               <TH align="right">Actions</TH>
@@ -142,7 +142,7 @@ export default async function AdminMembersPage({
                     </TD>
                     <TD>
                       <Badge tone={invitation.role === 'ADMIN' ? 'accent' : 'neutral'}>
-                        {invitation.role === 'ADMIN' ? 'Delegue' : 'Etudiant'}
+                        {invitation.role === 'ADMIN' ? 'Délégué' : 'Étudiant'}
                       </Badge>
                     </TD>
                     <TD>
@@ -184,7 +184,7 @@ export default async function AdminMembersPage({
 
       <FilterBar action="/admin/membres" hasFilters={Boolean(q) || includeInactive}>
         <FilterField label="Recherche" htmlFor="q" className="min-w-[220px] flex-1">
-          <Input id="q" name="q" defaultValue={q} placeholder="Nom, email, numero..." />
+          <Input id="q" name="q" defaultValue={q} placeholder="Nom, e-mail, numéro..." />
         </FilterField>
         <div className="flex items-end pb-1">
           <ShowInactiveToggle checked={includeInactive} />

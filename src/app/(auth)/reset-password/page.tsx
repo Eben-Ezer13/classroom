@@ -27,8 +27,8 @@ export default async function ResetPasswordPage({
         <ResetPasswordForm token={token} />
       ) : (
         <Alert tone="danger">
-          Lien incomplet : le jeton de reinitialisation est absent de l URL.
-          Refaites une demande depuis la page mot de passe oublie.
+          Lien incomplet : le jeton de réinitialisation est absent de l’URL.
+          Refaites une demande depuis la page « mot de passe oublié ».
         </Alert>
       )}
 

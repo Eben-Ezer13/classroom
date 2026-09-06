@@ -122,7 +122,7 @@ export function RoleSelect({
     <form action={changeMemberRoleAction}>
       <input type="hidden" name="membershipId" value={membershipId} />
       <label className="sr-only" htmlFor={`role-${membershipId}`}>
-        Role du membre
+        Rôle du membre
       </label>
       <Select
         id={`role-${membershipId}`}
@@ -132,8 +132,8 @@ export function RoleSelect({
         onChange={(e) => e.currentTarget.form?.requestSubmit()}
         className="h-8 text-[12.5px] w-[130px]"
       >
-        <option value="MEMBER">Etudiant</option>
-        <option value="ADMIN">Delegue</option>
+        <option value="MEMBER">Étudiant</option>
+        <option value="ADMIN">Délégué</option>
       </Select>
     </form>
   )
@@ -170,10 +170,10 @@ export function EditStudentIdButton({
 }) {
   return (
     <Modal
-      trigger="Numero"
+      trigger="Numéro"
       triggerVariant="ghost"
       triggerSize="sm"
-      title={`Numero etudiant — ${name}`}
+      title={`Numéro étudiant — ${name}`}
     >
       {(close) => (
         <StudentIdForm

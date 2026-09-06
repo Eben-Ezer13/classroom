@@ -57,7 +57,7 @@ export function CreateClassForm() {
         label="Année académique"
         htmlFor="academicYearLabel"
         error={state.fieldErrors?.academicYearLabel}
-        hint="Deux semestres sont crees automatiquement ; vous pourrez les ajuster."
+        hint="Deux semestres sont créés automatiquement ; vous pourrez les ajuster."
         required
       >
         <Input

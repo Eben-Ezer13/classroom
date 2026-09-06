@@ -52,7 +52,7 @@ export function ScheduleDocuments({
         title="Emploi du temps officiel"
         description={
           current
-            ? `Mis a jour le ${formatDateTime(current.createdAt)}${
+            ? `Mis à jour le ${formatDateTime(current.createdAt)}${
                 current.uploadedBy
                   ? ` par ${current.uploadedBy.firstName} ${current.uploadedBy.lastName}`
                   : ''
@@ -73,14 +73,14 @@ export function ScheduleDocuments({
       {!current ? (
         <EmptyState
           icon={<IconCalendar />}
-          title="Aucun document televerse"
+          title="Aucun document téléversé"
           description="Une photo ou un PDF du planning officiel peut completer la saisie manuelle."
         />
       ) : (
         <CardBody className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-[14px] font-medium text-[var(--text-1)]">{current.title}</p>
-            <Badge tone="success">A jour</Badge>
+            <Badge tone="success">À jour</Badge>
             <span className="text-[12.5px] text-[var(--text-3)]">
               {current.fileName} · {formatFileSize(current.fileSize)}
             </span>

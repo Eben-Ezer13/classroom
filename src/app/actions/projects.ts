@@ -66,7 +66,7 @@ export async function createProjectAction(
       entityId: project.id,
       entityLabel: project.title,
       classGroupId,
-      summary: `${user.firstName} ${user.lastName} a cree le projet ${project.title}.`,
+      summary: `${user.firstName} ${user.lastName} a créé le projet ${project.title}.`,
     })
 
     await notifyClass(
@@ -85,7 +85,7 @@ export async function createProjectAction(
     revalidatePath('/projets')
     revalidatePath('/echeances')
     revalidatePath('/dashboard')
-    return { ok: true, message: 'Projet cree.' }
+    return { ok: true, message: 'Projet créé.' }
   })
 }
 
@@ -139,7 +139,7 @@ export async function updateProjectAction(
         existing.classGroupId,
         {
           type: 'PROJET',
-          title: 'Date de rendu modifiee',
+          title: 'Date de rendu modifiée',
           body: `${updated.title} — nouvelle date : ${formatDateShort(updated.dueAt)}.`,
           url: `/projets/${updated.id}`,
           entityType: 'Project',
@@ -156,13 +156,13 @@ export async function updateProjectAction(
       entityId: updated.id,
       entityLabel: updated.title,
       classGroupId: existing.classGroupId,
-      summary: `${user.firstName} ${user.lastName} a modifie le projet ${updated.title}.`,
+      summary: `${user.firstName} ${user.lastName} a modifié le projet ${updated.title}.`,
     })
 
     revalidatePath('/projets')
     revalidatePath(`/projets/${projectId}`)
     revalidatePath('/echeances')
-    return { ok: true, message: 'Projet mis a jour.' }
+    return { ok: true, message: 'Projet mis à jour.' }
   })
 }
 

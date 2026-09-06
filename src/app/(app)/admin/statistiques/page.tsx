@@ -105,7 +105,7 @@ export default async function AdminStatsPage() {
           />
           <CardBody className="space-y-2.5">
             {resourcesByKind.length === 0 ? (
-              <p className="text-[13px] text-[var(--text-3)]">Aucune ressource deposee.</p>
+              <p className="text-[13px] text-[var(--text-3)]">Aucune ressource déposée.</p>
             ) : (
               resourcesByKind
                 .sort((a, b) => b._count._all - a._count._all)
@@ -174,7 +174,7 @@ export default async function AdminStatsPage() {
               </THead>
               <TBody>
                 <TR>
-                  <TD>Membres (dont delegues)</TD>
+                  <TD>Membres (dont délégués)</TD>
                   <TD align="right">
                     {memberStats.total} ({memberStats.admins})
                   </TD>

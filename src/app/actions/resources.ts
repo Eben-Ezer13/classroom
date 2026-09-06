@@ -39,7 +39,7 @@ export async function createResourceAction(
 
     const file = formData.get('file')
     if (!(file instanceof File) || file.size === 0) {
-      return { ok: false, message: 'Selectionnez un fichier a deposer.' }
+      return { ok: false, message: 'Sélectionnez un fichier à déposer.' }
     }
     // Taille, type MIME et extension sont verifies cote serveur : le
     // filtre du champ <input accept> n'est qu'un confort visuel.
@@ -95,7 +95,7 @@ export async function createResourceAction(
       entityId: resource.id,
       entityLabel: resource.title,
       classGroupId,
-      summary: `${user.firstName} ${user.lastName} a ajoute une ressource (${resource.title}).`,
+      summary: `${user.firstName} ${user.lastName} a ajouté une ressource (${resource.title}).`,
       metadata: { kind: resource.kind, fileSize: stored.fileSize },
     })
 
@@ -117,7 +117,7 @@ export async function createResourceAction(
     revalidatePath('/ressources')
     revalidatePath('/dashboard')
     if (resource.module) revalidatePath('/modules')
-    return { ok: true, message: 'Ressource ajoutee.' }
+    return { ok: true, message: 'Ressource ajoutée.' }
   })
 }
 
@@ -165,7 +165,7 @@ export async function updateResourceAction(
 
     revalidatePath('/ressources')
     revalidatePath('/modules')
-    return { ok: true, message: 'Ressource mise a jour.' }
+    return { ok: true, message: 'Ressource mise à jour.' }
   })
 }
 

@@ -59,7 +59,7 @@ export async function createPollAction(
       entityId: poll.id,
       entityLabel: poll.title,
       classGroupId,
-      summary: `${user.firstName} ${user.lastName} a cree le sondage ${poll.title}.`,
+      summary: `${user.firstName} ${user.lastName} a créé le sondage ${poll.title}.`,
     })
 
     await notifyClass(
@@ -77,7 +77,7 @@ export async function createPollAction(
 
     revalidatePath('/sondages')
     revalidatePath('/dashboard')
-    return { ok: true, message: 'Sondage cree.' }
+    return { ok: true, message: 'Sondage créé.' }
   })
 }
 
@@ -115,7 +115,7 @@ export async function voteAction(
     if (poll.endsAt.getTime() < now) throw new AppError('Ce sondage est termine.')
 
     if (!poll.allowMultiple && optionIds.length > 1) {
-      throw new AppError('Ce sondage n autorise qu une seule reponse.')
+      throw new AppError('Ce sondage n’autorise qu’une seule réponse.')
     }
 
     // Les options doivent appartenir a CE sondage : sinon on pourrait voter

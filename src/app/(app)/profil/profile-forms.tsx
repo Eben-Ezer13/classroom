@@ -102,7 +102,7 @@ export function AvatarForm() {
       </Field>
 
       <SubmitButton size="sm" variant="secondary" pendingLabel="Envoi...">
-        Mettre a jour la photo
+        Mettre à jour la photo
       </SubmitButton>
     </form>
   )
@@ -168,7 +168,7 @@ export function PasswordForm() {
       </p>
 
       <div className="flex justify-end">
-        <SubmitButton variant="secondary" pendingLabel="Mise a jour...">
+        <SubmitButton variant="secondary" pendingLabel="Mise à jour...">
           Changer le mot de passe
         </SubmitButton>
       </div>

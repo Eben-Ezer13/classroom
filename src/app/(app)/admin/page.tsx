@@ -75,7 +75,7 @@ export default async function AdminHomePage({
         <StatTile
           label="Membres"
           value={members.total}
-          hint={`${members.admins} delegue(s)`}
+          hint={`${members.admins} délégué(s)`}
           tone="accent"
         />
         <StatTile
@@ -101,10 +101,10 @@ export default async function AdminHomePage({
         <StatTile
           label="Code d inscription"
           value={<span className="font-mono text-[18px]">{profile?.code ?? '—'}</span>}
-          hint="a communiquer aux etudiants"
+          hint="à communiquer aux étudiants"
         />
         <StatTile
-          label="Delegue principal"
+          label="Délégué principal"
           value={
             <span className="text-[15px]">
               {profile?.createdBy

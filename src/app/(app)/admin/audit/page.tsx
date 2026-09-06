@@ -109,7 +109,7 @@ export default async function AdminAuditPage({
         {entries.length === 0 ? (
           <EmptyState
             icon={<IconShield />}
-            title="Aucune entree"
+            title="Aucune entrée"
             description="Aucune action ne correspond a ces filtres."
           />
         ) : (

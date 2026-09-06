@@ -61,13 +61,13 @@ export default async function AdminArchivesPage() {
     <>
       <PageHeader
         title="Archives"
-        description="Archiver une annee retire ses semestres et ses ressources de l affichage courant, sans rien supprimer."
+        description="Archiver une année retire ses semestres et ses ressources de l’affichage courant, sans rien supprimer."
         breadcrumb={[{ label: 'Administration', href: '/admin' }, { label: 'Archives' }]}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <StatTile label="Annees actives" value={active.length} tone="success" />
-        <StatTile label="Annees archivees" value={archived.length} tone="warning" />
+        <StatTile label="Années actives" value={active.length} tone="success" />
+        <StatTile label="Années archivées" value={archived.length} tone="warning" />
         <StatTile label="Semestres archives" value={archivedSemesters} />
         <StatTile label="Ressources archivees" value={archivedResources} tone="info" />
       </div>
@@ -75,12 +75,12 @@ export default async function AdminArchivesPage() {
       <div className="space-y-4">
         <Card>
           <CardHeader
-            title="Annees en cours"
+            title="Années en cours"
             description="Visibles par les étudiants et les délégués."
           />
           <CardBody className="space-y-2.5">
             {active.length === 0 ? (
-              <p className="text-[13px] text-[var(--text-3)]">Aucune annee active.</p>
+              <p className="text-[13px] text-[var(--text-3)]">Aucune année active.</p>
             ) : (
               active.map((year) => {
                 const t = totals(year)
@@ -108,7 +108,7 @@ export default async function AdminArchivesPage() {
                       hidden={{ yearId: year.id }}
                       message={`Archiver ${year.label} ? Ses semestres et ses ${t.resources} ressource(s) passeront en archives.`}
                     >
-                      <IconSubmit label="Archiver cette annee">
+                      <IconSubmit label="Archiver cette année">
                         <IconArchive className="size-[17px]" />
                       </IconSubmit>
                     </ConfirmForm>
@@ -121,7 +121,7 @@ export default async function AdminArchivesPage() {
 
         <Card>
           <CardHeader
-            title="Annees archivees"
+            title="Années archivées"
             description="Conservees en base, masquees de l affichage courant."
           />
           {archived.length === 0 ? (

@@ -95,8 +95,8 @@ export default async function ComplaintsPage({
             title={status || category ? 'Aucun résultat' : 'Aucune réclamation'}
             description={
               isStaff
-                ? 'Aucune difficulte signalee pour le moment.'
-                : 'Vous n avez encore signale aucune difficulte.'
+                ? 'Aucune difficulté signalée pour le moment.'
+                : 'Vous n’avez encore signalé aucune difficulté.'
             }
           />
         ) : (

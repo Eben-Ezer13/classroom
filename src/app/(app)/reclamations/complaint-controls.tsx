@@ -130,7 +130,7 @@ export function ComplaintMessageForm({ complaintId }: { complaintId: string }) {
           name="body"
           rows={3}
           required
-          placeholder="Ajouter une precision ou une reponse..."
+          placeholder="Ajouter une précision ou une réponse..."
         />
       </Field>
 

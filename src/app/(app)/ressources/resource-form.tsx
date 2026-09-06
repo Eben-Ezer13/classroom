@@ -143,7 +143,7 @@ export function ResourceForm({
         </>
       ) : (
         <p className="text-[12.5px] text-[var(--text-3)]">
-          Le fichier deja depose n est pas remplace. Pour changer le fichier,
+          Le fichier déjà déposé n’est pas remplacé. Pour changer le fichier,
           supprimez la ressource et deposez-la a nouveau.
         </p>
       )}

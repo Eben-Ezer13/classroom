@@ -91,7 +91,7 @@ export default async function JoinPage({
                   maxLength={40}
                 />
               </Field>
-              <Field label="Numero etudiant" htmlFor="studentId" hint="Facultatif">
+              <Field label="Numéro étudiant" htmlFor="studentId" hint="Facultatif">
                 <Input id="studentId" name="studentId" maxLength={40} />
               </Field>
               <SubmitButton className="w-full" pendingLabel="Adhesion...">
