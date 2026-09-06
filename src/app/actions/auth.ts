@@ -88,8 +88,8 @@ export async function registerAction(
         passwordHash: await hashPassword(data.password),
         firstName: data.firstName,
         lastName: data.lastName,
-        role: 'ETUDIANT',
-        studentId: data.studentId ?? null,
+        role: data.accountType,
+        studentId: data.accountType === 'ETUDIANT' ? data.studentId ?? null : null,
       },
       select: { id: true },
     })

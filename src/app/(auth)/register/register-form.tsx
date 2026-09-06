@@ -27,15 +27,51 @@ export function RegisterForm() {
         <Input id="email" name="email" type="email" autoComplete="email" required />
       </Field>
 
+      <fieldset className="space-y-2">
+        <legend className="text-[13px] font-medium text-[var(--text-1)]">
+          Type de compte
+        </legend>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] p-3 transition-colors has-[:checked]:border-[var(--accent)] has-[:checked]:bg-[var(--accent-soft)]">
+            <input
+              type="radio"
+              name="accountType"
+              value="ETUDIANT"
+              defaultChecked
+              className="mt-0.5 accent-[var(--accent)]"
+            />
+            <span>
+              <span className="block text-[13px] font-medium text-[var(--text-1)]">Étudiant</span>
+              <span className="mt-0.5 block text-[12px] text-[var(--text-3)]">
+                Rejoindre une classe avec un code.
+              </span>
+            </span>
+          </label>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] p-3 transition-colors has-[:checked]:border-[var(--accent)] has-[:checked]:bg-[var(--accent-soft)]">
+            <input
+              type="radio"
+              name="accountType"
+              value="DELEGUE"
+              className="mt-0.5 accent-[var(--accent)]"
+            />
+            <span>
+              <span className="block text-[13px] font-medium text-[var(--text-1)]">Délégué</span>
+              <span className="mt-0.5 block text-[12px] text-[var(--text-3)]">
+                Créer et administrer une classe.
+              </span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
       <div className="grid grid-cols-2 gap-3">
         <Field
           label="Code de la classe"
           htmlFor="classCode"
           error={state.fieldErrors?.classCode}
-          hint="Fourni par le délégué"
-          required
+          hint="Facultatif pour un délégué"
         >
-          <Input id="classCode" name="classCode" required placeholder="GSMI4A" />
+          <Input id="classCode" name="classCode" placeholder="GSMI4A" />
         </Field>
         <Field
           label="Numéro étudiant"

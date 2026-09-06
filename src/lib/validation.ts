@@ -87,6 +87,7 @@ export const registerSchema = z
     firstName: trimmed(2, 60, 'Prénom'),
     lastName: trimmed(2, 60, 'Nom'),
     email: emailSchema,
+    accountType: z.enum(['ETUDIANT', 'DELEGUE']).default('ETUDIANT'),
     studentId: optionalText(40),
     // Facultatif : on peut creer son compte puis creer sa classe ou la
     // rejoindre ensuite.
