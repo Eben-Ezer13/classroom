@@ -65,11 +65,11 @@ export default async function ClassSettingsPage() {
                 />
               </div>
               <p className="text-[13px] text-[var(--text-2)]">
-                {formatFileSize(storage.used)} utilises sur {formatFileSize(storage.quota)}{' '}
+                {formatFileSize(storage.used)} utilisés sur {formatFileSize(storage.quota)}{' '}
                 ({percent}%)
               </p>
               <p className="text-[12.5px] text-[var(--text-3)] leading-relaxed">
-                Le quota est propre a votre classe : les fichiers des autres classes ne
+                Le quota est propre à votre classe : les fichiers des autres classes ne
                 l’entament pas, et vos ressources ne sont accessibles qu’à vos membres.
               </p>
             </CardBody>
@@ -79,13 +79,13 @@ export default async function ClassSettingsPage() {
             <CardHeader title="Informations" />
             <CardBody className="space-y-1.5 text-[13px] text-[var(--text-2)]">
               <p>
-                Code d inscription :{' '}
+                Code d’inscription :{' '}
                 <code className="font-mono tracking-wider">{profile.code}</code>
               </p>
               <p>Créée le {formatDate(profile.createdAt)}</p>
               {profile.createdBy ? (
                 <p>
-                  Delegue principal : {profile.createdBy.firstName}{' '}
+                  Délégué principal : {profile.createdBy.firstName}{' '}
                   {profile.createdBy.lastName}
                 </p>
               ) : null}

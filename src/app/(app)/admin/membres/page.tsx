@@ -91,7 +91,7 @@ export default async function AdminMembersPage({
 
       <Card className="mb-4">
         <CardHeader
-          title="Code d inscription"
+          title="Code d’inscription"
           description="Les étudiants saisissent ce code pour rejoindre la classe."
         />
         <CardBody className="flex flex-wrap items-center gap-3">
@@ -114,7 +114,7 @@ export default async function AdminMembersPage({
         <Card className="mb-4">
           <CardHeader
             title="Liens d’invitation actifs"
-            description="Chaque lien peut porter un rôle, une expiration et un quota d’usage."
+            description="Chaque lien peut porter un rôle, une expiration et un quota d’utilisation."
           />
           <Table>
             <THead>

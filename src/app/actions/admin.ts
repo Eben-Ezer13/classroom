@@ -239,7 +239,7 @@ export async function setCurrentSemesterAction(formData: FormData): Promise<void
   })
   if (!semester) throw new NotFoundError('Semestre introuvable dans cette classe.')
   if (semester.isArchived) {
-    throw new AppError('Desarchivez ce semestre avant de le definir comme courant.')
+    throw new AppError('Désarchivez ce semestre avant de le définir comme courant.')
   }
 
   await prisma.$transaction([

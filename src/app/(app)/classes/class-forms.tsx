@@ -93,7 +93,7 @@ export function JoinClassForm() {
       {state.message && !state.ok ? <Alert tone="danger">{state.message}</Alert> : null}
 
       <Field
-        label="Code de la classe ou d’invitation"
+        label="Code de classe ou d’invitation"
         htmlFor="code"
         error={state.fieldErrors?.code}
         hint="Fourni par votre délégué"
@@ -110,7 +110,7 @@ export function JoinClassForm() {
       </Field>
 
       <Field
-        label="Numero etudiant"
+        label="Numéro étudiant"
         htmlFor="studentId"
         error={state.fieldErrors?.studentId}
         hint="Facultatif"

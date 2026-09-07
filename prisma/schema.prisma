@@ -148,7 +148,7 @@ model ClassGroup {
   /// a chaque upload / suppression). Sert au quota et aux statistiques.
   storageUsed  BigInt @default(0)
   /// Quota de stockage de la classe, en octets.
-  storageQuota BigInt @default(2147483648)
+  storageQuota BigInt @default(10737418240)
 
   isActive    Boolean   @default(true)
   createdById String?

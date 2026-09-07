@@ -147,7 +147,7 @@ export const MODULE_COLORS = [
 export const PAGE_SIZE = 20
 
 /** Limites d'upload appliquees cote serveur (jamais seulement cote client). */
-export const MAX_FILE_SIZE = 25 * 1024 * 1024 // 25 Mo
+export const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100 Mo
 
 export const ALLOWED_MIME_TYPES: Record<string, string[]> = {
   'application/pdf': ['.pdf'],
@@ -175,7 +175,7 @@ export const AVATAR_MAX_SIZE = 2 * 1024 * 1024 // 2 Mo
 export const AVATAR_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 
 /** Emploi du temps televerse : image ou PDF uniquement. */
-export const SCHEDULE_DOC_MAX_SIZE = 15 * 1024 * 1024 // 15 Mo
+export const SCHEDULE_DOC_MAX_SIZE = 50 * 1024 * 1024 // 50 Mo
 export const SCHEDULE_DOC_MIME_TYPES: Record<string, string[]> = {
   'application/pdf': ['.pdf'],
   'image/png': ['.png'],
@@ -188,7 +188,7 @@ export const SCHEDULE_DOC_MIME_TYPES: Record<string, string[]> = {
  * Valeur volontairement explicite : le stockage n'est jamais illimite, et
  * une classe ne doit pas pouvoir saturer l'espace des autres.
  */
-export const DEFAULT_CLASS_STORAGE_QUOTA = 2 * 1024 * 1024 * 1024 // 2 Go
+export const DEFAULT_CLASS_STORAGE_QUOTA = 10 * 1024 * 1024 * 1024 // 10 Go
 
 export const SESSION_COOKIE = 'cp_session'
 export const SESSION_DURATION_DAYS = 30

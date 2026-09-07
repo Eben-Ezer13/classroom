@@ -135,12 +135,12 @@ export default async function ResourcesPage({
         {result.items.length === 0 ? (
           <EmptyState
             icon={<IconFolder />}
-            title={hasFilters ? 'Aucun resultat' : 'Aucune ressource'}
+            title={hasFilters ? 'Aucun résultat' : 'Aucune ressource'}
             description={
               hasFilters
-                ? 'Aucune ressource ne correspond a ces filtres.'
+                ? 'Aucune ressource ne correspond à ces filtres.'
                 : canManage
-                  ? 'Deposez le premier document de la classe.'
+                  ? 'Déposez le premier document de la classe.'
                   : 'Les documents déposés par le délégué apparaîtront ici.'
             }
           />

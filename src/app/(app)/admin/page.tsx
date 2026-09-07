@@ -99,7 +99,7 @@ export default async function AdminHomePage({
           tone={quotaPercent > 85 ? 'warning' : 'neutral'}
         />
         <StatTile
-          label="Code d inscription"
+          label="Code d’inscription"
           value={<span className="font-mono text-[18px]">{profile?.code ?? '—'}</span>}
           hint="à communiquer aux étudiants"
         />

@@ -144,13 +144,13 @@ export function ResourceForm({
       ) : (
         <p className="text-[12.5px] text-[var(--text-3)]">
           Le fichier déjà déposé n’est pas remplacé. Pour changer le fichier,
-          supprimez la ressource et deposez-la a nouveau.
+          supprimez la ressource et déposez-la à nouveau.
         </p>
       )}
 
       <div className="flex justify-end pt-1">
-        <SubmitButton pendingLabel={isEdit ? 'Enregistrement...' : 'Depot en cours...'}>
-          {isEdit ? 'Enregistrer' : 'Deposer la ressource'}
+        <SubmitButton pendingLabel={isEdit ? 'Enregistrement...' : 'Dépôt en cours...'}>
+          {isEdit ? 'Enregistrer' : 'Déposer la ressource'}
         </SubmitButton>
       </div>
     </form>

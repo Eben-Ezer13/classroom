@@ -70,7 +70,7 @@ export default async function AdminYearsPage() {
                         hidden={{ yearId: year.id }}
                         message={`Définir ${year.label} comme année courante ?`}
                       >
-                        <IconSubmit label="Definir comme annee courante">
+                        <IconSubmit label="Définir comme année courante">
                           <IconCheck className="size-[17px]" />
                         </IconSubmit>
                       </ConfirmForm>
@@ -80,11 +80,11 @@ export default async function AdminYearsPage() {
                       hidden={{ yearId: year.id }}
                       message={
                         year.isArchived
-                          ? `Desarchiver ${year.label} et ses semestres ?`
-                          : `Archiver ${year.label} ? Ses semestres et ressources seront archives.`
+                          ? `Désarchiver ${year.label} et ses semestres ?`
+                          : `Archiver ${year.label} ? Ses semestres et ressources seront archivés.`
                       }
                     >
-                      <IconSubmit label={year.isArchived ? 'Desarchiver' : 'Archiver'}>
+                      <IconSubmit label={year.isArchived ? 'Désarchiver' : 'Archiver'}>
                         <IconArchive className="size-[17px]" />
                       </IconSubmit>
                     </ConfirmForm>
