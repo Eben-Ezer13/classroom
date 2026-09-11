@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { requireClassAdmin, requireUser } from '@/lib/auth/guards'
 import { canViewClass } from '@/lib/permissions'
@@ -130,81 +131,75 @@ export async function joinClassAction(
   })
 }
 
-/**
- * Variante sans etat, pour un formulaire simple (lien d'invitation).
- * Une erreur y remonte comme une erreur de page plutot que comme un
- * message de champ : ce formulaire n'a pas d'etat a afficher.
- */
-export async function joinClassFormAction(formData: FormData): Promise<void> {
-  const result = await joinClassAction({ ok: false }, formData)
-  if (!result.ok && result.message) throw new AppError(result.message)
-}
-
 /** Change l'espace de travail affiche. Refuse toute classe non rejointe. */
-export async function switchClassAction(formData: FormData): Promise<void> {
-  const user = await requireUser()
-  const parsed = parseForm(switchClassSchema, formData)
-  if (!parsed.success) throw new AppError(parsed.message)
+export async function switchClassAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const user = await requireUser()
+    const parsed = parseForm(switchClassSchema, formData)
+    if (!parsed.success) return { ok: false, message: parsed.message }
 
-  if (!canViewClass(user, parsed.data.classGroupId)) {
-    throw new NotFoundError('Classe introuvable.')
-  }
+    if (!canViewClass(user, parsed.data.classGroupId)) {
+      throw new NotFoundError('Classe introuvable.')
+    }
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { activeClassGroupId: parsed.data.classGroupId },
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { activeClassGroupId: parsed.data.classGroupId },
+    })
+
+    revalidatePath('/', 'layout')
+    redirect('/dashboard')
   })
-
-  revalidatePath('/', 'layout')
-  redirect('/dashboard')
 }
 
 /** Quitte une classe. Le dernier delegue doit d'abord nommer un successeur. */
-export async function leaveClassAction(formData: FormData): Promise<void> {
-  const user = await requireUser()
-  const classGroupId = String(formData.get('classGroupId') ?? '')
-  if (!canViewClass(user, classGroupId)) throw new NotFoundError('Classe introuvable.')
+export async function leaveClassAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const user = await requireUser()
+    const classGroupId = String(formData.get('classGroupId') ?? '')
+    if (!canViewClass(user, classGroupId)) throw new NotFoundError('Classe introuvable.')
 
-  const membership = await prisma.membership.findUnique({
-    where: { userId_classGroupId: { userId: user.id, classGroupId } },
-    select: { id: true, role: true, classGroup: { select: { name: true } } },
-  })
-  if (!membership) throw new NotFoundError('Classe introuvable.')
-
-  if (membership.role === 'ADMIN' && (await countClassAdmins(classGroupId)) <= 1) {
-    throw new AppError(
-      'Vous êtes le seul délégué de cette classe : nommez un autre délégué avant de la quitter.',
-    )
-  }
-
-  await prisma.$transaction(async (tx) => {
-    await tx.membership.update({
-      where: { id: membership.id },
-      data: { isActive: false },
+    const membership = await prisma.membership.findUnique({
+      where: { userId_classGroupId: { userId: user.id, classGroupId } },
+      select: { id: true, role: true, classGroup: { select: { name: true } } },
     })
-    const fallback = await tx.membership.findFirst({
-      where: { userId: user.id, isActive: true, classGroupId: { not: classGroupId } },
-      select: { classGroupId: true },
-      orderBy: { joinedAt: 'asc' },
-    })
-    await tx.user.update({
-      where: { id: user.id },
-      data: { activeClassGroupId: fallback?.classGroupId ?? null },
-    })
-  })
+    if (!membership) throw new NotFoundError('Classe introuvable.')
 
-  await recordAudit({
-    actor: user,
-    action: 'CLASS_LEFT',
-    entityType: 'ClassGroup',
-    entityId: classGroupId,
-    entityLabel: membership.classGroup.name,
-    classGroupId,
-    summary: `${user.firstName} ${user.lastName} a quitté la classe ${membership.classGroup.name}.`,
-  })
+    if (membership.role === 'ADMIN' && (await countClassAdmins(classGroupId)) <= 1) {
+      throw new AppError(
+        'Vous êtes le seul délégué de cette classe : nommez un autre délégué avant de la quitter.',
+      )
+    }
 
-  revalidatePath('/', 'layout')
-  redirect('/classes')
+    await prisma.$transaction(async (tx) => {
+      await tx.membership.update({
+        where: { id: membership.id },
+        data: { isActive: false },
+      })
+      const fallback = await tx.membership.findFirst({
+        where: { userId: user.id, isActive: true, classGroupId: { not: classGroupId } },
+        select: { classGroupId: true },
+        orderBy: { joinedAt: 'asc' },
+      })
+      await tx.user.update({
+        where: { id: user.id },
+        data: { activeClassGroupId: fallback?.classGroupId ?? null },
+      })
+    })
+
+    await recordAudit({
+      actor: user,
+      action: 'CLASS_LEFT',
+      entityType: 'ClassGroup',
+      entityId: classGroupId,
+      entityLabel: membership.classGroup.name,
+      classGroupId,
+      summary: `${user.firstName} ${user.lastName} a quitté la classe ${membership.classGroup.name}.`,
+    })
+
+    revalidatePath('/', 'layout')
+    redirect('/classes')
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -250,22 +245,25 @@ export async function updateClassAction(
 }
 
 /** Regenere le code d'inscription : coupe l'acces aux anciens partages. */
-export async function rotateClassCodeAction(): Promise<void> {
-  const { user, classId } = await requireClassAdmin()
-  const code = await generateClassCode()
+export async function rotateClassCodeAction(): Promise<ActionState> {
+  return runAction(async () => {
+    const { user, classId } = await requireClassAdmin()
+    const code = await generateClassCode()
 
-  await prisma.classGroup.update({ where: { id: classId }, data: { code } })
+    await prisma.classGroup.update({ where: { id: classId }, data: { code } })
 
-  await recordAudit({
-    actor: user,
-    action: 'CLASS_CODE_ROTATED',
-    entityType: 'ClassGroup',
-    entityId: classId,
-    classGroupId: classId,
-    summary: `${user.firstName} ${user.lastName} a regenere le code d inscription de la classe.`,
+    await recordAudit({
+      actor: user,
+      action: 'CLASS_CODE_ROTATED',
+      entityType: 'ClassGroup',
+      entityId: classId,
+      classGroupId: classId,
+      summary: `${user.firstName} ${user.lastName} a régénéré le code d’inscription de la classe.`,
+    })
+
+    revalidatePath('/', 'layout')
+    return { ok: true, message: 'Nouveau code généré. L’ancien ne fonctionne plus.' }
   })
-
-  revalidatePath('/', 'layout')
 }
 
 // ---------------------------------------------------------------------------
@@ -312,28 +310,31 @@ export async function createInvitationAction(
   })
 }
 
-export async function revokeInvitationAction(formData: FormData): Promise<void> {
-  const { user, classId } = await requireClassAdmin()
-  const invitationId = String(formData.get('invitationId') ?? '')
+export async function revokeInvitationAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user, classId } = await requireClassAdmin()
+    const invitationId = String(formData.get('invitationId') ?? '')
 
-  // Le filtre sur classGroupId interdit de revoquer l'invitation d'une
-  // autre classe en changeant l'identifiant.
-  const result = await prisma.invitation.updateMany({
-    where: { id: invitationId, classGroupId: classId, revokedAt: null },
-    data: { revokedAt: new Date() },
+    // Le filtre sur classGroupId interdit de revoquer l'invitation d'une
+    // autre classe en changeant l'identifiant.
+    const result = await prisma.invitation.updateMany({
+      where: { id: invitationId, classGroupId: classId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    })
+    if (result.count === 0) throw new NotFoundError('Invitation introuvable.')
+
+    await recordAudit({
+      actor: user,
+      action: 'INVITATION_REVOKED',
+      entityType: 'Invitation',
+      entityId: invitationId,
+      classGroupId: classId,
+      summary: `${user.firstName} ${user.lastName} a révoqué un lien d’invitation.`,
+    })
+
+    revalidatePath('/admin/membres')
+    return { ok: true, message: 'Lien d’invitation révoqué.' }
   })
-  if (result.count === 0) throw new NotFoundError('Invitation introuvable.')
-
-  await recordAudit({
-    actor: user,
-    action: 'INVITATION_REVOKED',
-    entityType: 'Invitation',
-    entityId: invitationId,
-    classGroupId: classId,
-    summary: `${user.firstName} ${user.lastName} a révoqué un lien d’invitation.`,
-  })
-
-  revalidatePath('/admin/membres')
 }
 
 // ---------------------------------------------------------------------------
@@ -356,57 +357,81 @@ async function loadMembership(membershipId: string, classId: string) {
   return membership
 }
 
-export async function changeMemberRoleAction(formData: FormData): Promise<void> {
-  const { user, classId } = await requireClassAdmin()
-  const parsed = parseForm(memberRoleSchema, formData)
-  if (!parsed.success) throw new AppError(parsed.message)
+export async function changeMemberRoleAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user, classId } = await requireClassAdmin()
+    const parsed = parseForm(memberRoleSchema, formData)
+    if (!parsed.success) return { ok: false, message: parsed.message }
 
-  const membership = await loadMembership(parsed.data.membershipId, classId)
+    const membership = await loadMembership(parsed.data.membershipId, classId)
+    if (membership.role === parsed.data.role) return { ok: true }
 
-  // Personne ne modifie son propre role : ni auto-promotion, ni retrait
-  // accidentel du dernier delegue.
-  if (membership.userId === user.id) {
-    throw new AppError('Vous ne pouvez pas modifier votre propre rôle.')
-  }
-  if (
-    membership.role === 'ADMIN' &&
-    parsed.data.role === 'MEMBER' &&
-    (await countClassAdmins(classId)) <= 1
-  ) {
-    throw new AppError('La classe doit conserver au moins un délégué.')
-  }
+    // Personne ne modifie son propre role : ni auto-promotion, ni retrait
+    // accidentel du dernier delegue.
+    if (membership.userId === user.id) {
+      throw new AppError('Vous ne pouvez pas modifier votre propre rôle.')
+    }
+    if (
+      membership.role === 'ADMIN' &&
+      parsed.data.role === 'MEMBER' &&
+      (await countClassAdmins(classId)) <= 1
+    ) {
+      throw new AppError('La classe doit conserver au moins un délégué.')
+    }
 
-  await prisma.membership.update({
-    where: { id: membership.id },
-    data: { role: parsed.data.role },
+    try {
+      await prisma.membership.update({
+        where: { id: membership.id },
+        data: { role: parsed.data.role },
+      })
+    } catch (error) {
+      // Contraintes PostgreSQL : un etudiant n'a qu'une classe active, et une
+      // classe accueille 60 etudiants au plus.
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError ||
+        error instanceof Prisma.PrismaClientUnknownRequestError
+      ) {
+        throw new AppError(
+          'Changement impossible : ce membre est déjà étudiant dans une autre classe, ' +
+            'ou la classe a atteint sa capacité maximale.',
+        )
+      }
+      throw error
+    }
+
+    await notifyUser(
+      membership.userId,
+      {
+        type: 'MEMBRE',
+        title: parsed.data.role === 'ADMIN' ? 'Vous êtes délégué' : 'Rôle mis à jour',
+        body:
+          parsed.data.role === 'ADMIN'
+            ? 'Vous pouvez désormais administrer la classe.'
+            : 'Vos droits d’administration ont été retirés.',
+        url: '/dashboard',
+      },
+      classId,
+    )
+
+    await recordAudit({
+      actor: user,
+      action: 'MEMBER_ROLE_CHANGED',
+      entityType: 'Membership',
+      entityId: membership.id,
+      entityLabel: `${membership.user.firstName} ${membership.user.lastName}`,
+      classGroupId: classId,
+      summary: `${user.firstName} ${user.lastName} a changé le rôle de ${membership.user.firstName} ${membership.user.lastName}.`,
+      metadata: { from: membership.role, to: parsed.data.role },
+    })
+
+    revalidatePath('/admin/membres')
+    return {
+      ok: true,
+      message: `${membership.user.firstName} ${membership.user.lastName} est désormais ${
+        parsed.data.role === 'ADMIN' ? 'délégué' : 'étudiant'
+      }.`,
+    }
   })
-
-  await notifyUser(
-    membership.userId,
-    {
-      type: 'MEMBRE',
-      title: parsed.data.role === 'ADMIN' ? 'Vous êtes délégué' : 'Rôle mis à jour',
-      body:
-        parsed.data.role === 'ADMIN'
-          ? 'Vous pouvez desormais administrer la classe.'
-          : 'Vos droits d administration ont ete retires.',
-      url: '/dashboard',
-    },
-    classId,
-  )
-
-  await recordAudit({
-    actor: user,
-    action: 'MEMBER_ROLE_CHANGED',
-    entityType: 'Membership',
-    entityId: membership.id,
-    entityLabel: `${membership.user.firstName} ${membership.user.lastName}`,
-    classGroupId: classId,
-    summary: `${user.firstName} ${user.lastName} a change le role de ${membership.user.firstName} ${membership.user.lastName}.`,
-    metadata: { from: membership.role, to: parsed.data.role },
-  })
-
-  revalidatePath('/admin/membres')
 }
 
 export async function updateMemberStudentIdAction(
@@ -464,61 +489,67 @@ export async function updateMemberStudentIdAction(
  * L'appartenance est desactivee, le compte n'est pas supprime : ses
  * contributions restent attribuees et il peut etre reinvite plus tard.
  */
-export async function removeMemberAction(formData: FormData): Promise<void> {
-  const { user, classId } = await requireClassAdmin()
-  const membershipId = String(formData.get('membershipId') ?? '')
-  const membership = await loadMembership(membershipId, classId)
+export async function removeMemberAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user, classId } = await requireClassAdmin()
+    const membershipId = String(formData.get('membershipId') ?? '')
+    const membership = await loadMembership(membershipId, classId)
 
-  if (membership.userId === user.id) {
-    throw new AppError(
-      'Vous ne pouvez pas vous retirer vous-meme : utilisez "Quitter la classe".',
-    )
-  }
-  if (membership.role === 'ADMIN' && (await countClassAdmins(classId)) <= 1) {
-    throw new AppError('La classe doit conserver au moins un delegue.')
-  }
+    if (membership.userId === user.id) {
+      throw new AppError(
+        'Vous ne pouvez pas vous retirer vous-même : utilisez « Quitter la classe ».',
+      )
+    }
+    if (membership.role === 'ADMIN' && (await countClassAdmins(classId)) <= 1) {
+      throw new AppError('La classe doit conserver au moins un délégué.')
+    }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.membership.update({
-      where: { id: membership.id },
-      data: { isActive: false },
+    await prisma.$transaction(async (tx) => {
+      await tx.membership.update({
+        where: { id: membership.id },
+        data: { isActive: false },
+      })
+      // Le membre retire ne doit plus arriver sur cet espace a sa prochaine
+      // visite : sa classe active bascule sur une autre de ses classes.
+      const fallback = await tx.membership.findFirst({
+        where: {
+          userId: membership.userId,
+          isActive: true,
+          classGroupId: { not: classId },
+        },
+        select: { classGroupId: true },
+        orderBy: { joinedAt: 'asc' },
+      })
+      await tx.user.updateMany({
+        where: { id: membership.userId, activeClassGroupId: classId },
+        data: { activeClassGroupId: fallback?.classGroupId ?? null },
+      })
     })
-    // Le membre retire ne doit plus arriver sur cet espace a sa prochaine
-    // visite : sa classe active bascule sur une autre de ses classes.
-    const fallback = await tx.membership.findFirst({
-      where: {
-        userId: membership.userId,
-        isActive: true,
-        classGroupId: { not: classId },
+
+    await notifyUser(
+      membership.userId,
+      {
+        type: 'MEMBRE',
+        title: 'Retrait de la classe',
+        body: 'Votre accès à cette classe a été retiré par le délégué.',
       },
-      select: { classGroupId: true },
-      orderBy: { joinedAt: 'asc' },
+      null,
+    )
+
+    await recordAudit({
+      actor: user,
+      action: 'MEMBER_REMOVED',
+      entityType: 'Membership',
+      entityId: membership.id,
+      entityLabel: `${membership.user.firstName} ${membership.user.lastName}`,
+      classGroupId: classId,
+      summary: `${user.firstName} ${user.lastName} a retiré ${membership.user.firstName} ${membership.user.lastName} de la classe.`,
     })
-    await tx.user.updateMany({
-      where: { id: membership.userId, activeClassGroupId: classId },
-      data: { activeClassGroupId: fallback?.classGroupId ?? null },
-    })
+
+    revalidatePath('/admin/membres')
+    return {
+      ok: true,
+      message: `${membership.user.firstName} ${membership.user.lastName} a été retiré de la classe.`,
+    }
   })
-
-  await notifyUser(
-    membership.userId,
-    {
-      type: 'MEMBRE',
-      title: 'Retrait de la classe',
-      body: 'Votre accès à cette classe a été retiré par le délégué.',
-    },
-    null,
-  )
-
-  await recordAudit({
-    actor: user,
-    action: 'MEMBER_REMOVED',
-    entityType: 'Membership',
-    entityId: membership.id,
-    entityLabel: `${membership.user.firstName} ${membership.user.lastName}`,
-    classGroupId: classId,
-    summary: `${user.firstName} ${user.lastName} a retire ${membership.user.firstName} ${membership.user.lastName} de la classe.`,
-  })
-
-  revalidatePath('/admin/membres')
 }

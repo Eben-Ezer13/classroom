@@ -1,13 +1,14 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { ConfirmForm, IconSubmit } from '@/components/ui/confirm-form'
 import { IconPencil, IconPlus, IconTrash } from '@/components/ui/icons'
 import { Field, Input, Select, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
-import { emptyActionState } from '@/lib/errors'
+import { useFormAction } from '@/components/ui/use-form-action'
+import { toDateTimeInputValue } from '@/lib/utils'
 import {
   addProjectLinkAction,
   createProjectAction,
@@ -29,13 +30,6 @@ export type ProjectFormValues = {
   dueAt: Date
 }
 
-function toLocalInput(date: Date | null | undefined): string {
-  if (!date) return ''
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 16)
-}
-
 function ProjectForm({
   modules,
   semesters,
@@ -50,9 +44,8 @@ function ProjectForm({
   onDone?: () => void
 }) {
   const isEdit = Boolean(project)
-  const [state, formAction] = useActionState(
+  const { state, formAction, value } = useFormAction(
     isEdit ? updateProjectAction : createProjectAction,
-    emptyActionState,
   )
 
   useEffect(() => {
@@ -70,8 +63,9 @@ function ProjectForm({
         <Input
           id="title"
           name="title"
-          defaultValue={project?.title ?? ''}
+          defaultValue={value('title', project?.title)}
           required
+          maxLength={160}
           placeholder="Modélisation d’une suspension de véhicule électrique"
         />
       </Field>
@@ -81,7 +75,8 @@ function ProjectForm({
           id="description"
           name="description"
           rows={3}
-          defaultValue={project?.description ?? ''}
+          maxLength={2000}
+          defaultValue={value('description', project?.description)}
         />
       </Field>
 
@@ -89,13 +84,14 @@ function ProjectForm({
         label="Consignes"
         htmlFor="instructions"
         error={state.fieldErrors?.instructions}
-        hint="Attendus, livrables, criteres d evaluation"
+        hint="Attendus, livrables, critères d’évaluation"
       >
         <Textarea
           id="instructions"
           name="instructions"
           rows={5}
-          defaultValue={project?.instructions ?? ''}
+          maxLength={5000}
+          defaultValue={value('instructions', project?.instructions)}
         />
       </Field>
 
@@ -104,7 +100,7 @@ function ProjectForm({
           <Select
             id="semesterId"
             name="semesterId"
-            defaultValue={project?.semesterId ?? defaultSemesterId ?? ''}
+            defaultValue={value('semesterId', project?.semesterId ?? defaultSemesterId)}
             required
           >
             <option value="" disabled>
@@ -119,7 +115,7 @@ function ProjectForm({
         </Field>
 
         <Field label="Module" htmlFor="moduleId" error={state.fieldErrors?.moduleId}>
-          <Select id="moduleId" name="moduleId" defaultValue={project?.moduleId ?? ''}>
+          <Select id="moduleId" name="moduleId" defaultValue={value('moduleId', project?.moduleId)}>
             <option value="">Aucun module</option>
             {modules.map((m) => (
               <option key={m.id} value={m.id}>
@@ -134,17 +130,18 @@ function ProjectForm({
         <Input
           id="teacherName"
           name="teacherName"
-          defaultValue={project?.teacherName ?? ''}
+          maxLength={120}
+          defaultValue={value('teacherName', project?.teacherName)}
         />
       </Field>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Date de debut" htmlFor="startsAt" error={state.fieldErrors?.startsAt}>
+        <Field label="Date de début" htmlFor="startsAt" error={state.fieldErrors?.startsAt}>
           <Input
             id="startsAt"
             name="startsAt"
             type="datetime-local"
-            defaultValue={toLocalInput(project?.startsAt)}
+            defaultValue={value('startsAt', toDateTimeInputValue(project?.startsAt))}
           />
         </Field>
         <Field label="Date limite" htmlFor="dueAt" error={state.fieldErrors?.dueAt} required>
@@ -152,7 +149,7 @@ function ProjectForm({
             id="dueAt"
             name="dueAt"
             type="datetime-local"
-            defaultValue={toLocalInput(project?.dueAt)}
+            defaultValue={value('dueAt', toDateTimeInputValue(project?.dueAt))}
             required
           />
         </Field>
@@ -196,7 +193,7 @@ export function AddProjectButton({
       }
       triggerSize="sm"
       title="Nouveau projet"
-      description="Consignes, documents et compte a rebours pour toute la classe."
+      description="Consignes, documents et compte à rebours pour toute la classe."
       width="lg"
     >
       {(close) => (
@@ -251,7 +248,7 @@ export function ProjectActions({
 }
 
 export function AddProjectLinkForm({ projectId }: { projectId: string }) {
-  const [state, formAction] = useActionState(addProjectLinkAction, emptyActionState)
+  const { state, formAction, value } = useFormAction(addProjectLinkAction)
 
   return (
     <form action={formAction} className="space-y-2.5" key={state.ok ? 'sent' : 'draft'}>
@@ -259,12 +256,21 @@ export function AddProjectLinkForm({ projectId }: { projectId: string }) {
       {state.message && !state.ok ? <Alert tone="danger">{state.message}</Alert> : null}
 
       <div className="grid sm:grid-cols-[1fr_2fr] gap-2">
-        <Input name="label" placeholder="Libelle" required aria-label="Libelle du lien" />
+        <Input
+          name="label"
+          placeholder="Libellé"
+          required
+          maxLength={80}
+          defaultValue={value('label')}
+          aria-label="Libellé du lien"
+        />
         <Input
           name="url"
           type="url"
           placeholder="https://..."
           required
+          maxLength={500}
+          defaultValue={value('url')}
           aria-label="Adresse du lien"
         />
       </div>

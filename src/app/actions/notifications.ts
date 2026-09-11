@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireUser } from '@/lib/auth/guards'
+import { notificationScope } from '@/lib/notifications'
 
 /**
  * Les notifications appartiennent a un utilisateur : chaque requete filtre
@@ -25,13 +26,14 @@ export async function markNotificationReadAction(formData: FormData): Promise<vo
 export async function markAllNotificationsReadAction(): Promise<void> {
   const user = await requireUser()
 
+  // Meme perimetre que la liste affichee : les notifications d'une autre
+  // classe ne sont pas marquees lues a l'insu de l'utilisateur.
   await prisma.notification.updateMany({
-    where: { userId: user.id, readAt: null },
+    where: { ...notificationScope(user.id, user.classGroupId), readAt: null },
     data: { readAt: new Date() },
   })
 
-  revalidatePath('/notifications')
-  revalidatePath('/dashboard')
+  revalidatePath('/', 'layout')
 }
 
 export async function deleteNotificationAction(formData: FormData): Promise<void> {

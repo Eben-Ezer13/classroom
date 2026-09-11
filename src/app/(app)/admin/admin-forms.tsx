@@ -1,12 +1,12 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { IconPlus } from '@/components/ui/icons'
 import { Checkbox, Field, Input, Select } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
-import { emptyActionState } from '@/lib/errors'
+import { useFormAction } from '@/components/ui/use-form-action'
 import { createAcademicYearAction, createSemesterAction } from '@/app/actions/admin'
 
 /**
@@ -65,7 +65,7 @@ export function AddYearButton() {
 }
 
 function YearForm({ onDone }: { onDone: () => void }) {
-  const [state, formAction] = useActionState(createAcademicYearAction, emptyActionState)
+  const { state, formAction, value, checked } = useFormAction(createAcademicYearAction)
   useCloseOnSuccess(state.ok, onDone)
 
   return (
@@ -73,18 +73,35 @@ function YearForm({ onDone }: { onDone: () => void }) {
       {state.message ? (
         <Alert tone={state.ok ? 'success' : 'danger'}>{state.message}</Alert>
       ) : null}
-      <Field label="Libelle" htmlFor="label" error={state.fieldErrors?.label} required>
-        <Input id="label" name="label" required placeholder="2026/2027" maxLength={20} />
+      <Field label="Libellé" htmlFor="label" error={state.fieldErrors?.label} required>
+        <Input
+          id="label"
+          name="label"
+          required
+          placeholder="2026/2027"
+          maxLength={20}
+          defaultValue={value('label')}
+        />
       </Field>
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Debut" htmlFor="startsAt" error={state.fieldErrors?.startsAt} required>
-          <Input id="startsAt" name="startsAt" type="date" required />
+        <Field label="Début" htmlFor="startsAt" error={state.fieldErrors?.startsAt} required>
+          <Input
+            id="startsAt"
+            name="startsAt"
+            type="date"
+            required
+            defaultValue={value('startsAt')}
+          />
         </Field>
         <Field label="Fin" htmlFor="endsAt" error={state.fieldErrors?.endsAt} required>
-          <Input id="endsAt" name="endsAt" type="date" required />
+          <Input id="endsAt" name="endsAt" type="date" required defaultValue={value('endsAt')} />
         </Field>
       </div>
-      <Checkbox name="isCurrent" label="Définir comme année courante" defaultChecked />
+      <Checkbox
+        name="isCurrent"
+        label="Définir comme année courante"
+        defaultChecked={checked('isCurrent', true)}
+      />
       <div className="flex justify-end">
         <SubmitButton pendingLabel="Création...">Créer</SubmitButton>
       </div>
@@ -101,7 +118,7 @@ export function AddSemesterButton({ years }: { years: Option[] }) {
 }
 
 function SemesterForm({ years, onDone }: { years: Option[]; onDone: () => void }) {
-  const [state, formAction] = useActionState(createSemesterAction, emptyActionState)
+  const { state, formAction, value, checked } = useFormAction(createSemesterAction)
   useCloseOnSuccess(state.ok, onDone)
 
   return (
@@ -115,7 +132,12 @@ function SemesterForm({ years, onDone }: { years: Option[]; onDone: () => void }
         error={state.fieldErrors?.academicYearId}
         required
       >
-        <Select id="academicYearId" name="academicYearId" required defaultValue="">
+        <Select
+          id="academicYearId"
+          name="academicYearId"
+          required
+          defaultValue={value('academicYearId')}
+        >
           <option value="" disabled>
             Choisir
           </option>
@@ -128,21 +150,46 @@ function SemesterForm({ years, onDone }: { years: Option[]; onDone: () => void }
       </Field>
       <div className="grid grid-cols-[110px_1fr] gap-3">
         <Field label="Numéro" htmlFor="number" error={state.fieldErrors?.number} required>
-          <Input id="number" name="number" type="number" min={1} max={12} required />
+          <Input
+            id="number"
+            name="number"
+            type="number"
+            min={1}
+            max={12}
+            required
+            defaultValue={value('number')}
+          />
         </Field>
         <Field label="Libellé" htmlFor="label" error={state.fieldErrors?.label} required>
-          <Input id="label" name="label" required placeholder="Semestre 7" />
+          <Input
+            id="label"
+            name="label"
+            required
+            placeholder="Semestre 7"
+            maxLength={60}
+            defaultValue={value('label')}
+          />
         </Field>
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
         <Field label="Début" htmlFor="startsAt" error={state.fieldErrors?.startsAt} required>
-          <Input id="startsAt" name="startsAt" type="date" required />
+          <Input
+            id="startsAt"
+            name="startsAt"
+            type="date"
+            required
+            defaultValue={value('startsAt')}
+          />
         </Field>
         <Field label="Fin" htmlFor="endsAt" error={state.fieldErrors?.endsAt} required>
-          <Input id="endsAt" name="endsAt" type="date" required />
+          <Input id="endsAt" name="endsAt" type="date" required defaultValue={value('endsAt')} />
         </Field>
       </div>
-      <Checkbox name="isCurrent" label="Définir comme semestre courant" />
+      <Checkbox
+        name="isCurrent"
+        label="Définir comme semestre courant"
+        defaultChecked={checked('isCurrent')}
+      />
       <div className="flex justify-end">
         <SubmitButton pendingLabel="Création...">Créer</SubmitButton>
       </div>

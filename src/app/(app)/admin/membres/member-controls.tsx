@@ -1,14 +1,14 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Checkbox, Field, Input, Select } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
-import { ConfirmForm } from '@/components/ui/confirm-form'
+import { ActionForm, ConfirmForm } from '@/components/ui/confirm-form'
 import { IconPlus } from '@/components/ui/icons'
-import { emptyActionState } from '@/lib/errors'
+import { useFormAction } from '@/components/ui/use-form-action'
 import {
   changeMemberRoleAction,
   createInvitationAction,
@@ -43,7 +43,7 @@ export function NewInvitationButton() {
 }
 
 function InvitationForm({ onDone }: { onDone: () => void }) {
-  const [state, formAction] = useActionState(createInvitationAction, emptyActionState)
+  const { state, formAction, value } = useFormAction(createInvitationAction)
   useCloseOnSuccess(state.ok, onDone)
 
   return (
@@ -53,27 +53,47 @@ function InvitationForm({ onDone }: { onDone: () => void }) {
       ) : null}
 
       <Field label="Intitulé" htmlFor="label" hint="Pour vous y retrouver (facultatif)">
-        <Input id="label" name="label" placeholder="Groupe TD 2" maxLength={80} />
+        <Input
+          id="label"
+          name="label"
+          placeholder="Groupe TD 2"
+          maxLength={80}
+          defaultValue={value('label')}
+        />
       </Field>
 
       <div className="grid sm:grid-cols-2 gap-3">
         <Field label="Rôle attribué" htmlFor="role" required>
-          <Select id="role" name="role" defaultValue="MEMBER">
+          <Select id="role" name="role" defaultValue={value('role', 'MEMBER')}>
             <option value="MEMBER">Étudiant</option>
             <option value="ADMIN">Délégué (administrateur)</option>
           </Select>
         </Field>
-        <Field label="Validite (jours)" htmlFor="days" required>
-          <Input id="days" name="days" type="number" min={1} max={365} defaultValue={14} />
+        <Field label="Validité (jours)" htmlFor="days" required>
+          <Input
+            id="days"
+            name="days"
+            type="number"
+            min={1}
+            max={365}
+            defaultValue={value('days', 14)}
+          />
         </Field>
       </div>
 
       <Field
-        label="Nombre maximal d utilisations"
+        label="Nombre maximal d’utilisations"
         htmlFor="maxUses"
-        hint="0 = illimite pendant la duree de validite"
+        hint="0 = illimité pendant la durée de validité"
       >
-        <Input id="maxUses" name="maxUses" type="number" min={0} max={500} defaultValue={0} />
+        <Input
+          id="maxUses"
+          name="maxUses"
+          type="number"
+          min={0}
+          max={500}
+          defaultValue={value('maxUses', 0)}
+        />
       </Field>
 
       <div className="flex justify-end">
@@ -103,7 +123,7 @@ export function CopyButton({ value, label = 'Copier' }: { value: string; label?:
         }
       }}
     >
-      {copied ? 'Copie' : label}
+      {copied ? 'Copié' : label}
     </Button>
   )
 }
@@ -119,8 +139,9 @@ export function RoleSelect({
   disabled?: boolean
 }) {
   return (
-    <form action={changeMemberRoleAction}>
-      <input type="hidden" name="membershipId" value={membershipId} />
+    // Apres l'action, React reinitialise le formulaire : si le serveur refuse
+    // le changement, le selecteur revient au role reel (message affiche).
+    <ActionForm action={changeMemberRoleAction} hidden={{ membershipId }}>
       <label className="sr-only" htmlFor={`role-${membershipId}`}>
         Rôle du membre
       </label>
@@ -135,7 +156,7 @@ export function RoleSelect({
         <option value="MEMBER">Étudiant</option>
         <option value="ADMIN">Délégué</option>
       </Select>
-    </form>
+    </ActionForm>
   )
 }
 
@@ -150,7 +171,7 @@ export function RemoveMemberButton({
     <ConfirmForm
       action={removeMemberAction}
       hidden={{ membershipId }}
-      message={`Retirer ${name} de la classe ? Son compte est conserve, mais il perd l acces aux donnees de la classe.`}
+      message={`Retirer ${name} de la classe ? Son compte est conservé, mais il perd l’accès aux données de la classe.`}
     >
       <Button type="submit" size="sm" variant="ghost">
         Retirer
@@ -195,10 +216,7 @@ function StudentIdForm({
   studentId: string | null
   onDone: () => void
 }) {
-  const [state, formAction] = useActionState(
-    updateMemberStudentIdAction,
-    emptyActionState,
-  )
+  const { state, formAction, value } = useFormAction(updateMemberStudentIdAction)
   useCloseOnSuccess(state.ok, onDone)
 
   return (
@@ -208,15 +226,15 @@ function StudentIdForm({
       ) : null}
       <input type="hidden" name="membershipId" value={membershipId} />
       <Field
-        label="Numero etudiant"
+        label="Numéro étudiant"
         htmlFor="studentId"
         error={state.fieldErrors?.studentId}
-        hint="Unique au sein de la classe. Laissez vide pour l effacer."
+        hint="Unique au sein de la classe. Laissez vide pour l’effacer."
       >
         <Input
           id="studentId"
           name="studentId"
-          defaultValue={studentId ?? ''}
+          defaultValue={value('studentId', studentId)}
           maxLength={40}
         />
       </Field>
@@ -227,17 +245,19 @@ function StudentIdForm({
   )
 }
 
-/** Affiche ou masque les membres retires de la classe. */
+/**
+ * Affiche ou masque les membres retires de la classe.
+ * Simple champ du formulaire de filtre qui l'entoure (un formulaire ne peut
+ * pas en contenir un autre) : la recherche en cours est conservee.
+ */
 export function ShowInactiveToggle({ checked }: { checked: boolean }) {
   return (
-    <form action="/admin/membres" className="flex items-center">
-      <Checkbox
-        name="inactifs"
-        value="1"
-        defaultChecked={checked}
-        onChange={(e) => e.currentTarget.form?.requestSubmit()}
-        label="Afficher les membres retires"
-      />
-    </form>
+    <Checkbox
+      name="inactifs"
+      value="1"
+      defaultChecked={checked}
+      onChange={(e) => e.currentTarget.form?.requestSubmit()}
+      label="Afficher les membres retirés"
+    />
   )
 }

@@ -7,7 +7,7 @@ import { EmptyState, StatTile } from '@/components/ui/feedback'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmForm, IconSubmit } from '@/components/ui/confirm-form'
 import { IconArchive } from '@/components/ui/icons'
-import { formatDate } from '@/lib/utils'
+import { formatCalendarDate } from '@/lib/utils'
 import { toggleYearArchiveAction } from '@/app/actions/admin'
 
 export const metadata: Metadata = { title: 'Archives' }
@@ -97,7 +97,7 @@ export default async function AdminArchivesPage() {
                         {year.isCurrent ? <Badge tone="success">Courante</Badge> : null}
                       </div>
                       <p className="mt-1 text-[12px] text-[var(--text-3)]">
-                        {formatDate(year.startsAt)} → {formatDate(year.endsAt)} ·{' '}
+                        {formatCalendarDate(year.startsAt)} → {formatCalendarDate(year.endsAt)} ·{' '}
                         {year.semesters.length} semestre(s) · {t.modules} module(s) ·{' '}
                         {t.resources} ressource(s) · {t.projects} projet(s)
                       </p>

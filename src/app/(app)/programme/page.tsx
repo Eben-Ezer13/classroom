@@ -13,7 +13,13 @@ import { EmptyState } from '@/components/ui/feedback'
 import { NoClassState } from '@/components/ui/no-class'
 import { ScheduleItem } from '@/components/features/schedule-item'
 import { IconCalendar } from '@/components/ui/icons'
-import { addDays, cn, formatDateShort, formatWeekday, startOfDay } from '@/lib/utils'
+import {
+  addDays,
+  cn,
+  formatCalendarDateShort,
+  formatCalendarWeekday,
+  todayDateOnly,
+} from '@/lib/utils'
 import { AddScheduleButton, ScheduleEntryActions } from './schedule-controls'
 
 export const metadata: Metadata = { title: 'Programme' }
@@ -51,7 +57,7 @@ export default async function ProgrammePage({
     ])
 
   const byDay = groupByDay(entries)
-  const today = startOfDay()
+  const today = todayDateOnly()
   const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i))
 
   const moduleOptions = modules.map((m) => ({ id: m.id, code: m.code, name: m.name }))
@@ -65,7 +71,7 @@ export default async function ProgrammePage({
     <>
       <PageHeader
         title="Programme"
-        description={`Semaine du ${formatDateShort(monday)} au ${formatDateShort(sunday)}`}
+        description={`Semaine du ${formatCalendarDateShort(monday)} au ${formatCalendarDateShort(sunday)}`}
         actions={
           canManage ? (
             <AddScheduleButton
@@ -141,7 +147,7 @@ export default async function ProgrammePage({
                       ) : null}
                     </span>
                   }
-                  description={formatWeekday(day)}
+                  description={formatCalendarWeekday(day)}
                 />
                 <CardBody className="space-y-2.5">
                   {dayEntries.map((entry) => (

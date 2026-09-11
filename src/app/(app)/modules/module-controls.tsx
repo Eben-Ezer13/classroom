@@ -1,13 +1,13 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { ConfirmForm, IconSubmit } from '@/components/ui/confirm-form'
 import { IconPencil, IconPlus, IconTrash } from '@/components/ui/icons'
 import { Field, Input, Select, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
-import { emptyActionState } from '@/lib/errors'
+import { useFormAction } from '@/components/ui/use-form-action'
 import { MODULE_COLORS } from '@/lib/constants'
 import {
   createModuleAction,
@@ -40,9 +40,8 @@ function ModuleForm({
   onDone?: () => void
 }) {
   const isEdit = Boolean(module)
-  const [state, formAction] = useActionState(
+  const { state, formAction, value } = useFormAction(
     isEdit ? updateModuleAction : createModuleAction,
-    emptyActionState,
   )
 
   useEffect(() => {
@@ -58,15 +57,23 @@ function ModuleForm({
 
       <div className="grid grid-cols-[110px_1fr] gap-3">
         <Field label="Code" htmlFor="code" error={state.fieldErrors?.code} required>
-          <Input id="code" name="code" defaultValue={module?.code ?? ''} required placeholder="CAO" />
+          <Input
+            id="code"
+            name="code"
+            defaultValue={value('code', module?.code)}
+            required
+            maxLength={20}
+            placeholder="CAO"
+          />
         </Field>
         <Field label="Intitulé" htmlFor="name" error={state.fieldErrors?.name} required>
           <Input
             id="name"
             name="name"
-            defaultValue={module?.name ?? ''}
+            defaultValue={value('name', module?.name)}
             required
-            placeholder="Conception assistee par ordinateur"
+            maxLength={120}
+            placeholder="Conception assistée par ordinateur"
           />
         </Field>
       </div>
@@ -75,7 +82,7 @@ function ModuleForm({
         <Select
           id="semesterId"
           name="semesterId"
-          defaultValue={module?.semesterId ?? defaultSemesterId ?? ''}
+          defaultValue={value('semesterId', module?.semesterId ?? defaultSemesterId)}
           required
         >
           <option value="" disabled>
@@ -94,7 +101,8 @@ function ModuleForm({
           id="description"
           name="description"
           rows={3}
-          defaultValue={module?.description ?? ''}
+          maxLength={1000}
+          defaultValue={value('description', module?.description)}
           placeholder="Objectifs et contenu du module."
         />
       </Field>
@@ -104,7 +112,8 @@ function ModuleForm({
           <Input
             id="teacherName"
             name="teacherName"
-            defaultValue={module?.teacherName ?? ''}
+            maxLength={120}
+            defaultValue={value('teacherName', module?.teacherName)}
             placeholder="M. Alaoui"
           />
         </Field>
@@ -113,24 +122,25 @@ function ModuleForm({
             id="teacherEmail"
             name="teacherEmail"
             type="email"
-            defaultValue={module?.teacherEmail ?? ''}
+            maxLength={180}
+            defaultValue={value('teacherEmail', module?.teacherEmail)}
           />
         </Field>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Credits" htmlFor="credits" error={state.fieldErrors?.credits}>
+        <Field label="Crédits" htmlFor="credits" error={state.fieldErrors?.credits}>
           <Input
             id="credits"
             name="credits"
             type="number"
             min={0}
             max={60}
-            defaultValue={module?.credits ?? ''}
+            defaultValue={value('credits', module?.credits)}
           />
         </Field>
         <Field label="Couleur" htmlFor="color" hint="Distingue le module dans le programme">
-          <Select id="color" name="color" defaultValue={module?.color ?? MODULE_COLORS[0]}>
+          <Select id="color" name="color" defaultValue={value('color', module?.color ?? MODULE_COLORS[0])}>
             {MODULE_COLORS.map((color, i) => (
               <option key={color} value={color}>
                 Couleur {i + 1}

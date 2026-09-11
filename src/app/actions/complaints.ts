@@ -6,7 +6,12 @@ import { requireClassAdmin, requireUser } from '@/lib/auth/guards'
 import { assertCanManageClass, requireClassId } from '@/lib/permissions'
 import { recordAudit } from '@/lib/audit'
 import { notifyClassStaff, notifyUser } from '@/lib/notifications'
-import { assertValidUpload, storeFile } from '@/lib/storage'
+import {
+  assertClassQuota,
+  discardStoredFiles,
+  receiveUploads,
+  trackClassStorage,
+} from '@/lib/storage'
 import { runAction, ForbiddenError, NotFoundError, type ActionState } from '@/lib/errors'
 import {
   complaintMessageSchema,
@@ -31,35 +36,46 @@ export async function createComplaintAction(
     const data = parsed.data
     const classGroupId = requireClassId(user, null)
 
-    const complaint = await prisma.complaint.create({
-      data: {
-        classGroupId,
-        authorId: user.id,
-        title: data.title,
-        category: data.category,
-        description: data.description,
-        priority: data.priority,
-      },
-      select: { id: true, title: true, priority: true },
+    // Pieces jointes facultatives, validees AVANT la creation : une piece
+    // refusee ne laisse pas derriere elle une reclamation incomplete.
+    const attachments = await receiveUploads(formData, {
+      field: 'attachments',
+      kind: 'complaint',
+      classGroupId,
+      userId: user.id,
     })
+    const totalSize = attachments.reduce((sum, file) => sum + file.fileSize, 0)
 
-    // Pieces jointes facultatives.
-    const files = formData.getAll('attachments').filter((f): f is File => f instanceof File)
-    for (const file of files) {
-      if (file.size === 0) continue
-      assertValidUpload(file)
-      const stored = await storeFile(file, `classes/${classGroupId}/complaints/${complaint.id}`)
-      await prisma.attachment.create({
+    let complaint
+    try {
+      if (totalSize > 0) await assertClassQuota(classGroupId, totalSize)
+      complaint = await prisma.complaint.create({
         data: {
-          complaintId: complaint.id,
-          fileName: stored.fileName,
-          filePath: stored.filePath,
-          fileSize: stored.fileSize,
-          mimeType: stored.mimeType,
-          uploadedById: user.id,
+          classGroupId,
+          authorId: user.id,
+          title: data.title,
+          category: data.category,
+          description: data.description,
+          priority: data.priority,
+          attachments: {
+            create: attachments.map((file) => ({
+              fileName: file.fileName,
+              filePath: file.filePath,
+              fileSize: file.fileSize,
+              mimeType: file.mimeType,
+              uploadedById: user.id,
+            })),
+          },
         },
+        select: { id: true, title: true, priority: true },
       })
+    } catch (error) {
+      await discardStoredFiles(attachments)
+      throw error
     }
+
+    // Les pieces jointes comptent dans le quota de la classe.
+    await trackClassStorage(classGroupId, totalSize)
 
     await recordAudit({
       actor: user,
@@ -68,7 +84,7 @@ export async function createComplaintAction(
       entityId: complaint.id,
       entityLabel: complaint.title,
       classGroupId,
-      summary: `${user.firstName} ${user.lastName} a signale une difficulte (${complaint.title}).`,
+      summary: `${user.firstName} ${user.lastName} a signalé une difficulté (${complaint.title}).`,
       metadata: { priority: complaint.priority },
     })
 
@@ -118,14 +134,18 @@ export async function addComplaintMessageAction(
     // On previent l'autre partie : l'auteur si un responsable repond,
     // les responsables si l'auteur relance.
     if (isStaff && complaint.authorId !== user.id) {
-      await notifyUser(complaint.authorId, {
-        type: 'RECLAMATION',
-        title: 'Réponse à votre réclamation',
-        body: truncate(parsed.data.body, 160),
-        url: `/reclamations/${complaint.id}`,
-        entityType: 'Complaint',
-        entityId: complaint.id,
-      })
+      await notifyUser(
+        complaint.authorId,
+        {
+          type: 'RECLAMATION',
+          title: 'Réponse à votre réclamation',
+          body: truncate(parsed.data.body, 160),
+          url: `/reclamations/${complaint.id}`,
+          entityType: 'Complaint',
+          entityId: complaint.id,
+        },
+        complaint.classGroupId,
+      )
     } else {
       await notifyClassStaff(
         complaint.classGroupId,
@@ -142,7 +162,7 @@ export async function addComplaintMessageAction(
     }
 
     revalidatePath(`/reclamations/${complaint.id}`)
-    return { ok: true, message: 'Message envoye.' }
+    return { ok: true, message: 'Message envoyé.' }
   })
 }
 
@@ -186,18 +206,22 @@ export async function updateComplaintStatusAction(
     })
 
     if (existing.authorId !== user.id) {
-      await notifyUser(existing.authorId, {
-        type: 'RECLAMATION',
-        title: `Réclamation ${COMPLAINT_STATUS_LABELS[status]}`,
-        body: existing.title,
-        url: `/reclamations/${existing.id}`,
-        entityType: 'Complaint',
-        entityId: existing.id,
-      })
+      await notifyUser(
+        existing.authorId,
+        {
+          type: 'RECLAMATION',
+          title: `Réclamation ${COMPLAINT_STATUS_LABELS[status]}`,
+          body: existing.title,
+          url: `/reclamations/${existing.id}`,
+          entityType: 'Complaint',
+          entityId: existing.id,
+        },
+        existing.classGroupId,
+      )
     }
 
     revalidatePath('/reclamations')
     revalidatePath(`/reclamations/${existing.id}`)
-    return { ok: true, message: `Statut mis a jour : ${COMPLAINT_STATUS_LABELS[status]}.` }
+    return { ok: true, message: `Statut mis à jour : ${COMPLAINT_STATUS_LABELS[status]}.` }
   })
 }

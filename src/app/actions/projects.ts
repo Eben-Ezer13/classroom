@@ -166,38 +166,41 @@ export async function updateProjectAction(
   })
 }
 
-export async function deleteProjectAction(formData: FormData): Promise<void> {
-  const { user } = await requireClassAdmin()
-  const projectId = String(formData.get('projectId') ?? '')
+export async function deleteProjectAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user } = await requireClassAdmin()
+    const projectId = String(formData.get('projectId') ?? '')
 
-  const existing = await prisma.project.findFirst({
-    where: { id: projectId, deletedAt: null },
-    select: { id: true, classGroupId: true, title: true },
+    const existing = await prisma.project.findFirst({
+      where: { id: projectId, deletedAt: null },
+      select: { id: true, classGroupId: true, title: true },
+    })
+    if (!existing) throw new NotFoundError('Projet introuvable.')
+    assertCanManageClass(user, existing.classGroupId)
+
+    await prisma.$transaction([
+      prisma.project.update({ where: { id: projectId }, data: { deletedAt: new Date() } }),
+      prisma.deadline.updateMany({
+        where: { projectId, deletedAt: null },
+        data: { deletedAt: new Date() },
+      }),
+    ])
+
+    await recordAudit({
+      actor: user,
+      action: 'PROJECT_DELETED',
+      entityType: 'Project',
+      entityId: existing.id,
+      entityLabel: existing.title,
+      classGroupId: existing.classGroupId,
+      summary: `${user.firstName} ${user.lastName} a supprimé le projet ${existing.title}.`,
+    })
+
+    revalidatePath('/projets')
+    revalidatePath('/echeances')
+    revalidatePath('/dashboard')
+    return { ok: true, message: 'Projet supprimé.' }
   })
-  if (!existing) throw new NotFoundError('Projet introuvable.')
-  assertCanManageClass(user, existing.classGroupId)
-
-  await prisma.$transaction([
-    prisma.project.update({ where: { id: projectId }, data: { deletedAt: new Date() } }),
-    prisma.deadline.updateMany({
-      where: { projectId, deletedAt: null },
-      data: { deletedAt: new Date() },
-    }),
-  ])
-
-  await recordAudit({
-    actor: user,
-    action: 'PROJECT_DELETED',
-    entityType: 'Project',
-    entityId: existing.id,
-    entityLabel: existing.title,
-    classGroupId: existing.classGroupId,
-    summary: `${user.firstName} ${user.lastName} a supprime le projet ${existing.title}.`,
-  })
-
-  revalidatePath('/projets')
-  revalidatePath('/echeances')
-  revalidatePath('/dashboard')
 }
 
 export async function addProjectLinkAction(
@@ -231,17 +234,20 @@ export async function addProjectLinkAction(
   })
 }
 
-export async function deleteProjectLinkAction(formData: FormData): Promise<void> {
-  const { user } = await requireClassAdmin()
-  const linkId = String(formData.get('linkId') ?? '')
+export async function deleteProjectLinkAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user } = await requireClassAdmin()
+    const linkId = String(formData.get('linkId') ?? '')
 
-  const link = await prisma.projectLink.findUnique({
-    where: { id: linkId },
-    select: { id: true, projectId: true, project: { select: { classGroupId: true } } },
+    const link = await prisma.projectLink.findUnique({
+      where: { id: linkId },
+      select: { id: true, projectId: true, project: { select: { classGroupId: true } } },
+    })
+    if (!link) throw new NotFoundError('Lien introuvable.')
+    assertCanManageClass(user, link.project.classGroupId)
+
+    await prisma.projectLink.delete({ where: { id: linkId } })
+    revalidatePath(`/projets/${link.projectId}`)
+    return { ok: true, message: 'Lien supprimé.' }
   })
-  if (!link) throw new NotFoundError('Lien introuvable.')
-  assertCanManageClass(user, link.project.classGroupId)
-
-  await prisma.projectLink.delete({ where: { id: linkId } })
-  revalidatePath(`/projets/${link.projectId}`)
 }

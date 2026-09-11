@@ -220,32 +220,35 @@ export async function updateAnnouncementAction(
   })
 }
 
-export async function deleteAnnouncementAction(formData: FormData): Promise<void> {
-  const { user } = await requireClassAdmin()
-  const announcementId = String(formData.get('announcementId') ?? '')
+export async function deleteAnnouncementAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user } = await requireClassAdmin()
+    const announcementId = String(formData.get('announcementId') ?? '')
 
-  const existing = await prisma.announcement.findFirst({
-    where: { id: announcementId, deletedAt: null },
-    select: { id: true, classGroupId: true, title: true },
+    const existing = await prisma.announcement.findFirst({
+      where: { id: announcementId, deletedAt: null },
+      select: { id: true, classGroupId: true, title: true },
+    })
+    if (!existing) throw new NotFoundError('Annonce introuvable.')
+    assertCanManageClass(user, existing.classGroupId)
+
+    await prisma.announcement.update({
+      where: { id: announcementId },
+      data: { deletedAt: new Date() },
+    })
+
+    await recordAudit({
+      actor: user,
+      action: 'ANNOUNCEMENT_DELETED',
+      entityType: 'Announcement',
+      entityId: existing.id,
+      entityLabel: existing.title,
+      classGroupId: existing.classGroupId,
+      summary: `${user.firstName} ${user.lastName} a supprimé l’annonce ${existing.title}.`,
+    })
+
+    revalidatePath('/annonces')
+    revalidatePath('/dashboard')
+    return { ok: true, message: 'Annonce supprimée.' }
   })
-  if (!existing) throw new NotFoundError('Annonce introuvable.')
-  assertCanManageClass(user, existing.classGroupId)
-
-  await prisma.announcement.update({
-    where: { id: announcementId },
-    data: { deletedAt: new Date() },
-  })
-
-  await recordAudit({
-    actor: user,
-    action: 'ANNOUNCEMENT_DELETED',
-    entityType: 'Announcement',
-    entityId: existing.id,
-    entityLabel: existing.title,
-    classGroupId: existing.classGroupId,
-    summary: `${user.firstName} ${user.lastName} a supprime l annonce ${existing.title}.`,
-  })
-
-  revalidatePath('/annonces')
-  revalidatePath('/dashboard')
 }

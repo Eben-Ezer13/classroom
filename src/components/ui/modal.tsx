@@ -14,6 +14,7 @@ export function Modal({
   triggerVariant = 'primary',
   triggerSize = 'md',
   triggerClassName,
+  triggerLabel,
   title,
   description,
   children,
@@ -24,6 +25,12 @@ export function Modal({
   triggerVariant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'subtle'
   triggerSize?: 'sm' | 'md' | 'lg' | 'icon'
   triggerClassName?: string
+  /**
+   * Nom accessible du bouton. Obligatoire en pratique pour un bouton-icone :
+   * sans lui, un lecteur d'ecran annonce seulement "bouton". Par defaut, le
+   * titre de la modale.
+   */
+  triggerLabel?: string
   title: string
   description?: string
   children: ReactNode | ((close: () => void) => ReactNode)
@@ -60,6 +67,9 @@ export function Modal({
       <button
         type="button"
         onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        aria-label={triggerSize === 'icon' ? (triggerLabel ?? title) : triggerLabel}
+        title={triggerSize === 'icon' ? (triggerLabel ?? title) : undefined}
         className={buttonClasses(triggerVariant, triggerSize, triggerClassName)}
       >
         {trigger}

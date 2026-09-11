@@ -10,7 +10,9 @@ import { emptyActionState } from '@/lib/errors'
 import { Field, Input } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
+import { useFormAction } from '@/components/ui/use-form-action'
 import { AVATAR_MAX_SIZE, AVATAR_MIME_TYPES } from '@/lib/constants'
+import { formatFileSize } from '@/lib/utils'
 
 export function ProfileForm({
   defaults,
@@ -22,7 +24,7 @@ export function ProfileForm({
     studentId: string | null
   }
 }) {
-  const [state, formAction] = useActionState(updateProfileAction, emptyActionState)
+  const { state, formAction, value } = useFormAction(updateProfileAction)
 
   return (
     <form action={formAction} className="space-y-4">
@@ -35,8 +37,9 @@ export function ProfileForm({
           <Input
             id="firstName"
             name="firstName"
-            defaultValue={defaults.firstName}
+            defaultValue={value('firstName', defaults.firstName)}
             required
+            maxLength={60}
             autoComplete="given-name"
           />
         </Field>
@@ -44,8 +47,9 @@ export function ProfileForm({
           <Input
             id="lastName"
             name="lastName"
-            defaultValue={defaults.lastName}
+            defaultValue={value('lastName', defaults.lastName)}
             required
+            maxLength={60}
             autoComplete="family-name"
           />
         </Field>
@@ -57,14 +61,20 @@ export function ProfileForm({
           htmlFor="studentId"
           error={state.fieldErrors?.studentId}
         >
-          <Input id="studentId" name="studentId" defaultValue={defaults.studentId ?? ''} />
+          <Input
+            id="studentId"
+            name="studentId"
+            maxLength={40}
+            defaultValue={value('studentId', defaults.studentId)}
+          />
         </Field>
-        <Field label="Telephone" htmlFor="phone" error={state.fieldErrors?.phone}>
+        <Field label="Téléphone" htmlFor="phone" error={state.fieldErrors?.phone}>
           <Input
             id="phone"
             name="phone"
             type="tel"
-            defaultValue={defaults.phone ?? ''}
+            maxLength={30}
+            defaultValue={value('phone', defaults.phone)}
             autoComplete="tel"
           />
         </Field>
@@ -89,7 +99,7 @@ export function AvatarForm() {
       <Field
         label="Nouvelle photo"
         htmlFor="avatar"
-        hint={`${AVATAR_MAX_SIZE / 1024 / 1024} Mo maximum · PNG, JPEG ou WEBP`}
+        hint={`${formatFileSize(AVATAR_MAX_SIZE)} maximum · PNG, JPEG ou WEBP`}
       >
         <input
           id="avatar"
@@ -164,7 +174,7 @@ export function PasswordForm() {
       </Field>
 
       <p className="text-[12.5px] text-[var(--text-3)]">
-        Toutes vos sessions seront fermees : vous devrez vous reconnecter.
+        Toutes vos sessions seront fermées : vous devrez vous reconnecter.
       </p>
 
       <div className="flex justify-end">

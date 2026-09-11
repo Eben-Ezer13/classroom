@@ -1,16 +1,15 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { createResourceAction, updateResourceAction } from '@/app/actions/resources'
-import { emptyActionState } from '@/lib/errors'
+import type { ActionState } from '@/lib/errors'
 import { Field, Input, Select, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
-import {
-  ALLOWED_EXTENSIONS,
-  MAX_FILE_SIZE,
-  RESOURCE_KIND_LABELS,
-} from '@/lib/constants'
+import { uploadPendingLabel, useDirectUploads } from '@/components/features/direct-upload'
+import { useFormAction } from '@/components/ui/use-form-action'
+import { ALLOWED_EXTENSIONS, MAX_FILE_SIZE, RESOURCE_KIND_LABELS } from '@/lib/constants'
+import { formatFileSize } from '@/lib/utils'
 import type { ModuleOption, SemesterOption } from '../programme/schedule-form'
 
 export type ResourceFormValues = {
@@ -26,6 +25,8 @@ export function ResourceForm({
   semesters,
   defaultSemesterId,
   defaultModuleId,
+  classGroupId,
+  projectId,
   resource,
   onDone,
 }: {
@@ -33,13 +34,25 @@ export function ResourceForm({
   semesters: SemesterOption[]
   defaultSemesterId: string | null
   defaultModuleId?: string
+  /** Classe de rattachement quand elle differe de la classe active. */
+  classGroupId?: string
+  /** Projet auquel rattacher le document (page projet). */
+  projectId?: string
   resource?: ResourceFormValues
   onDone?: () => void
 }) {
   const isEdit = Boolean(resource)
-  const [state, formAction] = useActionState(
-    isEdit ? updateResourceAction : createResourceAction,
-    emptyActionState,
+  const { prepare, progress } = useDirectUploads()
+
+  const { state, formAction, value } = useFormAction(
+    async (previous: ActionState, formData: FormData): Promise<ActionState> => {
+      if (isEdit) return updateResourceAction(previous, formData)
+      // Le fichier part d'abord vers le stockage ; la Server Action ne
+      // recoit que sa reference, qu'elle revalide.
+      const problem = await prepare(formData, { field: 'file', kind: 'resource', classGroupId })
+      if (problem) return { ok: false, message: problem }
+      return createResourceAction(previous, formData)
+    },
   )
 
   useEffect(() => {
@@ -49,6 +62,10 @@ export function ResourceForm({
   return (
     <form action={formAction} className="space-y-4">
       {resource ? <input type="hidden" name="id" value={resource.id} /> : null}
+      {!isEdit && classGroupId ? (
+        <input type="hidden" name="classGroupId" value={classGroupId} />
+      ) : null}
+      {!isEdit && projectId ? <input type="hidden" name="projectId" value={projectId} /> : null}
       {state.message ? (
         <Alert tone={state.ok ? 'success' : 'danger'}>{state.message}</Alert>
       ) : null}
@@ -57,8 +74,9 @@ export function ResourceForm({
         <Input
           id="title"
           name="title"
-          defaultValue={resource?.title ?? ''}
+          defaultValue={value('title', resource?.title)}
           required
+          maxLength={160}
           placeholder="Chapitre 3 — Asservissements"
         />
       </Field>
@@ -68,16 +86,22 @@ export function ResourceForm({
           id="description"
           name="description"
           rows={3}
-          defaultValue={resource?.description ?? ''}
-          placeholder="Support de cours complet, avec exercices corriges."
+          maxLength={1000}
+          defaultValue={value('description', resource?.description)}
+          placeholder="Support de cours complet, avec exercices corrigés."
         />
       </Field>
 
       <div className="grid sm:grid-cols-2 gap-3">
         <Field label="Type" htmlFor="kind" error={state.fieldErrors?.kind} required>
-          <Select id="kind" name="kind" defaultValue={resource?.kind ?? 'COURS'} required>
-            {Object.entries(RESOURCE_KIND_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
+          <Select
+            id="kind"
+            name="kind"
+            defaultValue={value('kind', resource?.kind ?? 'COURS')}
+            required
+          >
+            {Object.entries(RESOURCE_KIND_LABELS).map(([kind, label]) => (
+              <option key={kind} value={kind}>
                 {label}
               </option>
             ))}
@@ -88,7 +112,7 @@ export function ResourceForm({
           <Select
             id="moduleId"
             name="moduleId"
-            defaultValue={resource?.moduleId ?? defaultModuleId ?? ''}
+            defaultValue={value('moduleId', resource?.moduleId ?? defaultModuleId)}
           >
             <option value="">Aucun module</option>
             {modules.map((m) => (
@@ -111,7 +135,7 @@ export function ResourceForm({
             <Select
               id="semesterId"
               name="semesterId"
-              defaultValue={defaultSemesterId ?? ''}
+              defaultValue={value('semesterId', defaultSemesterId)}
               required
             >
               <option value="" disabled>
@@ -128,7 +152,7 @@ export function ResourceForm({
           <Field
             label="Fichier"
             htmlFor="file"
-            hint={`${MAX_FILE_SIZE / 1024 / 1024} Mo maximum · ${ALLOWED_EXTENSIONS.join(', ')}`}
+            hint={`${formatFileSize(MAX_FILE_SIZE)} maximum · ${ALLOWED_EXTENSIONS.join(', ')}`}
             required
           >
             <input
@@ -149,7 +173,9 @@ export function ResourceForm({
       )}
 
       <div className="flex justify-end pt-1">
-        <SubmitButton pendingLabel={isEdit ? 'Enregistrement...' : 'Dépôt en cours...'}>
+        <SubmitButton
+          pendingLabel={isEdit ? 'Enregistrement...' : uploadPendingLabel(progress, 'Dépôt en cours...')}
+        >
           {isEdit ? 'Enregistrer' : 'Déposer la ressource'}
         </SubmitButton>
       </div>

@@ -150,63 +150,70 @@ export async function voteAction(
   })
 }
 
-export async function closePollAction(formData: FormData): Promise<void> {
-  const { user } = await requireClassAdmin()
-  const pollId = String(formData.get('pollId') ?? '')
+export async function closePollAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user } = await requireClassAdmin()
+    const pollId = String(formData.get('pollId') ?? '')
 
-  const poll = await prisma.poll.findFirst({
-    where: { id: pollId, deletedAt: null },
-    select: { id: true, classGroupId: true, title: true, closedAt: true },
+    const poll = await prisma.poll.findFirst({
+      where: { id: pollId, deletedAt: null },
+      select: { id: true, classGroupId: true, title: true, closedAt: true },
+    })
+    if (!poll) throw new NotFoundError('Sondage introuvable.')
+    assertCanManageClass(user, poll.classGroupId)
+
+    await prisma.poll.update({
+      where: { id: pollId },
+      data: { closedAt: poll.closedAt ? null : new Date() },
+    })
+
+    await recordAudit({
+      actor: user,
+      action: poll.closedAt ? 'POLL_REOPENED' : 'POLL_CLOSED',
+      entityType: 'Poll',
+      entityId: poll.id,
+      entityLabel: poll.title,
+      classGroupId: poll.classGroupId,
+      summary: `${user.firstName} ${user.lastName} a ${
+        poll.closedAt ? 'rouvert' : 'clos'
+      } le sondage ${poll.title}.`,
+    })
+
+    revalidatePath('/sondages')
+    revalidatePath('/dashboard')
+    return { ok: true, message: poll.closedAt ? 'Sondage rouvert.' : 'Sondage clos.' }
   })
-  if (!poll) throw new NotFoundError('Sondage introuvable.')
-  assertCanManageClass(user, poll.classGroupId)
-
-  await prisma.poll.update({
-    where: { id: pollId },
-    data: { closedAt: poll.closedAt ? null : new Date() },
-  })
-
-  await recordAudit({
-    actor: user,
-    action: poll.closedAt ? 'POLL_REOPENED' : 'POLL_CLOSED',
-    entityType: 'Poll',
-    entityId: poll.id,
-    entityLabel: poll.title,
-    classGroupId: poll.classGroupId,
-    summary: `${user.firstName} ${user.lastName} a ${
-      poll.closedAt ? 'rouvert' : 'clos'
-    } le sondage ${poll.title}.`,
-  })
-
-  revalidatePath('/sondages')
 }
 
-export async function deletePollAction(formData: FormData): Promise<void> {
-  const { user } = await requireClassAdmin()
-  const pollId = String(formData.get('pollId') ?? '')
+export async function deletePollAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user } = await requireClassAdmin()
+    const pollId = String(formData.get('pollId') ?? '')
 
-  const poll = await prisma.poll.findFirst({
-    where: { id: pollId, deletedAt: null },
-    select: { id: true, classGroupId: true, title: true },
+    const poll = await prisma.poll.findFirst({
+      where: { id: pollId, deletedAt: null },
+      select: { id: true, classGroupId: true, title: true },
+    })
+    if (!poll) throw new NotFoundError('Sondage introuvable.')
+    assertCanManageClass(user, poll.classGroupId)
+
+    await prisma.poll.update({
+      where: { id: pollId },
+      data: { deletedAt: new Date() },
+    })
+
+    await recordAudit({
+      actor: user,
+      action: 'POLL_DELETED',
+      entityType: 'Poll',
+      entityId: poll.id,
+      entityLabel: poll.title,
+      classGroupId: poll.classGroupId,
+      summary: `${user.firstName} ${user.lastName} a supprimé le sondage ${poll.title}.`,
+    })
+
+    revalidatePath('/sondages')
+    revalidatePath('/dashboard')
+    return { ok: true, message: 'Sondage supprimé.' }
   })
-  if (!poll) throw new NotFoundError('Sondage introuvable.')
-  assertCanManageClass(user, poll.classGroupId)
-
-  await prisma.poll.update({
-    where: { id: pollId },
-    data: { deletedAt: new Date() },
-  })
-
-  await recordAudit({
-    actor: user,
-    action: 'POLL_DELETED',
-    entityType: 'Poll',
-    entityId: poll.id,
-    entityLabel: poll.title,
-    classGroupId: poll.classGroupId,
-    summary: `${user.firstName} ${user.lastName} a supprime le sondage ${poll.title}.`,
-  })
-
-  revalidatePath('/sondages')
-  revalidatePath('/dashboard')
 }

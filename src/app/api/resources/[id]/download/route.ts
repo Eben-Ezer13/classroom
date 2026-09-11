@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth/session'
 import { canViewClass } from '@/lib/permissions'
-import { readFile } from '@/lib/storage'
+import { streamStoredFile } from '@/lib/storage/response'
+
+/** Un gros fichier sur une connexion lente : on laisse le temps au flux. */
+export const maxDuration = 300
 
 /**
  * Telechargement d'une ressource.
@@ -34,7 +37,6 @@ export async function GET(
       fileName: true,
       filePath: true,
       mimeType: true,
-      fileSize: true,
     },
   })
 
@@ -42,42 +44,26 @@ export async function GET(
     return NextResponse.json({ error: 'Ressource introuvable.' }, { status: 404 })
   }
 
-  let data: Buffer
-  try {
-    data = await readFile(resource.filePath)
-  } catch (error) {
-    console.error('[download] fichier illisible', resource.id, error)
-    return NextResponse.json(
-      { error: 'Fichier indisponible dans le stockage.' },
-      { status: 502 },
-    )
-  }
+  const response = await streamStoredFile(resource, {
+    disposition: 'attachment',
+    logLabel: 'download',
+  })
 
   // Compteur et historique : utilises par les statistiques. Un echec ici
   // ne doit pas empecher le telechargement.
-  prisma
-    .$transaction([
-      prisma.resource.update({
-        where: { id: resource.id },
-        data: { downloadCount: { increment: 1 } },
-      }),
-      prisma.download.create({
-        data: { resourceId: resource.id, userId: user.id },
-      }),
-    ])
-    .catch((error) => console.error('[download] compteur non mis a jour', error))
+  if (response.ok) {
+    prisma
+      .$transaction([
+        prisma.resource.update({
+          where: { id: resource.id },
+          data: { downloadCount: { increment: 1 } },
+        }),
+        prisma.download.create({
+          data: { resourceId: resource.id, userId: user.id },
+        }),
+      ])
+      .catch((error) => console.error('[download] compteur non mis à jour', error))
+  }
 
-  const asciiName = resource.fileName.replace(/[^\x20-\x7e]/g, '_')
-
-  return new NextResponse(new Uint8Array(data), {
-    headers: {
-      'Content-Type': resource.mimeType || 'application/octet-stream',
-      'Content-Length': String(data.byteLength),
-      'Content-Disposition': `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(resource.fileName)}`,
-      // Un fichier academique ne doit pas etre mis en cache par un proxy
-      // partage : il est servi sous condition de permission.
-      'Cache-Control': 'private, no-store',
-      'X-Content-Type-Options': 'nosniff',
-    },
-  })
+  return response
 }

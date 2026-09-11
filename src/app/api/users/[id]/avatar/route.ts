@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth/session'
-import { readFile } from '@/lib/storage'
+import { streamStoredFile } from '@/lib/storage/response'
+import { AVATAR_RULE, checkFile } from '@/lib/uploads'
 
 /**
  * Photo de profil.
@@ -44,26 +45,13 @@ export async function GET(
     return NextResponse.json({ error: 'Introuvable.' }, { status: 404 })
   }
 
-  // Le type MIME est deduit de l extension conservee a l upload : seuls
-  // PNG, JPEG et WEBP sont acceptes par assertValidAvatar.
-  const lower = target.avatarUrl.toLowerCase()
-  const contentType = lower.endsWith('.png')
-    ? 'image/png'
-    : lower.endsWith('.webp')
-      ? 'image/webp'
-      : 'image/jpeg'
+  // Le type MIME est deduit de l'extension conservee a l'upload : seuls
+  // PNG, JPEG et WEBP sont acceptes pour une photo.
+  const check = checkFile({ name: target.avatarUrl, size: 1 }, AVATAR_RULE)
+  const mimeType = check.ok ? check.mimeType : 'image/jpeg'
 
-  try {
-    const data = await readFile(target.avatarUrl)
-    return new NextResponse(new Uint8Array(data), {
-      headers: {
-        'Content-Type': contentType,
-        'Content-Length': String(data.byteLength),
-        'Cache-Control': 'private, max-age=300',
-        'X-Content-Type-Options': 'nosniff',
-      },
-    })
-  } catch {
-    return NextResponse.json({ error: 'Introuvable.' }, { status: 404 })
-  }
+  return streamStoredFile(
+    { filePath: target.avatarUrl, fileName: 'avatar', mimeType },
+    { disposition: 'inline', cacheControl: 'private, max-age=300', logLabel: 'avatar' },
+  )
 }

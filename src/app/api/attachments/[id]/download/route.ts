@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth/session'
 import { canManageClass } from '@/lib/permissions'
-import { readFile } from '@/lib/storage'
+import { streamStoredFile } from '@/lib/storage/response'
+
+export const maxDuration = 300
 
 /**
  * Piece jointe d'une reclamation.
@@ -43,22 +45,5 @@ export async function GET(
     return NextResponse.json({ error: 'Fichier introuvable.' }, { status: 404 })
   }
 
-  let data: Buffer
-  try {
-    data = await readFile(attachment.filePath)
-  } catch {
-    return NextResponse.json({ error: 'Fichier indisponible.' }, { status: 502 })
-  }
-
-  const asciiName = attachment.fileName.replace(/[^\x20-\x7e]/g, '_')
-
-  return new NextResponse(new Uint8Array(data), {
-    headers: {
-      'Content-Type': attachment.mimeType || 'application/octet-stream',
-      'Content-Length': String(data.byteLength),
-      'Content-Disposition': `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(attachment.fileName)}`,
-      'Cache-Control': 'private, no-store',
-      'X-Content-Type-Options': 'nosniff',
-    },
-  })
+  return streamStoredFile(attachment, { disposition: 'attachment', logLabel: 'attachment' })
 }

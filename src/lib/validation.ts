@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { parseDateInput } from '@/lib/utils'
 
 /**
  * Schemas de validation appliques a TOUTES les entrees serveur.
@@ -31,21 +32,23 @@ const optionalId = z
   .optional()
   .transform((v) => (v === '' || v === undefined ? undefined : v))
 
+// Les heures saisies (datetime-local) sont lues dans le fuseau de reference
+// de la plateforme, jamais dans celui du serveur : voir parseDateInput.
 const dateField = (label: string) =>
   z
     .string()
     .trim()
     .min(1, `${label} est obligatoire.`)
-    .refine((v) => !Number.isNaN(Date.parse(v)), `${label} est invalide.`)
-    .transform((v) => new Date(v))
+    .refine((v) => !Number.isNaN(parseDateInput(v).getTime()), `${label} est invalide.`)
+    .transform((v) => parseDateInput(v))
 
 const optionalDateField = z
   .string()
   .trim()
   .optional()
   .transform((v) => (v === '' || v === undefined ? undefined : v))
-  .refine((v) => v === undefined || !Number.isNaN(Date.parse(v)), 'Date invalide.')
-  .transform((v) => (v === undefined ? undefined : new Date(v)))
+  .refine((v) => v === undefined || !Number.isNaN(parseDateInput(v).getTime()), 'Date invalide.')
+  .transform((v) => (v === undefined ? undefined : parseDateInput(v)))
 
 const timeField = (label: string) =>
   z
@@ -380,20 +383,33 @@ export const projectSchema = z
 
 export const projectLinkSchema = z.object({
   projectId: z.string().min(1),
-  label: trimmed(1, 80, 'Libelle'),
-  url: z.string().trim().url('URL invalide.').max(500),
+  label: trimmed(1, 80, 'Libellé'),
+  // http(s) uniquement : un lien "javascript:" ou "data:" affiche aux
+  // etudiants serait un vecteur d'attaque.
+  url: z
+    .string()
+    .trim()
+    .url('URL invalide.')
+    .max(500)
+    .refine((v) => /^https?:\/\//i.test(v), 'Le lien doit commencer par http:// ou https://.'),
 })
 
-export const deadlineSchema = z.object({
-  classGroupId: optionalId,
-  moduleId: optionalId,
-  projectId: optionalId,
-  title: trimmed(3, 160, 'Titre'),
-  description: optionalText(1000),
-  category: z.enum(['EXAMEN', 'DEVOIR', 'PROJET', 'PRESENTATION', 'RAPPORT', 'AUTRE']),
-  dueAt: dateField('Date limite'),
-  reminderAt: optionalDateField,
-})
+export const deadlineSchema = z
+  .object({
+    classGroupId: optionalId,
+    moduleId: optionalId,
+    projectId: optionalId,
+    title: trimmed(3, 160, 'Titre'),
+    description: optionalText(1000),
+    category: z.enum(['EXAMEN', 'DEVOIR', 'PROJET', 'PRESENTATION', 'RAPPORT', 'AUTRE']),
+    dueAt: dateField('Date limite'),
+    reminderAt: optionalDateField,
+  })
+  // Un rappel posterieur a l'echeance ne partirait jamais.
+  .refine((d) => !d.reminderAt || d.reminderAt < d.dueAt, {
+    message: 'Le rappel doit précéder la date limite.',
+    path: ['reminderAt'],
+  })
 
 // ---------------------------------------------------------------------------
 // Sondages

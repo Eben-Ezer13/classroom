@@ -1,57 +1,107 @@
 import 'server-only'
-import { del, put as blobPut } from '@vercel/blob'
+import {
+  BlobAccessError,
+  BlobNotFoundError,
+  BlobStoreNotFoundError,
+  del,
+  get,
+  head,
+  put as blobPut,
+} from '@vercel/blob'
 import { env } from '@/lib/env'
 import { AppError } from '@/lib/errors'
 
 /**
  * Driver Vercel Blob (production).
  *
- * Vercel Blob n'expose que des URL publiques : la confidentialite repose
- * donc sur trois garde-fous cumules.
- *   1. la cle contient un suffixe aleatoire (addRandomSuffix) : l'URL n'est
- *      pas devinable a partir du nom du fichier ni de l'identifiant de la
- *      classe ;
- *   2. l'URL n'est jamais transmise au navigateur : elle reste en base dans
- *      `filePath` et n'apparait dans aucune reponse ni dans aucun HTML ;
- *   3. le telechargement passe par une route applicative qui verifie
- *      l'appartenance a la classe avant de relayer le contenu.
+ * Deux modes de store, fixes a sa creation :
+ *   - "private" (recommande) : toute lecture exige le jeton du serveur. Une
+ *     URL qui fuiterait ne donne acces a rien ;
+ *   - "public" : l'URL suffit a lire le fichier. La confidentialite repose
+ *     alors sur le suffixe aleatoire de la cle et sur le fait que l'URL
+ *     n'est jamais affichee.
+ *
+ * Dans les deux cas, le telechargement passe par une route applicative qui
+ * verifie l'appartenance a la classe avant de relayer le contenu en flux.
+ * Le mode de lecture est deduit de l'URL : un store peut ainsi changer de
+ * mode sans rendre illisibles les fichiers deja enregistres.
  */
 
-export async function put(
-  key: string,
-  data: Buffer,
-  contentType: string,
-): Promise<string> {
+const BLOB_HOST = /\.blob\.vercel-storage\.com$/
+
+function accessOf(url: string): 'public' | 'private' {
+  return new URL(url).hostname.includes('.private.') ? 'private' : 'public'
+}
+
+/** URL de Vercel Blob bien formee : refuse tout autre hote (anti-SSRF). */
+export function isBlobUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' && BLOB_HOST.test(url.hostname)
+  } catch {
+    return false
+  }
+}
+
+export async function put(key: string, data: Buffer, contentType: string): Promise<string> {
   const result = await blobPut(key, data, {
-    access: 'public',
+    access: env.blobAccess,
     contentType,
     token: env.blobToken,
-    // Rend l'URL non devinable meme si l'on connait la classe et le nom
-    // du fichier.
+    // Rend l'URL non devinable meme si l'on connait la classe et le nom.
     addRandomSuffix: true,
   })
   return result.url
 }
 
-export async function read(filePath: string): Promise<Buffer> {
-  const response = await fetch(filePath, { cache: 'no-store' })
-  if (!response.ok) {
-    throw new AppError('Fichier introuvable dans le stockage.', 404)
-  }
-  return Buffer.from(await response.arrayBuffer())
+export type BlobMetadata = {
+  url: string
+  pathname: string
+  size: number
+  contentType: string
 }
 
 /**
- * Flux de lecture relaye tel quel.
- * Evite de charger un fichier de 25 Mo en memoire dans la fonction
- * serverless : la reponse est diffusee au navigateur au fil de l'eau.
+ * Metadonnees reelles d'un fichier envoye directement par le navigateur.
+ * Taille et type viennent du stockage, jamais du formulaire. Renvoie null si
+ * le fichier n'existe pas dans NOTRE store.
+ */
+export async function inspect(url: string): Promise<BlobMetadata | null> {
+  if (!isBlobUrl(url)) return null
+  try {
+    const meta = await head(url, { token: env.blobToken })
+    return {
+      url: meta.url,
+      pathname: meta.pathname,
+      size: meta.size,
+      contentType: meta.contentType.split(';')[0].trim().toLowerCase(),
+    }
+  } catch (error) {
+    if (
+      error instanceof BlobNotFoundError ||
+      error instanceof BlobAccessError ||
+      error instanceof BlobStoreNotFoundError
+    ) {
+      return null
+    }
+    throw error
+  }
+}
+
+/**
+ * Flux de lecture relaye tel quel : un fichier de 100 Mo n'est jamais charge
+ * en memoire, et une reponse diffusee en flux echappe a la limite de 4,5 Mo
+ * des reponses de fonctions Vercel.
  */
 export async function stream(filePath: string): Promise<ReadableStream<Uint8Array>> {
-  const response = await fetch(filePath, { cache: 'no-store' })
-  if (!response.ok || !response.body) {
+  if (!isBlobUrl(filePath)) {
     throw new AppError('Fichier introuvable dans le stockage.', 404)
   }
-  return response.body
+  const result = await get(filePath, { access: accessOf(filePath), token: env.blobToken })
+  if (!result || result.statusCode !== 200) {
+    throw new AppError('Fichier introuvable dans le stockage.', 404)
+  }
+  return result.stream
 }
 
 export async function remove(filePath: string): Promise<void> {

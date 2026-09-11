@@ -1,19 +1,23 @@
 'use client'
 
 import { useActionState, useEffect } from 'react'
+import { useFormAction } from '@/components/ui/use-form-action'
 import { Modal } from '@/components/ui/modal'
 import { IconPlus } from '@/components/ui/icons'
 import { Field, Input, Select, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
-import { emptyActionState } from '@/lib/errors'
+import { uploadPendingLabel, useDirectUploads } from '@/components/features/direct-upload'
+import { emptyActionState, type ActionState } from '@/lib/errors'
 import {
   ALLOWED_EXTENSIONS,
+  COMPLAINT_ATTACHMENT_MAX_SIZE,
   COMPLAINT_CATEGORY_LABELS,
+  COMPLAINT_MAX_ATTACHMENTS,
   COMPLAINT_PRIORITY_LABELS,
   COMPLAINT_STATUS_LABELS,
-  MAX_FILE_SIZE,
 } from '@/lib/constants'
+import { formatFileSize } from '@/lib/utils'
 import {
   addComplaintMessageAction,
   createComplaintAction,
@@ -21,7 +25,14 @@ import {
 } from '@/app/actions/complaints'
 
 function ComplaintForm({ onDone }: { onDone?: () => void }) {
-  const [state, formAction] = useActionState(createComplaintAction, emptyActionState)
+  const { prepare, progress } = useDirectUploads()
+  const { state, formAction, value } = useFormAction(
+    async (previous: ActionState, formData: FormData): Promise<ActionState> => {
+      const problem = await prepare(formData, { field: 'attachments', kind: 'complaint' })
+      if (problem) return { ok: false, message: problem }
+      return createComplaintAction(previous, formData)
+    },
+  )
 
   useEffect(() => {
     if (state.ok && onDone) onDone()
@@ -38,13 +49,15 @@ function ComplaintForm({ onDone }: { onDone?: () => void }) {
           id="title"
           name="title"
           required
+          maxLength={160}
+          defaultValue={value('title')}
           placeholder="Salle de TP indisponible le mardi"
         />
       </Field>
 
       <div className="grid sm:grid-cols-2 gap-3">
         <Field label="Catégorie" htmlFor="category" error={state.fieldErrors?.category} required>
-          <Select id="category" name="category" defaultValue="AUTRE" required>
+          <Select id="category" name="category" defaultValue={value('category', 'AUTRE')} required>
             {Object.entries(COMPLAINT_CATEGORY_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -54,7 +67,7 @@ function ComplaintForm({ onDone }: { onDone?: () => void }) {
         </Field>
 
         <Field label="Priorité" htmlFor="priority" error={state.fieldErrors?.priority} required>
-          <Select id="priority" name="priority" defaultValue="NORMALE" required>
+          <Select id="priority" name="priority" defaultValue={value('priority', 'NORMALE')} required>
             {Object.entries(COMPLAINT_PRIORITY_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -71,13 +84,20 @@ function ComplaintForm({ onDone }: { onDone?: () => void }) {
         hint="Décrivez précisément la difficulté rencontrée."
         required
       >
-        <Textarea id="description" name="description" rows={5} required />
+        <Textarea
+          id="description"
+          name="description"
+          rows={5}
+          maxLength={5000}
+          defaultValue={value('description')}
+          required
+        />
       </Field>
 
       <Field
         label="Pièces jointes"
         htmlFor="attachments"
-        hint={`Facultatif · ${MAX_FILE_SIZE / 1024 / 1024} Mo maximum par fichier`}
+        hint={`Facultatif · ${COMPLAINT_MAX_ATTACHMENTS} fichiers au plus, ${formatFileSize(COMPLAINT_ATTACHMENT_MAX_SIZE)} maximum chacun`}
       >
         <input
           id="attachments"
@@ -90,7 +110,9 @@ function ComplaintForm({ onDone }: { onDone?: () => void }) {
       </Field>
 
       <div className="flex justify-end pt-1">
-        <SubmitButton pendingLabel="Envoi...">Envoyer la réclamation</SubmitButton>
+        <SubmitButton pendingLabel={uploadPendingLabel(progress, 'Envoi...')}>
+          Envoyer la réclamation
+        </SubmitButton>
       </div>
     </form>
   )
@@ -103,11 +125,11 @@ export function AddComplaintButton({ autoOpen }: { autoOpen?: boolean }) {
       trigger={
         <>
           <IconPlus className="size-4" />
-          Signaler une difficulte
+          Signaler une difficulté
         </>
       }
       triggerSize="sm"
-      title="Signaler une difficulte"
+      title="Signaler une difficulté"
       description="Seuls vous et les responsables de votre classe verrez cette réclamation."
       width="lg"
     >
@@ -117,7 +139,7 @@ export function AddComplaintButton({ autoOpen }: { autoOpen?: boolean }) {
 }
 
 export function ComplaintMessageForm({ complaintId }: { complaintId: string }) {
-  const [state, formAction] = useActionState(addComplaintMessageAction, emptyActionState)
+  const { state, formAction, value } = useFormAction(addComplaintMessageAction)
 
   return (
     <form action={formAction} className="space-y-3" key={state.ok ? 'sent' : 'draft'}>
@@ -130,6 +152,8 @@ export function ComplaintMessageForm({ complaintId }: { complaintId: string }) {
           name="body"
           rows={3}
           required
+          maxLength={3000}
+          defaultValue={value('body')}
           placeholder="Ajouter une précision ou une réponse..."
         />
       </Field>
@@ -170,7 +194,7 @@ export function ComplaintStatusForm({
       </Field>
 
       <SubmitButton size="sm" variant="secondary" className="w-full" pendingLabel="...">
-        Mettre a jour le statut
+        Mettre à jour le statut
       </SubmitButton>
     </form>
   )

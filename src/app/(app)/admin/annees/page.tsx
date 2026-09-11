@@ -7,7 +7,7 @@ import { EmptyState } from '@/components/ui/feedback'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmForm, IconSubmit } from '@/components/ui/confirm-form'
 import { IconArchive, IconCheck, IconLayers } from '@/components/ui/icons'
-import { formatDate } from '@/lib/utils'
+import { formatCalendarDate } from '@/lib/utils'
 import {
   setCurrentSemesterAction,
   setCurrentYearAction,
@@ -61,7 +61,7 @@ export default async function AdminYearsPage() {
                     {year.isArchived ? <Badge tone="warning">Archivee</Badge> : null}
                   </span>
                 }
-                description={`${formatDate(year.startsAt)} → ${formatDate(year.endsAt)}`}
+                description={`${formatCalendarDate(year.startsAt)} → ${formatCalendarDate(year.endsAt)}`}
                 action={
                   <div className="flex items-center gap-0.5">
                     {!year.isCurrent && !year.isArchived ? (
@@ -114,7 +114,7 @@ export default async function AdminYearsPage() {
                             {semester.isArchived ? <Badge tone="warning">Archive</Badge> : null}
                           </div>
                           <p className="mt-1 text-[12px] text-[var(--text-3)]">
-                            {formatDate(semester.startsAt)} → {formatDate(semester.endsAt)}
+                            {formatCalendarDate(semester.startsAt)} → {formatCalendarDate(semester.endsAt)}
                           </p>
                           <p className="mt-1 text-[12px] text-[var(--text-3)]">
                             {semester._count.modules} module(s) ·{' '}

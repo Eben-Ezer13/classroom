@@ -1,18 +1,18 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState } from 'react'
 import { loginAction } from '@/app/actions/auth'
-import { emptyActionState } from '@/lib/errors'
 import { Field, Input } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
+import { useFormAction } from '@/components/ui/use-form-action'
 
-export function LoginForm({ notice }: { notice: string | null }) {
-  const [state, formAction] = useActionState(loginAction, emptyActionState)
+export function LoginForm({ notice, next }: { notice: string | null; next: string | null }) {
+  const { state, formAction, value } = useFormAction(loginAction)
 
   return (
     <form action={formAction} className="space-y-4">
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       {notice ? <Alert tone="success">{notice}</Alert> : null}
       {state.message && !state.ok ? <Alert tone="danger">{state.message}</Alert> : null}
 
@@ -22,6 +22,7 @@ export function LoginForm({ notice }: { notice: string | null }) {
           name="email"
           type="email"
           autoComplete="email"
+          defaultValue={value('email')}
           required
           placeholder="prenom.nom@ecole.fr"
         />

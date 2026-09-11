@@ -90,11 +90,15 @@ export async function updateDeadlineAction(
 
     const existing = await prisma.deadline.findFirst({
       where: { id: deadlineId, deletedAt: null },
-      select: { id: true, classGroupId: true, dueAt: true },
+      select: { id: true, classGroupId: true, dueAt: true, reminderAt: true },
     })
     if (!existing) throw new NotFoundError('Échéance introuvable.')
     assertCanManageClass(user, existing.classGroupId)
     await assertModuleInClass(data.moduleId, existing.classGroupId)
+
+    const dueChanged = existing.dueAt.getTime() !== data.dueAt.getTime()
+    const reminderChanged =
+      (existing.reminderAt?.getTime() ?? null) !== (data.reminderAt?.getTime() ?? null)
 
     const updated = await prisma.deadline.update({
       where: { id: deadlineId },
@@ -105,8 +109,9 @@ export async function updateDeadlineAction(
         category: data.category,
         dueAt: data.dueAt,
         reminderAt: data.reminderAt ?? null,
-        // Une date modifiee doit pouvoir declencher un nouveau rappel.
-        reminderSent: existing.dueAt.getTime() === data.dueAt.getTime() ? undefined : false,
+        // Une date (d'echeance ou de rappel) modifiee doit pouvoir
+        // declencher un nouveau rappel.
+        reminderSent: dueChanged || reminderChanged ? false : undefined,
       },
       select: { id: true, title: true, dueAt: true },
     })
@@ -121,7 +126,7 @@ export async function updateDeadlineAction(
       summary: `${user.firstName} ${user.lastName} a modifié l’échéance ${updated.title}.`,
     })
 
-    if (existing.dueAt.getTime() !== data.dueAt.getTime()) {
+    if (dueChanged) {
       await notifyClass(
         existing.classGroupId,
         {
@@ -142,75 +147,35 @@ export async function updateDeadlineAction(
   })
 }
 
-export async function deleteDeadlineAction(formData: FormData): Promise<void> {
-  const { user } = await requireClassAdmin()
-  const deadlineId = String(formData.get('deadlineId') ?? '')
+export async function deleteDeadlineAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user } = await requireClassAdmin()
+    const deadlineId = String(formData.get('deadlineId') ?? '')
 
-  const existing = await prisma.deadline.findFirst({
-    where: { id: deadlineId, deletedAt: null },
-    select: { id: true, classGroupId: true, title: true },
-  })
-  if (!existing) throw new NotFoundError('Échéance introuvable.')
-  assertCanManageClass(user, existing.classGroupId)
-
-  await prisma.deadline.update({
-    where: { id: deadlineId },
-    data: { deletedAt: new Date() },
-  })
-
-  await recordAudit({
-    actor: user,
-    action: 'DEADLINE_DELETED',
-    entityType: 'Deadline',
-    entityId: existing.id,
-    entityLabel: existing.title,
-    classGroupId: existing.classGroupId,
-    summary: `${user.firstName} ${user.lastName} a supprimé l’échéance ${existing.title}.`,
-  })
-
-  revalidatePath('/echeances')
-  revalidatePath('/dashboard')
-}
-
-/**
- * Envoie les rappels dus.
- * Appelable par un Cron Vercel (voir vercel.json) ou depuis l'interface
- * d'administration. Idempotent grace au drapeau `reminderSent`.
- */
-export async function dispatchDeadlineRemindersAction(): Promise<number> {
-  const now = new Date()
-
-  const due = await prisma.deadline.findMany({
-    where: {
-      deletedAt: null,
-      reminderSent: false,
-      reminderAt: { not: null, lte: now },
-      dueAt: { gte: now },
-    },
-    select: {
-      id: true,
-      classGroupId: true,
-      title: true,
-      category: true,
-      dueAt: true,
-    },
-    take: 100,
-  })
-
-  for (const deadline of due) {
-    await notifyClass(deadline.classGroupId, {
-      type: 'DEADLINE',
-      title: 'Rappel d’échéance',
-      body: `${DEADLINE_CATEGORY_LABELS[deadline.category]} : ${deadline.title} — ${formatDateTime(deadline.dueAt)}.`,
-      url: '/echeances',
-      entityType: 'Deadline',
-      entityId: deadline.id,
+    const existing = await prisma.deadline.findFirst({
+      where: { id: deadlineId, deletedAt: null },
+      select: { id: true, classGroupId: true, title: true },
     })
+    if (!existing) throw new NotFoundError('Échéance introuvable.')
+    assertCanManageClass(user, existing.classGroupId)
+
     await prisma.deadline.update({
-      where: { id: deadline.id },
-      data: { reminderSent: true },
+      where: { id: deadlineId },
+      data: { deletedAt: new Date() },
     })
-  }
 
-  return due.length
+    await recordAudit({
+      actor: user,
+      action: 'DEADLINE_DELETED',
+      entityType: 'Deadline',
+      entityId: existing.id,
+      entityLabel: existing.title,
+      classGroupId: existing.classGroupId,
+      summary: `${user.firstName} ${user.lastName} a supprimé l’échéance ${existing.title}.`,
+    })
+
+    revalidatePath('/echeances')
+    revalidatePath('/dashboard')
+    return { ok: true, message: 'Échéance supprimée.' }
+  })
 }

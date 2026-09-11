@@ -2,9 +2,10 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { requirePageUser } from '@/lib/auth/guards'
+import { getCurrentUser } from '@/lib/auth/session'
 import { prisma } from '@/lib/db'
-import { canViewClass } from '@/lib/permissions'
-import { getClassModules, getClassSemesters, getDefaultSemesterId } from '@/lib/services/class-context'
+import { canManageClass, canViewClass } from '@/lib/permissions'
+import { getClassModules, getClassSemesters } from '@/lib/services/class-context'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/feedback'
@@ -13,7 +14,7 @@ import { ResourceItem } from '@/components/features/resource-item'
 import { ScheduleItem } from '@/components/features/schedule-item'
 import { AnnouncementCard } from '@/components/features/announcement-card'
 import { IconClock, IconFile, IconMegaphone, IconProject } from '@/components/ui/icons'
-import { cn, formatCountdown, formatDateShort } from '@/lib/utils'
+import { cn, formatCalendarDateShort, formatCountdown, todayDateOnly } from '@/lib/utils'
 import { AddResourceButton } from '../../ressources/resource-controls'
 
 type Props = {
@@ -32,11 +33,17 @@ const TABS = [
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
-  const mod = await prisma.module.findUnique({
-    where: { id },
-    select: { code: true, name: true },
-  })
-  return { title: mod ? `${mod.code} — ${mod.name}` : 'Module' }
+  // Le titre suit la meme regle que la page : rien n'est revele d'un
+  // module d'une autre classe, pas meme son nom dans l'onglet.
+  const user = await getCurrentUser()
+  const mod = user
+    ? await prisma.module.findFirst({
+        where: { id, deletedAt: null },
+        select: { code: true, name: true, classGroupId: true },
+      })
+    : null
+  if (!user || !mod || !canViewClass(user, mod.classGroupId)) return { title: 'Module' }
+  return { title: `${mod.code} — ${mod.name}` }
 }
 
 export default async function ModuleDetailPage({ params, searchParams }: Props) {
@@ -68,8 +75,8 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
   // n'est pas revelee.
   if (!mod || !canViewClass(user, mod.classGroupId)) notFound()
 
-  // Seul le delegue de la classe active peut gerer le contenu.
-  const canManage = user.role === 'ADMIN'
+  // Seul un delegue de la classe DU MODULE peut en gerer le contenu.
+  const canManage = canManageClass(user, mod.classGroupId)
 
   const kindByTab: Record<string, string[]> = {
     cours: ['COURS', 'PRESENTATION'],
@@ -78,7 +85,7 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
     examens: ['EXAMEN', 'CORRECTION'],
   }
 
-  const [resources, projects, announcements, schedule, counts, modules, semesters, defaultSemesterId] =
+  const [resources, projects, announcements, schedule, counts, modules, semesters] =
     await Promise.all([
       tab in kindByTab
         ? prisma.resource.findMany({
@@ -139,7 +146,7 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
           moduleId: mod.id,
           deletedAt: null,
           isPublished: true,
-          date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+          date: { gte: todayDateOnly() },
         },
         select: {
           id: true,
@@ -165,7 +172,6 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
 
       getClassModules(mod.classGroupId),
       getClassSemesters(mod.classGroupId),
-      getDefaultSemesterId(mod.classGroupId),
     ])
 
   const countFor = (kinds: string[]) =>
@@ -192,8 +198,9 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
             <AddResourceButton
               modules={moduleOptions}
               semesters={semesterOptions}
-              defaultSemesterId={defaultSemesterId ?? mod.semesterId}
+              defaultSemesterId={mod.semesterId}
               defaultModuleId={mod.id}
+              classGroupId={mod.classGroupId}
               label="Déposer un document"
             />
           ) : null
@@ -338,7 +345,7 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
                 schedule.map((entry) => (
                   <div key={entry.id}>
                     <p className="mb-1 text-[11.5px] text-[var(--text-3)]">
-                      {formatDateShort(entry.date)}
+                      {formatCalendarDateShort(entry.date)}
                     </p>
                     <ScheduleItem entry={entry} />
                   </div>

@@ -21,9 +21,19 @@ export function AddResourceButton({
   semesters,
   defaultSemesterId,
   defaultModuleId,
+  classGroupId,
+  projectId,
   autoOpen,
   label = 'Ajouter une ressource',
-}: SharedProps & { defaultModuleId?: string; autoOpen?: boolean; label?: string }) {
+}: SharedProps & {
+  defaultModuleId?: string
+  /** Classe du module ou du projet affiche, si ce n'est pas la classe active. */
+  classGroupId?: string
+  /** Rattache le document au projet affiche. */
+  projectId?: string
+  autoOpen?: boolean
+  label?: string
+}) {
   return (
     <Modal
       defaultOpen={autoOpen}
@@ -44,6 +54,8 @@ export function AddResourceButton({
           semesters={semesters}
           defaultSemesterId={defaultSemesterId}
           defaultModuleId={defaultModuleId}
+          classGroupId={classGroupId}
+          projectId={projectId}
           onDone={close}
         />
       )}

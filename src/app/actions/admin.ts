@@ -156,109 +156,121 @@ export async function createSemesterAction(
 // Archivage
 // ---------------------------------------------------------------------------
 
-export async function toggleYearArchiveAction(formData: FormData): Promise<void> {
-  const { user, classId } = await requireClassAdmin()
-  const yearId = String(formData.get('yearId') ?? '')
-  const year = await loadYear(yearId, classId)
+export async function toggleYearArchiveAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user, classId } = await requireClassAdmin()
+    const yearId = String(formData.get('yearId') ?? '')
+    const year = await loadYear(yearId, classId)
 
-  const archived = !year.isArchived
+    const archived = !year.isArchived
 
-  // Archiver une annee archive ses semestres et les ressources associees,
-  // et retire son statut courant : les donnees anciennes ne se melangent
-  // plus a l'annee en cours.
-  await prisma.$transaction([
-    prisma.academicYear.update({
-      where: { id: yearId },
-      data: { isArchived: archived, isCurrent: archived ? false : undefined },
-    }),
-    prisma.semester.updateMany({
-      where: { academicYearId: yearId },
-      data: { isArchived: archived, isCurrent: archived ? false : undefined },
-    }),
-    prisma.resource.updateMany({
-      where: {
-        classGroupId: classId,
-        semester: { academicYearId: yearId },
-        deletedAt: null,
-      },
-      data: { isArchived: archived },
-    }),
-  ])
+    // Archiver une annee archive ses semestres et les ressources associees,
+    // et retire son statut courant : les donnees anciennes ne se melangent
+    // plus a l'annee en cours.
+    await prisma.$transaction([
+      prisma.academicYear.update({
+        where: { id: yearId },
+        data: { isArchived: archived, isCurrent: archived ? false : undefined },
+      }),
+      prisma.semester.updateMany({
+        where: { academicYearId: yearId },
+        data: { isArchived: archived, isCurrent: archived ? false : undefined },
+      }),
+      prisma.resource.updateMany({
+        where: {
+          classGroupId: classId,
+          semester: { academicYearId: yearId },
+          deletedAt: null,
+        },
+        data: { isArchived: archived },
+      }),
+    ])
 
-  await recordAudit({
-    actor: user,
-    action: archived ? 'YEAR_ARCHIVED' : 'YEAR_UNARCHIVED',
-    entityType: 'AcademicYear',
-    entityId: year.id,
-    entityLabel: year.label,
-    classGroupId: classId,
-    summary: `${user.firstName} ${user.lastName} a ${archived ? 'archivé' : 'désarchivé'} l’année ${year.label}.`,
+    await recordAudit({
+      actor: user,
+      action: archived ? 'YEAR_ARCHIVED' : 'YEAR_UNARCHIVED',
+      entityType: 'AcademicYear',
+      entityId: year.id,
+      entityLabel: year.label,
+      classGroupId: classId,
+      summary: `${user.firstName} ${user.lastName} a ${archived ? 'archivé' : 'désarchivé'} l’année ${year.label}.`,
+    })
+
+    revalidatePath('/admin/archives')
+    revalidatePath('/admin/annees')
+    return {
+      ok: true,
+      message: archived ? `Année ${year.label} archivée.` : `Année ${year.label} désarchivée.`,
+    }
   })
-
-  revalidatePath('/admin/archives')
-  revalidatePath('/admin/annees')
 }
 
-export async function setCurrentYearAction(formData: FormData): Promise<void> {
-  const { user, classId } = await requireClassAdmin()
-  const yearId = String(formData.get('yearId') ?? '')
-  const year = await loadYear(yearId, classId)
+export async function setCurrentYearAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user, classId } = await requireClassAdmin()
+    const yearId = String(formData.get('yearId') ?? '')
+    const year = await loadYear(yearId, classId)
 
-  if (year.isArchived) {
-    throw new AppError('Désarchivez cette année avant de la définir comme courante.')
-  }
+    if (year.isArchived) {
+      throw new AppError('Désarchivez cette année avant de la définir comme courante.')
+    }
 
-  await prisma.$transaction([
-    prisma.academicYear.updateMany({
-      where: { classGroupId: classId, isCurrent: true },
-      data: { isCurrent: false },
-    }),
-    prisma.academicYear.update({ where: { id: yearId }, data: { isCurrent: true } }),
-  ])
+    await prisma.$transaction([
+      prisma.academicYear.updateMany({
+        where: { classGroupId: classId, isCurrent: true },
+        data: { isCurrent: false },
+      }),
+      prisma.academicYear.update({ where: { id: yearId }, data: { isCurrent: true } }),
+    ])
 
-  await recordAudit({
-    actor: user,
-    action: 'YEAR_SET_CURRENT',
-    entityType: 'AcademicYear',
-    entityId: year.id,
-    entityLabel: year.label,
-    classGroupId: classId,
-    summary: `${user.firstName} ${user.lastName} a défini ${year.label} comme année courante.`,
+    await recordAudit({
+      actor: user,
+      action: 'YEAR_SET_CURRENT',
+      entityType: 'AcademicYear',
+      entityId: year.id,
+      entityLabel: year.label,
+      classGroupId: classId,
+      summary: `${user.firstName} ${user.lastName} a défini ${year.label} comme année courante.`,
+    })
+
+    revalidatePath('/admin/annees')
+    return { ok: true, message: `${year.label} est l’année courante.` }
   })
-
-  revalidatePath('/admin/annees')
 }
 
-export async function setCurrentSemesterAction(formData: FormData): Promise<void> {
-  const { user, classId } = await requireClassAdmin()
-  const semesterId = String(formData.get('semesterId') ?? '')
+export async function setCurrentSemesterAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user, classId } = await requireClassAdmin()
+    const semesterId = String(formData.get('semesterId') ?? '')
 
-  const semester = await prisma.semester.findFirst({
-    where: { id: semesterId, academicYear: { classGroupId: classId } },
-    select: { id: true, label: true, isArchived: true },
+    const semester = await prisma.semester.findFirst({
+      where: { id: semesterId, academicYear: { classGroupId: classId } },
+      select: { id: true, label: true, isArchived: true },
+    })
+    if (!semester) throw new NotFoundError('Semestre introuvable dans cette classe.')
+    if (semester.isArchived) {
+      throw new AppError('Désarchivez ce semestre avant de le définir comme courant.')
+    }
+
+    await prisma.$transaction([
+      prisma.semester.updateMany({
+        where: { academicYear: { classGroupId: classId }, isCurrent: true },
+        data: { isCurrent: false },
+      }),
+      prisma.semester.update({ where: { id: semesterId }, data: { isCurrent: true } }),
+    ])
+
+    await recordAudit({
+      actor: user,
+      action: 'SEMESTER_SET_CURRENT',
+      entityType: 'Semester',
+      entityId: semester.id,
+      entityLabel: semester.label,
+      classGroupId: classId,
+      summary: `${user.firstName} ${user.lastName} a défini ${semester.label} comme semestre courant.`,
+    })
+
+    revalidatePath('/admin/annees')
+    return { ok: true, message: `${semester.label} est le semestre courant.` }
   })
-  if (!semester) throw new NotFoundError('Semestre introuvable dans cette classe.')
-  if (semester.isArchived) {
-    throw new AppError('Désarchivez ce semestre avant de le définir comme courant.')
-  }
-
-  await prisma.$transaction([
-    prisma.semester.updateMany({
-      where: { academicYear: { classGroupId: classId }, isCurrent: true },
-      data: { isCurrent: false },
-    }),
-    prisma.semester.update({ where: { id: semesterId }, data: { isCurrent: true } }),
-  ])
-
-  await recordAudit({
-    actor: user,
-    action: 'SEMESTER_SET_CURRENT',
-    entityType: 'Semester',
-    entityId: semester.id,
-    entityLabel: semester.label,
-    classGroupId: classId,
-    summary: `${user.firstName} ${user.lastName} a defini ${semester.label} comme semestre courant.`,
-  })
-
-  revalidatePath('/admin/annees')
 }

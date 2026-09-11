@@ -183,6 +183,10 @@ export const SCHEDULE_DOC_MIME_TYPES: Record<string, string[]> = {
   'image/webp': ['.webp'],
 }
 
+/** Pieces jointes d'une reclamation : plus petites et en nombre limite. */
+export const COMPLAINT_ATTACHMENT_MAX_SIZE = 20 * 1024 * 1024 // 20 Mo
+export const COMPLAINT_MAX_ATTACHMENTS = 5
+
 /**
  * Quota de stockage par classe, en octets.
  * Valeur volontairement explicite : le stockage n'est jamais illimite, et

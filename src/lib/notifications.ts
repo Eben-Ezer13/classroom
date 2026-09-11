@@ -1,6 +1,6 @@
 import 'server-only'
 import { prisma } from '@/lib/db'
-import type { NotificationType } from '@prisma/client'
+import type { NotificationType, Prisma } from '@prisma/client'
 
 /**
  * Diffusion des notifications.
@@ -109,19 +109,26 @@ export async function notifyClassStaff(
 }
 
 /**
- * Notifications non lues.
- * Bornees a la classe active quand elle est fournie : le compteur affiche
- * dans la barre laterale correspond a l'espace ouvert.
+ * Perimetre des notifications visibles : celles de la classe ouverte et
+ * celles qui ne dependent d'aucune classe (retrait d'une classe...). Le
+ * compteur, la liste et "tout marquer comme lu" partagent ce perimetre.
  */
+export function notificationScope(
+  userId: string,
+  classGroupId?: string | null,
+): Prisma.NotificationWhereInput {
+  return {
+    userId,
+    ...(classGroupId ? { OR: [{ classGroupId }, { classGroupId: null }] } : {}),
+  }
+}
+
+/** Notifications non lues de l'espace ouvert (badge de la barre laterale). */
 export async function unreadCount(
   userId: string,
   classGroupId?: string | null,
 ): Promise<number> {
   return prisma.notification.count({
-    where: {
-      userId,
-      readAt: null,
-      ...(classGroupId ? { OR: [{ classGroupId }, { classGroupId: null }] } : {}),
-    },
+    where: { ...notificationScope(userId, classGroupId), readAt: null },
   })
 }

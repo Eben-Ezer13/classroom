@@ -6,7 +6,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Alert, EmptyState } from '@/components/ui/feedback'
-import { ConfirmForm } from '@/components/ui/confirm-form'
+import { ActionForm, ConfirmForm } from '@/components/ui/confirm-form'
 import { IconGraduation } from '@/components/ui/icons'
 import { CLASS_ROLE_LABELS } from '@/lib/constants'
 import { CreateClassForm, JoinClassForm } from './class-forms'
@@ -21,11 +21,12 @@ export const metadata: Metadata = { title: 'Mes classes' }
 export default async function ClassesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ bienvenue?: string }>
+  searchParams: Promise<{ bienvenue?: string; adhesion?: string }>
 }) {
   const user = await requirePageUser()
   const params = await searchParams
   const welcome = params.bienvenue === '1'
+  const joinFailed = params.adhesion === 'echec'
 
   return (
     <>
@@ -34,10 +35,16 @@ export default async function ClassesPage({
         description="Créez votre espace de classe ou rejoignez celui de votre délégué."
       />
 
-      {welcome ? (
+      {joinFailed ? (
+        <Alert tone="warning" className="mb-4">
+          Votre compte est créé, mais l’adhésion à la classe n’a pas abouti (classe
+          complète ou invitation épuisée entre-temps). Réessayez avec le code ci-contre
+          ou demandez un nouveau lien à votre délégué.
+        </Alert>
+      ) : welcome ? (
         <Alert tone="success" className="mb-4">
           Votre compte est créé. Créez maintenant votre classe si vous êtes délégué,
-          ou rejoignez la votre avec le code fourni.
+          ou rejoignez la vôtre avec le code fourni.
         </Alert>
       ) : null}
 
@@ -87,16 +94,14 @@ export default async function ClassesPage({
 
                       <div className="flex items-center gap-2">
                         {active ? null : (
-                          <form action={switchClassAction}>
-                            <input
-                              type="hidden"
-                              name="classGroupId"
-                              value={membership.classGroupId}
-                            />
+                          <ActionForm
+                            action={switchClassAction}
+                            hidden={{ classGroupId: membership.classGroupId }}
+                          >
                             <Button type="submit" size="sm" variant="secondary">
                               Ouvrir
                             </Button>
-                          </form>
+                          </ActionForm>
                         )}
                         <ConfirmForm
                           action={leaveClassAction}

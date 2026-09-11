@@ -9,6 +9,12 @@ import { NextResponse, type NextRequest } from 'next/server'
  * la classe) est verifiee dans chaque page, Server Action et route API via
  * lib/auth/guards.ts et lib/permissions.ts. Un cookie forge ne donne donc
  * acces a rien.
+ *
+ * Le middleware ne redirige JAMAIS un visiteur muni d'un cookie hors des
+ * ecrans de connexion : il ne sait pas si la session est encore valide. Un
+ * cookie perime (session revoquee, compte desactive) provoquait sinon une
+ * boucle /login -> /dashboard -> /login. Ce sont les pages de connexion et
+ * d'inscription qui renvoient un utilisateur reellement connecte.
  */
 
 const PUBLIC_PATHS = new Set([
@@ -22,22 +28,16 @@ const PUBLIC_PATHS = new Set([
 const SESSION_COOKIE = 'cp_session'
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const { pathname, search } = request.nextUrl
   const hasCookie = request.cookies.has(SESSION_COOKIE)
-  const isPublic = PUBLIC_PATHS.has(pathname)
 
-  if (!hasCookie && !isPublic) {
+  if (!hasCookie && !PUBLIC_PATHS.has(pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    url.search = pathname === '/dashboard' ? '' : `?next=${encodeURIComponent(pathname)}`
-    return NextResponse.redirect(url)
-  }
-
-  // Un utilisateur deja connecte n'a rien a faire sur les ecrans d'entree.
-  if (hasCookie && (pathname === '/login' || pathname === '/register')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    url.search = ''
+    // La destination complete (avec ?code=... d'une invitation) est
+    // conservee : l'utilisateur y revient apres s'etre connecte.
+    url.search =
+      pathname === '/dashboard' ? '' : `?next=${encodeURIComponent(`${pathname}${search}`)}`
     return NextResponse.redirect(url)
   }
 
@@ -55,6 +55,6 @@ export const config = {
      *   redirection vers /login empecherait le cron de s'executer.
      * - les fichiers a la racine (favicon, robots...)
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|webp|ico|txt|xml)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|webp|ico|txt|xml|webmanifest)$).*)',
   ],
 }

@@ -1,13 +1,14 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { ConfirmForm, IconSubmit } from '@/components/ui/confirm-form'
 import { IconPencil, IconPlus, IconTrash } from '@/components/ui/icons'
 import { Field, Input, Select, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
-import { emptyActionState } from '@/lib/errors'
+import { useFormAction } from '@/components/ui/use-form-action'
+import { toDateTimeInputValue } from '@/lib/utils'
 import { DEADLINE_CATEGORY_LABELS } from '@/lib/constants'
 import {
   createDeadlineAction,
@@ -26,14 +27,6 @@ export type DeadlineFormValues = {
   moduleId: string | null
 }
 
-/** Convertit une date en valeur acceptee par <input type="datetime-local">. */
-function toLocalInput(date: Date | null | undefined): string {
-  if (!date) return ''
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 16)
-}
-
 function DeadlineForm({
   modules,
   deadline,
@@ -44,9 +37,8 @@ function DeadlineForm({
   onDone?: () => void
 }) {
   const isEdit = Boolean(deadline)
-  const [state, formAction] = useActionState(
+  const { state, formAction, value } = useFormAction(
     isEdit ? updateDeadlineAction : createDeadlineAction,
-    emptyActionState,
   )
 
   useEffect(() => {
@@ -64,9 +56,10 @@ function DeadlineForm({
         <Input
           id="title"
           name="title"
-          defaultValue={deadline?.title ?? ''}
+          defaultValue={value('title', deadline?.title)}
           required
-          placeholder="Rapport de TP n3"
+          maxLength={160}
+          placeholder="Rapport de TP n° 3"
         />
       </Field>
 
@@ -75,8 +68,9 @@ function DeadlineForm({
           id="description"
           name="description"
           rows={3}
-          defaultValue={deadline?.description ?? ''}
-          placeholder="Format PDF, 10 pages maximum, depot sur la plateforme."
+          maxLength={1000}
+          defaultValue={value('description', deadline?.description)}
+          placeholder="Format PDF, 10 pages maximum, dépôt sur la plateforme."
         />
       </Field>
 
@@ -85,11 +79,11 @@ function DeadlineForm({
           <Select
             id="category"
             name="category"
-            defaultValue={deadline?.category ?? 'DEVOIR'}
+            defaultValue={value('category', deadline?.category ?? 'DEVOIR')}
             required
           >
-            {Object.entries(DEADLINE_CATEGORY_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
+            {Object.entries(DEADLINE_CATEGORY_LABELS).map(([category, label]) => (
+              <option key={category} value={category}>
                 {label}
               </option>
             ))}
@@ -97,7 +91,7 @@ function DeadlineForm({
         </Field>
 
         <Field label="Module" htmlFor="moduleId" error={state.fieldErrors?.moduleId}>
-          <Select id="moduleId" name="moduleId" defaultValue={deadline?.moduleId ?? ''}>
+          <Select id="moduleId" name="moduleId" defaultValue={value('moduleId', deadline?.moduleId)}>
             <option value="">Aucun module</option>
             {modules.map((m) => (
               <option key={m.id} value={m.id}>
@@ -114,7 +108,7 @@ function DeadlineForm({
             id="dueAt"
             name="dueAt"
             type="datetime-local"
-            defaultValue={toLocalInput(deadline?.dueAt)}
+            defaultValue={value('dueAt', toDateTimeInputValue(deadline?.dueAt))}
             required
           />
         </Field>
@@ -129,7 +123,7 @@ function DeadlineForm({
             id="reminderAt"
             name="reminderAt"
             type="datetime-local"
-            defaultValue={toLocalInput(deadline?.reminderAt)}
+            defaultValue={value('reminderAt', toDateTimeInputValue(deadline?.reminderAt))}
           />
         </Field>
       </div>

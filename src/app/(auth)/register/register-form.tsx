@@ -1,30 +1,59 @@
 'use client'
 
-import { useActionState } from 'react'
 import { registerAction } from '@/app/actions/auth'
-import { emptyActionState } from '@/lib/errors'
 import { Field, Input } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
+import { useFormAction } from '@/components/ui/use-form-action'
 
-export function RegisterForm() {
-  const [state, formAction] = useActionState(registerAction, emptyActionState)
+export function RegisterForm({
+  defaultClassCode,
+  next,
+}: {
+  defaultClassCode: string | null
+  next: string | null
+}) {
+  const { state, formAction, value } = useFormAction(registerAction)
+  const accountType = value('accountType', 'ETUDIANT')
 
   return (
     <form action={formAction} className="space-y-4">
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       {state.message && !state.ok ? <Alert tone="danger">{state.message}</Alert> : null}
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Prénom" htmlFor="firstName" error={state.fieldErrors?.firstName} required>
-          <Input id="firstName" name="firstName" autoComplete="given-name" required />
+          <Input
+            id="firstName"
+            name="firstName"
+            autoComplete="given-name"
+            defaultValue={value('firstName')}
+            maxLength={60}
+            required
+          />
         </Field>
         <Field label="Nom" htmlFor="lastName" error={state.fieldErrors?.lastName} required>
-          <Input id="lastName" name="lastName" autoComplete="family-name" required />
+          <Input
+            id="lastName"
+            name="lastName"
+            autoComplete="family-name"
+            defaultValue={value('lastName')}
+            maxLength={60}
+            required
+          />
         </Field>
       </div>
 
       <Field label="Adresse email" htmlFor="email" error={state.fieldErrors?.email} required>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          defaultValue={value('email')}
+          maxLength={180}
+          required
+        />
       </Field>
 
       <fieldset className="space-y-2">
@@ -37,7 +66,7 @@ export function RegisterForm() {
               type="radio"
               name="accountType"
               value="ETUDIANT"
-              defaultChecked
+              defaultChecked={accountType !== 'DELEGUE'}
               className="mt-0.5 accent-[var(--accent)]"
             />
             <span>
@@ -52,6 +81,7 @@ export function RegisterForm() {
               type="radio"
               name="accountType"
               value="DELEGUE"
+              defaultChecked={accountType === 'DELEGUE'}
               className="mt-0.5 accent-[var(--accent)]"
             />
             <span>
@@ -71,7 +101,14 @@ export function RegisterForm() {
           error={state.fieldErrors?.classCode}
           hint="Facultatif pour un délégué"
         >
-          <Input id="classCode" name="classCode" placeholder="GSMI4A" />
+          <Input
+            id="classCode"
+            name="classCode"
+            placeholder="GSMI4A"
+            defaultValue={value('classCode', defaultClassCode)}
+            className="uppercase"
+            maxLength={40}
+          />
         </Field>
         <Field
           label="Numéro étudiant"
@@ -79,7 +116,13 @@ export function RegisterForm() {
           error={state.fieldErrors?.studentId}
           hint="Facultatif"
         >
-          <Input id="studentId" name="studentId" placeholder="20260145" />
+          <Input
+            id="studentId"
+            name="studentId"
+            placeholder="20260145"
+            defaultValue={value('studentId')}
+            maxLength={40}
+          />
         </Field>
       </div>
 
@@ -95,6 +138,8 @@ export function RegisterForm() {
           name="password"
           type="password"
           autoComplete="new-password"
+          minLength={10}
+          maxLength={128}
           required
         />
       </Field>

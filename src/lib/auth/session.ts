@@ -117,6 +117,16 @@ export async function revokeAllSessions(userId: string): Promise<void> {
 }
 
 /**
+ * Efface le cookie de session du navigateur. A appeler apres une revocation :
+ * un cookie dont la session n'existe plus ne sert a rien et fausserait
+ * l'aiguillage du middleware.
+ */
+export async function clearSessionCookie(): Promise<void> {
+  const store = await cookies()
+  store.delete(SESSION_COOKIE)
+}
+
+/**
  * Resout l'utilisateur de la requete courante.
  * `cache()` garantit une seule requete SQL par rendu, meme si dix composants
  * serveur appellent getCurrentUser().

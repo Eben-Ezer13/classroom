@@ -15,13 +15,17 @@ import { runAction, NotFoundError, type ActionState } from '@/lib/errors'
 import { parseForm, scheduleDocumentSchema, scheduleSchema } from '@/lib/validation'
 import {
   assertClassQuota,
-  assertValidScheduleDocument,
-  classPrefix,
+  discardStoredFiles,
+  receiveUploads,
   removeFile,
-  storeFile,
   trackClassStorage,
 } from '@/lib/storage'
-import { formatDateShort, minutesToTime, timeToMinutes, toDateOnly } from '@/lib/utils'
+import {
+  formatCalendarDateShort,
+  minutesToTime,
+  timeToMinutes,
+  toDateOnly,
+} from '@/lib/utils'
 
 /**
  * Gestion du programme. Reserve au delegue de la classe :
@@ -82,7 +86,7 @@ export async function createScheduleEntryAction(
       entityId: entry.id,
       entityLabel: label,
       classGroupId,
-      summary: `${user.firstName} ${user.lastName} a ajouté une séance (${label}) le ${formatDateShort(entry.date)}.`,
+      summary: `${user.firstName} ${user.lastName} a ajouté une séance (${label}) le ${formatCalendarDateShort(entry.date)}.`,
     })
 
     if (entry.isPublished) {
@@ -91,7 +95,7 @@ export async function createScheduleEntryAction(
         {
           type: 'PROGRAMME',
           title: 'Programme mis à jour',
-          body: `${label} le ${formatDateShort(entry.date)} a ${minutesToTime(startMinutes)}.`,
+          body: `${label} le ${formatCalendarDateShort(entry.date)} a ${minutesToTime(startMinutes)}.`,
           url: '/programme',
           entityType: 'ScheduleEntry',
           entityId: entry.id,
@@ -173,7 +177,7 @@ export async function updateScheduleEntryAction(
       {
         type: 'PROGRAMME',
         title: 'Changement dans le programme',
-        body: `${label} — ${formatDateShort(updated.date)}.`,
+        body: `${label} — ${formatCalendarDateShort(updated.date)}.`,
         url: '/programme',
         entityType: 'ScheduleEntry',
         entityId: updated.id,
@@ -187,54 +191,58 @@ export async function updateScheduleEntryAction(
   })
 }
 
-export async function deleteScheduleEntryAction(formData: FormData): Promise<void> {
-  const { user } = await requireClassAdmin()
-  const entryId = String(formData.get('entryId') ?? '')
 
-  const existing = await prisma.scheduleEntry.findFirst({
-    where: { id: entryId, deletedAt: null },
-    select: {
-      id: true,
-      classGroupId: true,
-      title: true,
-      date: true,
-      module: { select: { name: true } },
-    },
+export async function deleteScheduleEntryAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user } = await requireClassAdmin()
+    const entryId = String(formData.get('entryId') ?? '')
+
+    const existing = await prisma.scheduleEntry.findFirst({
+      where: { id: entryId, deletedAt: null },
+      select: {
+        id: true,
+        classGroupId: true,
+        title: true,
+        date: true,
+        module: { select: { name: true } },
+      },
+    })
+    if (!existing) throw new NotFoundError('Séance introuvable.')
+    assertCanManageClass(user, existing.classGroupId)
+
+    // Suppression douce : la seance disparait de l'affichage mais reste
+    // tracable pour l'audit.
+    await prisma.scheduleEntry.update({
+      where: { id: entryId },
+      data: { deletedAt: new Date() },
+    })
+
+    const label = existing.module?.name ?? existing.title ?? 'Séance'
+    await recordAudit({
+      actor: user,
+      action: 'SCHEDULE_DELETED',
+      entityType: 'ScheduleEntry',
+      entityId: existing.id,
+      entityLabel: label,
+      classGroupId: existing.classGroupId,
+      summary: `${user.firstName} ${user.lastName} a supprimé une séance (${label}) du ${formatCalendarDateShort(existing.date)}.`,
+    })
+
+    await notifyClass(
+      existing.classGroupId,
+      {
+        type: 'PROGRAMME',
+        title: 'Séance annulée',
+        body: `${label} du ${formatCalendarDateShort(existing.date)} a été retirée du programme.`,
+        url: '/programme',
+      },
+      { excludeUserId: user.id },
+    )
+
+    revalidatePath('/programme')
+    revalidatePath('/dashboard')
+    return { ok: true, message: 'Séance supprimée.' }
   })
-  if (!existing) throw new NotFoundError('Séance introuvable.')
-  assertCanManageClass(user, existing.classGroupId)
-
-  // Suppression douce : la seance disparait de l'affichage mais reste
-  // tracable pour l'audit.
-  await prisma.scheduleEntry.update({
-    where: { id: entryId },
-    data: { deletedAt: new Date() },
-  })
-
-  const label = existing.module?.name ?? existing.title ?? 'Séance'
-  await recordAudit({
-    actor: user,
-    action: 'SCHEDULE_DELETED',
-    entityType: 'ScheduleEntry',
-    entityId: existing.id,
-    entityLabel: label,
-    classGroupId: existing.classGroupId,
-    summary: `${user.firstName} ${user.lastName} a supprimé une séance (${label}) du ${formatDateShort(existing.date)}.`,
-  })
-
-  await notifyClass(
-    existing.classGroupId,
-    {
-      type: 'PROGRAMME',
-      title: 'Séance annulée',
-      body: `${label} du ${formatDateShort(existing.date)} a ete retiree du programme.`,
-      url: '/programme',
-    },
-    { excludeUserId: user.id },
-  )
-
-  revalidatePath('/programme')
-  revalidatePath('/dashboard')
 }
 
 // ---------------------------------------------------------------------------
@@ -258,19 +266,21 @@ export async function uploadScheduleDocumentAction(
     }
     const data = parsed.data
 
-    const file = formData.get('file')
-    if (!(file instanceof File) || file.size === 0) {
-      return { ok: false, message: 'Sélectionnez une image ou un PDF.' }
-    }
-    assertValidScheduleDocument(file)
-    await assertClassQuota(classId, file.size)
-
     if (data.semesterId) await assertSemesterInClass(data.semesterId, classId)
 
-    const stored = await storeFile(file, classPrefix(classId, 'schedule'))
+    const [stored] = await receiveUploads(formData, {
+      field: 'file',
+      kind: 'schedule',
+      classGroupId: classId,
+      userId: user.id,
+    })
+    if (!stored) {
+      return { ok: false, message: 'Sélectionnez une image ou un PDF.' }
+    }
 
     let document
     try {
+      await assertClassQuota(classId, stored.fileSize)
       document = await prisma.$transaction(async (tx) => {
         // Un seul document courant : le precedent reste consultable dans
         // l'historique mais n'est plus mis en avant.
@@ -295,7 +305,7 @@ export async function uploadScheduleDocumentAction(
         })
       })
     } catch (error) {
-      await removeFile(stored.filePath)
+      await discardStoredFiles([stored])
       throw error
     }
 
@@ -308,14 +318,14 @@ export async function uploadScheduleDocumentAction(
       entityId: document.id,
       entityLabel: document.title,
       classGroupId: classId,
-      summary: `${user.firstName} ${user.lastName} a televerse un emploi du temps (${document.title}).`,
+      summary: `${user.firstName} ${user.lastName} a téléversé un emploi du temps (${document.title}).`,
     })
 
     await notifyClass(
       classId,
       {
         type: 'PROGRAMME',
-        title: 'Emploi du temps mis a jour',
+        title: 'Emploi du temps mis à jour',
         body: document.title,
         url: '/programme',
         entityType: 'ScheduleDocument',
@@ -325,80 +335,86 @@ export async function uploadScheduleDocumentAction(
     )
 
     revalidatePath('/programme')
-    return { ok: true, message: 'Emploi du temps televerse.' }
+    return { ok: true, message: 'Emploi du temps téléversé.' }
   })
 }
 
-export async function deleteScheduleDocumentAction(formData: FormData): Promise<void> {
-  const { user, classId } = await requireClassAdmin()
-  const documentId = String(formData.get('documentId') ?? '')
+export async function deleteScheduleDocumentAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user, classId } = await requireClassAdmin()
+    const documentId = String(formData.get('documentId') ?? '')
 
-  // Le filtre sur classGroupId rend impossible la suppression du document
-  // d'une autre classe.
-  const document = await prisma.scheduleDocument.findFirst({
-    where: { id: documentId, classGroupId: classId, deletedAt: null },
-    select: { id: true, title: true, filePath: true, fileSize: true, isCurrent: true },
-  })
-  if (!document) throw new NotFoundError('Document introuvable.')
-
-  await prisma.scheduleDocument.update({
-    where: { id: document.id },
-    data: { deletedAt: new Date(), isCurrent: false },
-  })
-  await removeFile(document.filePath)
-  await trackClassStorage(classId, -document.fileSize)
-
-  // Le plus recent restant reprend la place de document courant.
-  if (document.isCurrent) {
-    const previous = await prisma.scheduleDocument.findFirst({
-      where: { classGroupId: classId, deletedAt: null },
-      orderBy: { createdAt: 'desc' },
-      select: { id: true },
+    // Le filtre sur classGroupId rend impossible la suppression du document
+    // d'une autre classe.
+    const document = await prisma.scheduleDocument.findFirst({
+      where: { id: documentId, classGroupId: classId, deletedAt: null },
+      select: { id: true, title: true, filePath: true, fileSize: true, isCurrent: true },
     })
-    if (previous) {
-      await prisma.scheduleDocument.update({
-        where: { id: previous.id },
-        data: { isCurrent: true },
+    if (!document) throw new NotFoundError('Document introuvable.')
+
+    await prisma.scheduleDocument.update({
+      where: { id: document.id },
+      data: { deletedAt: new Date(), isCurrent: false },
+    })
+    await removeFile(document.filePath)
+    await trackClassStorage(classId, -document.fileSize)
+
+    // Le plus recent restant reprend la place de document courant.
+    if (document.isCurrent) {
+      const previous = await prisma.scheduleDocument.findFirst({
+        where: { classGroupId: classId, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true },
       })
+      if (previous) {
+        await prisma.scheduleDocument.update({
+          where: { id: previous.id },
+          data: { isCurrent: true },
+        })
+      }
     }
-  }
 
-  await recordAudit({
-    actor: user,
-    action: 'SCHEDULE_DOCUMENT_DELETED',
-    entityType: 'ScheduleDocument',
-    entityId: document.id,
-    entityLabel: document.title,
-    classGroupId: classId,
-    summary: `${user.firstName} ${user.lastName} a supprime un emploi du temps televerse.`,
+    await recordAudit({
+      actor: user,
+      action: 'SCHEDULE_DOCUMENT_DELETED',
+      entityType: 'ScheduleDocument',
+      entityId: document.id,
+      entityLabel: document.title,
+      classGroupId: classId,
+      summary: `${user.firstName} ${user.lastName} a supprimé un emploi du temps téléversé.`,
+    })
+
+    revalidatePath('/programme')
+    return { ok: true, message: 'Document supprimé.' }
   })
-
-  revalidatePath('/programme')
 }
 
 /** Remet un document de l'historique en avant. */
 export async function setCurrentScheduleDocumentAction(
   formData: FormData,
-): Promise<void> {
-  const { classId } = await requireClassAdmin()
-  const documentId = String(formData.get('documentId') ?? '')
+): Promise<ActionState> {
+  return runAction(async () => {
+    const { classId } = await requireClassAdmin()
+    const documentId = String(formData.get('documentId') ?? '')
 
-  const document = await prisma.scheduleDocument.findFirst({
-    where: { id: documentId, classGroupId: classId, deletedAt: null },
-    select: { id: true },
+    const document = await prisma.scheduleDocument.findFirst({
+      where: { id: documentId, classGroupId: classId, deletedAt: null },
+      select: { id: true },
+    })
+    if (!document) throw new NotFoundError('Document introuvable.')
+
+    await prisma.$transaction([
+      prisma.scheduleDocument.updateMany({
+        where: { classGroupId: classId, isCurrent: true },
+        data: { isCurrent: false },
+      }),
+      prisma.scheduleDocument.update({
+        where: { id: document.id },
+        data: { isCurrent: true },
+      }),
+    ])
+
+    revalidatePath('/programme')
+    return { ok: true }
   })
-  if (!document) throw new NotFoundError('Document introuvable.')
-
-  await prisma.$transaction([
-    prisma.scheduleDocument.updateMany({
-      where: { classGroupId: classId, isCurrent: true },
-      data: { isCurrent: false },
-    }),
-    prisma.scheduleDocument.update({
-      where: { id: document.id },
-      data: { isCurrent: true },
-    }),
-  ])
-
-  revalidatePath('/programme')
 }

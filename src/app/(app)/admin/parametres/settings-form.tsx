@@ -1,11 +1,10 @@
 'use client'
 
-import { useActionState } from 'react'
 import { updateClassAction } from '@/app/actions/classes'
-import { emptyActionState } from '@/lib/errors'
 import { Field, Input, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
+import { useFormAction } from '@/components/ui/use-form-action'
 
 export function ClassSettingsForm({
   defaults,
@@ -18,7 +17,7 @@ export function ClassSettingsForm({
     description: string
   }
 }) {
-  const [state, formAction] = useActionState(updateClassAction, emptyActionState)
+  const { state, formAction, value } = useFormAction(updateClassAction)
 
   return (
     <form action={formAction} className="space-y-4">
@@ -27,7 +26,13 @@ export function ClassSettingsForm({
       ) : null}
 
       <Field label="Nom de la classe" htmlFor="name" error={state.fieldErrors?.name} required>
-        <Input id="name" name="name" required defaultValue={defaults.name} maxLength={80} />
+        <Input
+          id="name"
+          name="name"
+          required
+          defaultValue={value('name', defaults.name)}
+          maxLength={80}
+        />
       </Field>
 
       <Field
@@ -40,7 +45,7 @@ export function ClassSettingsForm({
           id="schoolName"
           name="schoolName"
           required
-          defaultValue={defaults.schoolName}
+          defaultValue={value('schoolName', defaults.schoolName)}
           maxLength={140}
         />
       </Field>
@@ -50,7 +55,7 @@ export function ClassSettingsForm({
           <Input
             id="programName"
             name="programName"
-            defaultValue={defaults.programName}
+            defaultValue={value('programName', defaults.programName)}
             maxLength={140}
           />
         </Field>
@@ -58,7 +63,7 @@ export function ClassSettingsForm({
           <Input
             id="levelName"
             name="levelName"
-            defaultValue={defaults.levelName}
+            defaultValue={value('levelName', defaults.levelName)}
             maxLength={80}
           />
         </Field>
@@ -69,7 +74,7 @@ export function ClassSettingsForm({
           id="description"
           name="description"
           rows={3}
-          defaultValue={defaults.description}
+          defaultValue={value('description', defaults.description)}
           maxLength={500}
         />
       </Field>

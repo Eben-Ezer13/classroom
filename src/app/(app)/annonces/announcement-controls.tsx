@@ -1,13 +1,14 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { ConfirmForm, IconSubmit } from '@/components/ui/confirm-form'
 import { IconPencil, IconPlus, IconTrash } from '@/components/ui/icons'
 import { Checkbox, Field, Input, Select, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
-import { emptyActionState } from '@/lib/errors'
+import { useFormAction } from '@/components/ui/use-form-action'
+import { toDateTimeInputValue } from '@/lib/utils'
 import {
   ANNOUNCEMENT_CATEGORY_LABELS,
   ANNOUNCEMENT_LEVEL_LABELS,
@@ -40,9 +41,8 @@ function AnnouncementForm({
   onDone?: () => void
 }) {
   const isEdit = Boolean(announcement)
-  const [state, formAction] = useActionState(
+  const { state, formAction, value, checked } = useFormAction(
     isEdit ? updateAnnouncementAction : createAnnouncementAction,
-    emptyActionState,
   )
 
   useEffect(() => {
@@ -62,8 +62,9 @@ function AnnouncementForm({
         <Input
           id="title"
           name="title"
-          defaultValue={announcement?.title ?? ''}
+          defaultValue={value('title', announcement?.title)}
           required
+          maxLength={160}
           placeholder="Changement de salle pour le TP de jeudi"
         />
       </Field>
@@ -73,17 +74,23 @@ function AnnouncementForm({
           id="content"
           name="content"
           rows={5}
-          defaultValue={announcement?.content ?? ''}
+          defaultValue={value('content', announcement?.content)}
           required
-          placeholder="Le TP d automatique de jeudi 14h se tiendra en salle B12 au lieu de A03."
+          maxLength={5000}
+          placeholder="Le TP d’automatique de jeudi 14h se tiendra en salle B12 au lieu de A03."
         />
       </Field>
 
       <div className="grid sm:grid-cols-2 gap-3">
         <Field label="Niveau" htmlFor="level" error={state.fieldErrors?.level} required>
-          <Select id="level" name="level" defaultValue={announcement?.level ?? 'NORMAL'} required>
-            {Object.entries(ANNOUNCEMENT_LEVEL_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
+          <Select
+            id="level"
+            name="level"
+            defaultValue={value('level', announcement?.level ?? 'NORMAL')}
+            required
+          >
+            {Object.entries(ANNOUNCEMENT_LEVEL_LABELS).map(([level, label]) => (
+              <option key={level} value={level}>
                 {label}
               </option>
             ))}
@@ -94,11 +101,11 @@ function AnnouncementForm({
           <Select
             id="category"
             name="category"
-            defaultValue={announcement?.category ?? 'GENERALE'}
+            defaultValue={value('category', announcement?.category ?? 'GENERALE')}
             required
           >
-            {Object.entries(ANNOUNCEMENT_CATEGORY_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
+            {Object.entries(ANNOUNCEMENT_CATEGORY_LABELS).map(([category, label]) => (
+              <option key={category} value={category}>
                 {label}
               </option>
             ))}
@@ -107,8 +114,8 @@ function AnnouncementForm({
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Module concerne" htmlFor="moduleId" error={state.fieldErrors?.moduleId}>
-          <Select id="moduleId" name="moduleId" defaultValue={announcement?.moduleId ?? ''}>
+        <Field label="Module concerné" htmlFor="moduleId" error={state.fieldErrors?.moduleId}>
+          <Select id="moduleId" name="moduleId" defaultValue={value('moduleId', announcement?.moduleId)}>
             <option value="">Aucun module</option>
             {modules.map((m) => (
               <option key={m.id} value={m.id}>
@@ -128,24 +135,15 @@ function AnnouncementForm({
             id="expiresAt"
             name="expiresAt"
             type="datetime-local"
-            defaultValue={
-              announcement?.expiresAt
-                ? new Date(
-                    announcement.expiresAt.getTime() -
-                      announcement.expiresAt.getTimezoneOffset() * 60000,
-                  )
-                    .toISOString()
-                    .slice(0, 16)
-                : ''
-            }
+            defaultValue={value('expiresAt', toDateTimeInputValue(announcement?.expiresAt))}
           />
         </Field>
       </div>
 
       <Checkbox
         name="isPinned"
-        defaultChecked={announcement?.isPinned ?? false}
-        label="Epingler en haut de la liste"
+        defaultChecked={checked('isPinned', announcement?.isPinned ?? false)}
+        label="Épingler en haut de la liste"
       />
 
       <div className="flex justify-end pt-1">

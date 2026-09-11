@@ -90,20 +90,41 @@ n'est écrit en base**.
    |---|---|---|
    | `DATABASE_URL` | oui | Connexion Neon poolée |
    | `DIRECT_URL` | oui | Connexion Neon directe |
-   | `NEXT_PUBLIC_APP_URL` | oui | URL publique (liens des emails) |
+   | `NEXT_PUBLIC_APP_URL` | oui | URL publique (liens des emails et des invitations) |
+   | `NEXT_PUBLIC_APP_TIMEZONE` | oui | Fuseau de référence, ex. `Africa/Casablanca` (défaut), `Europe/Paris` |
    | `STORAGE_DRIVER` | oui | `vercel-blob` en production |
    | `BLOB_READ_WRITE_TOKEN` | oui | Fourni par le store Vercel Blob |
+   | `BLOB_ACCESS` | oui | `private` (défaut, recommandé) ou `public` : doit correspondre au store |
    | `MAIL_DRIVER` | oui | `resend` en production |
    | `RESEND_API_KEY`, `MAIL_FROM` | oui | Clé API et expéditeur Resend |
    | `CRON_SECRET` | oui | Généré par Vercel, protège `/api/cron/reminders` |
 
-3. Créer un store **Vercel Blob** et le relier au projet (renseigne `BLOB_READ_WRITE_TOKEN`).
-4. La commande de build par défaut (`npm run build`) exécute `prisma generate`.
-   Appliquer les migrations depuis la machine locale ou en ajoutant
-   `prisma migrate deploy &&` devant la commande de build.
-5. Le Cron déclarée dans `vercel.json` appelle `/api/cron/reminders` chaque jour à 7h
-   pour envoyer les rappels d'échéance. La route refuse tout appel sans en-tête
-   `Authorization: Bearer $CRON_SECRET`.
+3. Créer un store **Vercel Blob en accès privé** et le relier au projet (renseigne
+   `BLOB_READ_WRITE_TOKEN`). Pour un store existant créé en accès public, définir
+   `BLOB_ACCESS=public`.
+4. **Appliquer les migrations avant de déployer** (depuis la machine locale, avec
+   `DATABASE_URL`/`DIRECT_URL` de production) :
+   ```bash
+   npm run db:deploy
+   ```
+   La migration `20260911000000_rate_limits` crée la table de limitation des
+   tentatives. Tant qu'elle n'est pas appliquée, l'application fonctionne mais
+   sans limitation (erreur journalisée).
+5. Le Cron déclaré dans `vercel.json` appelle `/api/cron/reminders` chaque jour à 7h
+   (UTC) : rappels d'échéance et purge des sessions, jetons et compteurs expirés.
+   La route refuse tout appel sans en-tête `Authorization: Bearer $CRON_SECRET`.
+   Sur un plan Pro, une fréquence horaire (`0 * * * *`) rend les rappels plus précis.
+
+### Fichiers volumineux
+
+Une requête vers une fonction Vercel est plafonnée à **4,5 Mo**. Les fichiers
+(ressources jusqu'à 100 Mo, emplois du temps, pièces jointes) partent donc
+**directement du navigateur vers Vercel Blob**, avec un jeton à usage unique délivré
+par `/api/uploads` après vérification des droits, du format, de la taille et du
+quota. La Server Action ne reçoit que la référence du fichier et revérifie tout
+(taille et type relus dans le stockage, dossier propre à l'utilisateur).
+Les téléchargements sont relayés **en flux** par les routes applicatives, ce qui
+lève la même limite côté réponse.
 
 ---
 
@@ -168,6 +189,12 @@ src/
   est révocable instantanément — un changement de rôle, de classe, de mot de passe ou
   une désactivation ferme toutes les sessions du compte.
 - **Connexion** : réponse et temps de réponse identiques que l'email existe ou non.
+- **Limitation des tentatives** (table `rate_limits`, partagée par toutes les
+  instances) : 8 échecs de connexion par compte et 60 par adresse IP sur 15 min,
+  3 demandes de réinitialisation par adresse par heure, inscriptions et jetons
+  d'envoi plafonnés.
+- **Erreurs métier** : les actions renvoient leur message (affiché en notification)
+  au lieu de lever une erreur, que Next.js masquerait en production.
 - **Injections** : toutes les requêtes passent par Prisma (requêtes paramétrées).
 - **En-têtes** : `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` et
   `Permissions-Policy` sont posés dans `next.config.mjs`.

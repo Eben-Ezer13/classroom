@@ -21,7 +21,7 @@ import {
   IconPoll,
   IconUsers,
 } from '@/components/ui/icons'
-import { formatRelative, formatWeekday, minutesToTime } from '@/lib/utils'
+import { formatCalendarWeekday, formatRelative, formatWeekday, minutesToTime } from '@/lib/utils'
 
 export const metadata: Metadata = { title: 'Tableau de bord' }
 
@@ -71,7 +71,7 @@ export default async function DashboardPage() {
                   </p>
                   <ScheduleItem entry={data.nextSession} highlight />
                   <p className="mt-1.5 text-[12px] text-[var(--text-3)]">
-                    {formatWeekday(data.nextSession.date)} a{' '}
+                    {formatCalendarWeekday(data.nextSession.date)} à{' '}
                     {minutesToTime(data.nextSession.startMinutes)}
                   </p>
                 </div>

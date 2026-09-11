@@ -1,11 +1,13 @@
 import 'server-only'
 import { prisma } from '@/lib/db'
-import { addDays, startOfDay, startOfWeek, toDateOnly } from '@/lib/utils'
+import { addDays, minutesOfDay, startOfWeek, toDateOnly, todayDateOnly } from '@/lib/utils'
 
 /**
  * Lectures liees a l'emploi du temps.
- * La colonne `date` est de type DATE : on la compare toujours a des dates
- * normalisees a minuit UTC (toDateOnly) pour eviter tout decalage de jour.
+ * La colonne `date` est de type DATE : on la compare toujours a des jours
+ * calendaires normalises a minuit UTC. "Aujourd'hui" et l'heure courante
+ * sont lus dans le fuseau de reference de la plateforme, pas dans celui du
+ * serveur (UTC sur Vercel).
  */
 
 const ENTRY_SELECT = {
@@ -49,7 +51,7 @@ export async function getTodaySchedule(
   classGroupId: string,
   options: { includeUnpublished?: boolean } = {},
 ) {
-  const today = startOfDay()
+  const today = todayDateOnly()
   return getScheduleRange(classGroupId, today, today, options)
 }
 
@@ -59,7 +61,7 @@ export async function getWeekSchedule(
   offset = 0,
   options: { includeUnpublished?: boolean } = {},
 ) {
-  const monday = addDays(startOfWeek(), offset * 7)
+  const monday = addDays(startOfWeek(todayDateOnly()), offset * 7)
   const sunday = addDays(monday, 6)
   const entries = await getScheduleRange(classGroupId, monday, sunday, options)
   return { monday, sunday, entries }
@@ -71,8 +73,8 @@ export async function getWeekSchedule(
  */
 export async function getNextSession(classGroupId: string) {
   const now = new Date()
-  const nowMinutes = now.getHours() * 60 + now.getMinutes()
-  const today = toDateOnly(now)
+  const nowMinutes = minutesOfDay(now)
+  const today = todayDateOnly(now)
 
   const todayNext = await prisma.scheduleEntry.findFirst({
     where: {

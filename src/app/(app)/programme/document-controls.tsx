@@ -1,14 +1,16 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Field, Input, Select, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
-import { ConfirmForm, IconSubmit } from '@/components/ui/confirm-form'
+import { ActionForm, ConfirmForm, IconSubmit } from '@/components/ui/confirm-form'
 import { IconTrash, IconUpload } from '@/components/ui/icons'
-import { emptyActionState } from '@/lib/errors'
+import { uploadPendingLabel, useDirectUploads } from '@/components/features/direct-upload'
+import type { ActionState } from '@/lib/errors'
+import { useFormAction } from '@/components/ui/use-form-action'
 import {
   deleteScheduleDocumentAction,
   setCurrentScheduleDocumentAction,
@@ -36,7 +38,7 @@ export function UploadScheduleDocumentButton({
       trigger={
         <>
           <IconUpload className="size-4" />
-          {hasDocument ? 'Remplacer' : 'Televerser'}
+          {hasDocument ? 'Remplacer' : 'Téléverser'}
         </>
       }
       triggerVariant="secondary"
@@ -64,9 +66,13 @@ function DocumentForm({
   defaultSemesterId: string | null
   onDone: () => void
 }) {
-  const [state, formAction] = useActionState(
-    uploadScheduleDocumentAction,
-    emptyActionState,
+  const { prepare, progress } = useDirectUploads()
+  const { state, formAction, value } = useFormAction(
+    async (previous: ActionState, formData: FormData): Promise<ActionState> => {
+      const problem = await prepare(formData, { field: 'file', kind: 'schedule' })
+      if (problem) return { ok: false, message: problem }
+      return uploadScheduleDocumentAction(previous, formData)
+    },
   )
 
   useEffect(() => {
@@ -84,15 +90,15 @@ function DocumentForm({
           id="title"
           name="title"
           required
-          defaultValue=""
+          defaultValue={value('title')}
           placeholder="Intitulé du document"
           maxLength={140}
         />
       </Field>
 
       <Field label="Semestre" htmlFor="semesterId" error={state.fieldErrors?.semesterId}>
-        <Select id="semesterId" name="semesterId" defaultValue={defaultSemesterId ?? ''}>
-          <option value="">Non precise</option>
+        <Select id="semesterId" name="semesterId" defaultValue={value('semesterId', defaultSemesterId)}>
+          <option value="">Non précisé</option>
           {semesters.map((s) => (
             <option key={s.id} value={s.id}>
               {s.label} — {s.academicYear.label}
@@ -104,7 +110,7 @@ function DocumentForm({
       <Field
         label="Fichier"
         htmlFor="file"
-        hint="Photo du planning affiche, export PDF de l administration..."
+        hint="Photo du planning affiché, export PDF de l’administration..."
         required
       >
         <input
@@ -118,11 +124,13 @@ function DocumentForm({
       </Field>
 
       <Field label="Note" htmlFor="note" error={state.fieldErrors?.note} hint="Facultatif">
-        <Textarea id="note" name="note" rows={2} maxLength={500} />
+        <Textarea id="note" name="note" rows={2} maxLength={500} defaultValue={value('note')} />
       </Field>
 
       <div className="flex justify-end">
-        <SubmitButton pendingLabel="Envoi...">Televerser</SubmitButton>
+        <SubmitButton pendingLabel={uploadPendingLabel(progress, 'Envoi...')}>
+          Téléverser
+        </SubmitButton>
       </div>
     </form>
   )
@@ -140,17 +148,16 @@ export function ScheduleDocumentActions({
   return (
     <div className="flex items-center gap-1.5">
       {isCurrent ? null : (
-        <form action={setCurrentScheduleDocumentAction}>
-          <input type="hidden" name="documentId" value={documentId} />
+        <ActionForm action={setCurrentScheduleDocumentAction} hidden={{ documentId }}>
           <Button type="submit" size="sm" variant="ghost">
             Mettre en avant
           </Button>
-        </form>
+        </ActionForm>
       )}
       <ConfirmForm
         action={deleteScheduleDocumentAction}
         hidden={{ documentId }}
-        message={`Supprimer "${title}" ? Le fichier sera efface du stockage.`}
+        message={`Supprimer « ${title} » ? Le fichier sera effacé du stockage.`}
       >
         <IconSubmit label="Supprimer le document" tone="danger">
           <IconTrash className="size-[17px]" />

@@ -5,7 +5,10 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { CLASS_ROLE_LABELS } from '@/lib/constants'
+import type { ActionState } from '@/lib/errors'
 import { Avatar } from '@/components/ui/avatar'
+import { ActionForm } from '@/components/ui/confirm-form'
+import { Toaster } from '@/components/ui/toast'
 import { ThemeToggle } from './theme'
 import {
   IconClose,
@@ -41,6 +44,8 @@ export type ShellUser = {
   classes: ShellClass[]
 }
 
+type SwitchClassAction = (formData: FormData) => Promise<ActionState>
+
 /**
  * Coque applicative : barre laterale sur desktop, tiroir + barre inferieure
  * sur mobile. Les enfants restent rendus cote serveur.
@@ -55,7 +60,7 @@ export function AppShell({
   user: ShellUser
   unreadCount: number
   logout: () => Promise<void>
-  switchClass: (formData: FormData) => Promise<void>
+  switchClass: SwitchClassAction
   children: ReactNode
 }) {
   const pathname = usePathname()
@@ -196,6 +201,8 @@ export function AppShell({
           })}
         </ul>
       </nav>
+
+      <Toaster />
     </div>
   )
 }
@@ -216,7 +223,7 @@ function SidebarContent({
   sections: ReturnType<typeof navForRole>
   unreadCount: number
   pathname: string
-  switchClass: (formData: FormData) => Promise<void>
+  switchClass: SwitchClassAction
 }) {
   return (
     <>
@@ -368,7 +375,7 @@ function UserMenu({ user, logout }: { user: ShellUser; logout: () => Promise<voi
               className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-[var(--danger)] hover:bg-[var(--danger-soft)] transition-colors"
             >
               <IconLogout className="size-4" />
-              Se deconnecter
+              Se déconnecter
             </button>
           </form>
         </div>
@@ -389,7 +396,7 @@ function ClassSwitcher({
   switchClass,
 }: {
   user: ShellUser
-  switchClass: (formData: FormData) => Promise<void>
+  switchClass: SwitchClassAction
 }) {
   if (user.classes.length === 0) {
     return (
@@ -398,7 +405,7 @@ function ClassSwitcher({
           href="/classes"
           className="block rounded-lg border border-dashed border-[var(--border-strong)] px-3 py-2.5 text-[12.5px] text-[var(--text-2)] hover:bg-[var(--surface-3)] transition-colors"
         >
-          Creer ou rejoindre une classe
+          Créer ou rejoindre une classe
         </Link>
       </div>
     )
@@ -407,9 +414,9 @@ function ClassSwitcher({
   return (
     <div className="px-3 pt-3 space-y-1.5">
       {user.classes.length > 1 ? (
-        <form action={switchClass}>
+        <ActionForm action={switchClass}>
           <label htmlFor="class-switcher" className="sr-only">
-            Changer d espace de classe
+            Changer d’espace de classe
           </label>
           <select
             id="class-switcher"
@@ -429,7 +436,7 @@ function ClassSwitcher({
               Changer
             </button>
           </noscript>
-        </form>
+        </ActionForm>
       ) : null}
       <Link
         href="/classes"

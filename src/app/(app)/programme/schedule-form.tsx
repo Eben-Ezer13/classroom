@@ -1,14 +1,14 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useEffect } from 'react'
 import {
   createScheduleEntryAction,
   updateScheduleEntryAction,
 } from '@/app/actions/schedule'
-import { emptyActionState } from '@/lib/errors'
 import { Checkbox, Field, Input, Select, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
+import { useFormAction } from '@/components/ui/use-form-action'
 import { SCHEDULE_TYPE_LABELS } from '@/lib/constants'
 import { minutesToTime } from '@/lib/utils'
 
@@ -44,9 +44,8 @@ export function ScheduleForm({
   onDone?: () => void
 }) {
   const isEdit = Boolean(entry)
-  const [state, formAction] = useActionState(
+  const { state, formAction, value, checked } = useFormAction(
     isEdit ? updateScheduleEntryAction : createScheduleEntryAction,
-    emptyActionState,
   )
 
   // Effet et non appel direct : fermer la modale pendant le rendu
@@ -69,7 +68,7 @@ export function ScheduleForm({
           <Select
             id="semesterId"
             name="semesterId"
-            defaultValue={entry?.semesterId ?? defaultSemesterId ?? ''}
+            defaultValue={value('semesterId', entry?.semesterId ?? defaultSemesterId)}
             required
           >
             <option value="" disabled>
@@ -84,9 +83,9 @@ export function ScheduleForm({
         </Field>
 
         <Field label="Type de séance" htmlFor="type" error={state.fieldErrors?.type} required>
-          <Select id="type" name="type" defaultValue={entry?.type ?? 'COURS'} required>
-            {Object.entries(SCHEDULE_TYPE_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
+          <Select id="type" name="type" defaultValue={value('type', entry?.type ?? 'COURS')} required>
+            {Object.entries(SCHEDULE_TYPE_LABELS).map(([type, label]) => (
+              <option key={type} value={type}>
                 {label}
               </option>
             ))}
@@ -100,7 +99,7 @@ export function ScheduleForm({
         error={state.fieldErrors?.moduleId}
         hint="Facultatif : laissez vide pour une séance hors module"
       >
-        <Select id="moduleId" name="moduleId" defaultValue={entry?.moduleId ?? ''}>
+        <Select id="moduleId" name="moduleId" defaultValue={value('moduleId', entry?.moduleId)}>
           <option value="">Aucun module</option>
           {modules.map((m) => (
             <option key={m.id} value={m.id}>
@@ -119,21 +118,22 @@ export function ScheduleForm({
         <Input
           id="title"
           name="title"
-          defaultValue={entry?.title ?? ''}
+          defaultValue={value('title', entry?.title)}
+          maxLength={140}
           placeholder="Réunion de rentrée"
         />
       </Field>
 
       <div className="grid grid-cols-3 gap-3">
         <Field label="Date" htmlFor="date" error={state.fieldErrors?.date} required>
-          <Input id="date" name="date" type="date" defaultValue={dateValue} required />
+          <Input id="date" name="date" type="date" defaultValue={value('date', dateValue)} required />
         </Field>
-        <Field label="Debut" htmlFor="startTime" error={state.fieldErrors?.startTime} required>
+        <Field label="Début" htmlFor="startTime" error={state.fieldErrors?.startTime} required>
           <Input
             id="startTime"
             name="startTime"
             type="time"
-            defaultValue={entry ? minutesToTime(entry.startMinutes) : ''}
+            defaultValue={value('startTime', entry ? minutesToTime(entry.startMinutes) : '')}
             required
           />
         </Field>
@@ -142,7 +142,7 @@ export function ScheduleForm({
             id="endTime"
             name="endTime"
             type="time"
-            defaultValue={entry ? minutesToTime(entry.endMinutes) : ''}
+            defaultValue={value('endTime', entry ? minutesToTime(entry.endMinutes) : '')}
             required
           />
         </Field>
@@ -150,13 +150,20 @@ export function ScheduleForm({
 
       <div className="grid sm:grid-cols-2 gap-3">
         <Field label="Salle" htmlFor="room" error={state.fieldErrors?.room}>
-          <Input id="room" name="room" defaultValue={entry?.room ?? ''} placeholder="B204" />
+          <Input
+            id="room"
+            name="room"
+            maxLength={60}
+            defaultValue={value('room', entry?.room)}
+            placeholder="B204"
+          />
         </Field>
         <Field label="Professeur" htmlFor="teacherName" error={state.fieldErrors?.teacherName}>
           <Input
             id="teacherName"
             name="teacherName"
-            defaultValue={entry?.teacherName ?? ''}
+            maxLength={120}
+            defaultValue={value('teacherName', entry?.teacherName)}
             placeholder="Mme Bennani"
           />
         </Field>
@@ -166,15 +173,16 @@ export function ScheduleForm({
         <Textarea
           id="note"
           name="note"
-          defaultValue={entry?.note ?? ''}
+          defaultValue={value('note', entry?.note)}
           rows={3}
-          placeholder="Apporter le polycopie du chapitre 4."
+          maxLength={500}
+          placeholder="Apporter le polycopié du chapitre 4."
         />
       </Field>
 
       <Checkbox
         name="isPublished"
-        defaultChecked={entry?.isPublished ?? true}
+        defaultChecked={checked('isPublished', entry?.isPublished ?? true)}
         label="Publier immédiatement (visible par les étudiants)"
       />
 

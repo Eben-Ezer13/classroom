@@ -14,10 +14,9 @@ import { recordAudit } from '@/lib/audit'
 import { notifyClass } from '@/lib/notifications'
 import {
   assertClassQuota,
-  assertValidUpload,
-  classPrefix,
+  discardStoredFiles,
+  receiveUploads,
   removeFile,
-  storeFile,
   trackClassStorage,
 } from '@/lib/storage'
 import { runAction, NotFoundError, type ActionState } from '@/lib/errors'
@@ -37,15 +36,6 @@ export async function createResourceAction(
     const data = parsed.data
     const classGroupId = requireManagedClassId(user, data.classGroupId)
 
-    const file = formData.get('file')
-    if (!(file instanceof File) || file.size === 0) {
-      return { ok: false, message: 'Sélectionnez un fichier à déposer.' }
-    }
-    // Taille, type MIME et extension sont verifies cote serveur : le
-    // filtre du champ <input accept> n'est qu'un confort visuel.
-    assertValidUpload(file)
-    await assertClassQuota(classGroupId, file.size)
-
     // Semestre, module et projet doivent appartenir a CETTE classe : sans
     // ces controles, un delegue pourrait rattacher un fichier au
     // calendrier ou au projet d'une autre classe.
@@ -53,10 +43,21 @@ export async function createResourceAction(
     await assertModuleInClass(data.moduleId, classGroupId)
     await assertProjectInClass(data.projectId, classGroupId)
 
-    const stored = await storeFile(file, classPrefix(classGroupId, 'resources'))
+    // Taille, format et emplacement sont verifies cote serveur : le filtre
+    // <input accept> et le controle du navigateur ne sont qu'un confort.
+    const [stored] = await receiveUploads(formData, {
+      field: 'file',
+      kind: 'resource',
+      classGroupId,
+      userId: user.id,
+    })
+    if (!stored) {
+      return { ok: false, message: 'Sélectionnez un fichier à déposer.' }
+    }
 
     let resource
     try {
+      await assertClassQuota(classGroupId, stored.fileSize)
       resource = await prisma.resource.create({
         data: {
           classGroupId,
@@ -76,13 +77,14 @@ export async function createResourceAction(
           id: true,
           title: true,
           kind: true,
+          projectId: true,
           module: { select: { code: true, name: true } },
         },
       })
     } catch (error) {
       // Le fichier est deja dans le stockage : sans ce nettoyage il
       // resterait orphelin, sans ligne correspondante en base.
-      await removeFile(stored.filePath)
+      await discardStoredFiles([stored])
       throw error
     }
 
@@ -107,7 +109,7 @@ export async function createResourceAction(
         body: `${RESOURCE_KIND_LABELS[resource.kind] ?? resource.kind} : ${resource.title}${
           resource.module ? ` (${resource.module.code})` : ''
         }`,
-        url: '/ressources',
+        url: resource.projectId ? `/projets/${resource.projectId}` : '/ressources',
         entityType: 'Resource',
         entityId: resource.id,
       },
@@ -116,7 +118,8 @@ export async function createResourceAction(
 
     revalidatePath('/ressources')
     revalidatePath('/dashboard')
-    if (resource.module) revalidatePath('/modules')
+    revalidatePath('/modules', 'layout')
+    if (resource.projectId) revalidatePath(`/projets/${resource.projectId}`)
     return { ok: true, message: 'Ressource ajoutée.' }
   })
 }
@@ -160,78 +163,95 @@ export async function updateResourceAction(
       entityId: updated.id,
       entityLabel: updated.title,
       classGroupId: existing.classGroupId,
-      summary: `${user.firstName} ${user.lastName} a modifie la ressource ${updated.title}.`,
+      summary: `${user.firstName} ${user.lastName} a modifié la ressource ${updated.title}.`,
     })
 
     revalidatePath('/ressources')
-    revalidatePath('/modules')
+    revalidatePath('/modules', 'layout')
     return { ok: true, message: 'Ressource mise à jour.' }
   })
 }
 
-export async function deleteResourceAction(formData: FormData): Promise<void> {
-  const { user } = await requireClassAdmin()
-  const resourceId = String(formData.get('resourceId') ?? '')
+export async function deleteResourceAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user } = await requireClassAdmin()
+    const resourceId = String(formData.get('resourceId') ?? '')
 
-  const existing = await prisma.resource.findFirst({
-    where: { id: resourceId, deletedAt: null },
-    select: { id: true, classGroupId: true, title: true, filePath: true, fileSize: true },
+    const existing = await prisma.resource.findFirst({
+      where: { id: resourceId, deletedAt: null },
+      select: {
+        id: true,
+        classGroupId: true,
+        title: true,
+        filePath: true,
+        fileSize: true,
+        projectId: true,
+      },
+    })
+    if (!existing) throw new NotFoundError('Ressource introuvable.')
+    assertCanManageClass(user, existing.classGroupId)
+
+    await prisma.resource.update({
+      where: { id: resourceId },
+      data: { deletedAt: new Date() },
+    })
+
+    // Le binaire est retire du stockage : conserver une ligne en soft delete
+    // ne justifie pas de payer le stockage du fichier indefiniment.
+    await removeFile(existing.filePath)
+    await trackClassStorage(existing.classGroupId, -existing.fileSize)
+
+    await recordAudit({
+      actor: user,
+      action: 'RESOURCE_DELETED',
+      entityType: 'Resource',
+      entityId: existing.id,
+      entityLabel: existing.title,
+      classGroupId: existing.classGroupId,
+      summary: `${user.firstName} ${user.lastName} a supprimé la ressource ${existing.title}.`,
+    })
+
+    revalidatePath('/ressources')
+    revalidatePath('/modules', 'layout')
+    revalidatePath('/dashboard')
+    if (existing.projectId) revalidatePath(`/projets/${existing.projectId}`)
+    return { ok: true, message: 'Ressource supprimée.' }
   })
-  if (!existing) throw new NotFoundError('Ressource introuvable.')
-  assertCanManageClass(user, existing.classGroupId)
-
-  await prisma.resource.update({
-    where: { id: resourceId },
-    data: { deletedAt: new Date() },
-  })
-
-  // Le binaire est retire du stockage : conserver une ligne en soft delete
-  // ne justifie pas de payer le stockage du fichier indefiniment.
-  await removeFile(existing.filePath)
-  await trackClassStorage(existing.classGroupId, -existing.fileSize)
-
-  await recordAudit({
-    actor: user,
-    action: 'RESOURCE_DELETED',
-    entityType: 'Resource',
-    entityId: existing.id,
-    entityLabel: existing.title,
-    classGroupId: existing.classGroupId,
-    summary: `${user.firstName} ${user.lastName} a supprime la ressource ${existing.title}.`,
-  })
-
-  revalidatePath('/ressources')
-  revalidatePath('/modules')
-  revalidatePath('/dashboard')
 }
 
-export async function toggleResourceArchiveAction(formData: FormData): Promise<void> {
-  const { user } = await requireClassAdmin()
-  const resourceId = String(formData.get('resourceId') ?? '')
+export async function toggleResourceArchiveAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user } = await requireClassAdmin()
+    const resourceId = String(formData.get('resourceId') ?? '')
 
-  const existing = await prisma.resource.findFirst({
-    where: { id: resourceId, deletedAt: null },
-    select: { id: true, classGroupId: true, title: true, isArchived: true },
+    const existing = await prisma.resource.findFirst({
+      where: { id: resourceId, deletedAt: null },
+      select: { id: true, classGroupId: true, title: true, isArchived: true },
+    })
+    if (!existing) throw new NotFoundError('Ressource introuvable.')
+    assertCanManageClass(user, existing.classGroupId)
+
+    await prisma.resource.update({
+      where: { id: resourceId },
+      data: { isArchived: !existing.isArchived },
+    })
+
+    await recordAudit({
+      actor: user,
+      action: existing.isArchived ? 'RESOURCE_UNARCHIVED' : 'RESOURCE_ARCHIVED',
+      entityType: 'Resource',
+      entityId: existing.id,
+      entityLabel: existing.title,
+      classGroupId: existing.classGroupId,
+      summary: `${user.firstName} ${user.lastName} a ${
+        existing.isArchived ? 'désarchivé' : 'archivé'
+      } la ressource ${existing.title}.`,
+    })
+
+    revalidatePath('/ressources')
+    return {
+      ok: true,
+      message: existing.isArchived ? 'Ressource désarchivée.' : 'Ressource archivée.',
+    }
   })
-  if (!existing) throw new NotFoundError('Ressource introuvable.')
-  assertCanManageClass(user, existing.classGroupId)
-
-  await prisma.resource.update({
-    where: { id: resourceId },
-    data: { isArchived: !existing.isArchived },
-  })
-
-  await recordAudit({
-    actor: user,
-    action: existing.isArchived ? 'RESOURCE_UNARCHIVED' : 'RESOURCE_ARCHIVED',
-    entityType: 'Resource',
-    entityId: existing.id,
-    entityLabel: existing.title,
-    classGroupId: existing.classGroupId,
-    summary: `${user.firstName} ${user.lastName} a ${
-      existing.isArchived ? 'desarchive' : 'archive'
-    } la ressource ${existing.title}.`,
-  })
-
-  revalidatePath('/ressources')
 }

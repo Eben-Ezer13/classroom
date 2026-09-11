@@ -26,7 +26,7 @@ export function FilterBar({
           <div className="flex items-center gap-2 ml-auto">
             {hasFilters ? (
               <Link href={action} className={buttonClasses('ghost', 'sm')}>
-                Reinitialiser
+                Réinitialiser
               </Link>
             ) : null}
             <button type="submit" className={buttonClasses('secondary', 'sm')}>

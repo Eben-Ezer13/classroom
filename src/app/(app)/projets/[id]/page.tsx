@@ -1,13 +1,10 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { requirePageUser } from '@/lib/auth/guards'
+import { getCurrentUser } from '@/lib/auth/session'
 import { prisma } from '@/lib/db'
-import { canViewClass } from '@/lib/permissions'
-import {
-  getClassModules,
-  getClassSemesters,
-  getDefaultSemesterId,
-} from '@/lib/services/class-context'
+import { canManageClass, canViewClass } from '@/lib/permissions'
+import { getClassModules, getClassSemesters } from '@/lib/services/class-context'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/feedback'
@@ -22,11 +19,17 @@ type Props = { params: Promise<{ id: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
-  const project = await prisma.project.findUnique({
-    where: { id },
-    select: { title: true },
-  })
-  return { title: project?.title ?? 'Projet' }
+  // Meme regle que la page : le titre d'un projet d'une autre classe
+  // n'apparait pas, meme dans l'onglet du navigateur.
+  const user = await getCurrentUser()
+  const project = user
+    ? await prisma.project.findFirst({
+        where: { id, deletedAt: null },
+        select: { title: true, classGroupId: true },
+      })
+    : null
+  if (!user || !project || !canViewClass(user, project.classGroupId)) return { title: 'Projet' }
+  return { title: project.title }
 }
 
 export default async function ProjectDetailPage({ params }: Props) {
@@ -69,16 +72,15 @@ export default async function ProjectDetailPage({ params }: Props) {
 
   if (!project || !canViewClass(user, project.classGroupId)) notFound()
 
-  // Seul le delegue de la classe active peut gerer le contenu.
-  const canManage = user.role === 'ADMIN'
+  // Seul un delegue de la classe DU PROJET peut en gerer le contenu.
+  const canManage = canManageClass(user, project.classGroupId)
   const remaining = project.dueAt.getTime() - Date.now()
   const overdue = remaining <= 0
   const urgent = remaining > 0 && remaining < 3 * 86_400_000
 
-  const [modules, semesters, defaultSemesterId] = await Promise.all([
+  const [modules, semesters] = await Promise.all([
     getClassModules(project.classGroupId),
     getClassSemesters(project.classGroupId),
-    getDefaultSemesterId(project.classGroupId),
   ])
 
   const moduleOptions = modules.map((m) => ({ id: m.id, code: m.code, name: m.name }))
@@ -99,8 +101,10 @@ export default async function ProjectDetailPage({ params }: Props) {
             <AddResourceButton
               modules={moduleOptions}
               semesters={semesterOptions}
-              defaultSemesterId={defaultSemesterId ?? project.semesterId}
+              defaultSemesterId={project.semesterId}
               defaultModuleId={project.module?.id}
+              classGroupId={project.classGroupId}
+              projectId={project.id}
               label="Ajouter un document"
             />
           ) : null

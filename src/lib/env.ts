@@ -48,6 +48,15 @@ export const env = {
   get blobToken() {
     return required('BLOB_READ_WRITE_TOKEN')
   },
+  /**
+   * Mode d'acces du store Vercel Blob, qui doit correspondre a celui choisi a
+   * sa creation. "private" (par defaut) : un fichier n'est lisible qu'avec le
+   * jeton du serveur, meme si son URL fuite. "public" : pour un store deja
+   * cree en acces public.
+   */
+  get blobAccess(): 'private' | 'public' {
+    return optional('BLOB_ACCESS') === 'public' ? 'public' : 'private'
+  },
   get isProduction() {
     return process.env.NODE_ENV === 'production'
   },

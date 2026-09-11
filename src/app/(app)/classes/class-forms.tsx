@@ -1,14 +1,13 @@
 'use client'
 
-import { useActionState } from 'react'
 import { createClassAction, joinClassAction } from '@/app/actions/classes'
-import { emptyActionState } from '@/lib/errors'
 import { Field, Input, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
+import { useFormAction } from '@/components/ui/use-form-action'
 
 export function CreateClassForm() {
-  const [state, formAction] = useActionState(createClassAction, emptyActionState)
+  const { state, formAction, value } = useFormAction(createClassAction)
 
   return (
     <form action={formAction} className="space-y-4">
@@ -21,7 +20,14 @@ export function CreateClassForm() {
         hint="Exemple : GSMI 4A"
         required
       >
-        <Input id="name" name="name" required placeholder="GSMI 4A" maxLength={80} />
+        <Input
+          id="name"
+          name="name"
+          required
+          placeholder="GSMI 4A"
+          maxLength={80}
+          defaultValue={value('name')}
+        />
       </Field>
 
       <Field
@@ -36,6 +42,7 @@ export function CreateClassForm() {
           required
           placeholder="ENSAM Casablanca"
           maxLength={140}
+          defaultValue={value('schoolName')}
         />
       </Field>
 
@@ -46,10 +53,17 @@ export function CreateClassForm() {
             name="programName"
             placeholder="Génie mécanique"
             maxLength={140}
+            defaultValue={value('programName')}
           />
         </Field>
         <Field label="Niveau" htmlFor="levelName" error={state.fieldErrors?.levelName}>
-          <Input id="levelName" name="levelName" placeholder="4e année" maxLength={80} />
+          <Input
+            id="levelName"
+            name="levelName"
+            placeholder="4e année"
+            maxLength={80}
+            defaultValue={value('levelName')}
+          />
         </Field>
       </div>
 
@@ -66,6 +80,7 @@ export function CreateClassForm() {
           required
           placeholder="2026/2027"
           maxLength={20}
+          defaultValue={value('academicYearLabel')}
         />
       </Field>
 
@@ -75,7 +90,13 @@ export function CreateClassForm() {
         error={state.fieldErrors?.description}
         hint="Facultatif"
       >
-        <Textarea id="description" name="description" rows={3} maxLength={500} />
+        <Textarea
+          id="description"
+          name="description"
+          rows={3}
+          maxLength={500}
+          defaultValue={value('description')}
+        />
       </Field>
 
       <SubmitButton className="w-full" pendingLabel="Création de l’espace...">
@@ -85,8 +106,15 @@ export function CreateClassForm() {
   )
 }
 
-export function JoinClassForm() {
-  const [state, formAction] = useActionState(joinClassAction, emptyActionState)
+export function JoinClassForm({
+  defaultCode,
+  variant = 'secondary',
+}: {
+  /** Code pre-rempli (lien d'invitation). */
+  defaultCode?: string
+  variant?: 'primary' | 'secondary'
+}) {
+  const { state, formAction, value } = useFormAction(joinClassAction)
 
   return (
     <form action={formAction} className="space-y-4">
@@ -103,6 +131,7 @@ export function JoinClassForm() {
           id="code"
           name="code"
           required
+          defaultValue={value('code', defaultCode)}
           placeholder="A1B2C3D4"
           className="uppercase tracking-[0.15em] font-mono"
           maxLength={40}
@@ -115,10 +144,16 @@ export function JoinClassForm() {
         error={state.fieldErrors?.studentId}
         hint="Facultatif"
       >
-        <Input id="studentId" name="studentId" placeholder="20260145" maxLength={40} />
+        <Input
+          id="studentId"
+          name="studentId"
+          placeholder="20260145"
+          maxLength={40}
+          defaultValue={value('studentId')}
+        />
       </Field>
 
-      <SubmitButton className="w-full" variant="secondary" pendingLabel="Verification...">
+      <SubmitButton className="w-full" variant={variant} pendingLabel="Vérification...">
         Rejoindre la classe
       </SubmitButton>
     </form>

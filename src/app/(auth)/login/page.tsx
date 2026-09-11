@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { getCurrentUser } from '@/lib/auth/session'
+import { safeNextPath } from '@/lib/utils'
 import { LoginForm } from './login-form'
 
 export const metadata: Metadata = { title: 'Connexion' }
@@ -10,12 +13,22 @@ export default async function LoginPage({
   searchParams: Promise<{ reason?: string; next?: string }>
 }) {
   const params = await searchParams
+  const next = safeNextPath(params.next)
+
+  // Seule une session VALIDE renvoie vers l'application : un cookie perime
+  // laisse l'ecran de connexion s'afficher normalement.
+  if (await getCurrentUser()) redirect(next ?? '/dashboard')
+
   const notice =
     params.reason === 'password-changed'
       ? 'Mot de passe modifié. Reconnectez-vous.'
       : params.reason === 'reset'
         ? 'Mot de passe réinitialisé. Vous pouvez vous connecter.'
-        : null
+        : next?.startsWith('/rejoindre')
+          ? 'Connectez-vous pour rejoindre la classe. Pas encore de compte ? Créez-en un ci-dessous.'
+          : null
+
+  const registerHref = next ? `/register?next=${encodeURIComponent(next)}` : '/register'
 
   return (
     <div>
@@ -28,12 +41,12 @@ export default async function LoginPage({
         </p>
       </div>
 
-      <LoginForm notice={notice} />
+      <LoginForm notice={notice} next={next} />
 
       <p className="mt-6 text-center text-[13px] text-[var(--text-3)]">
         Pas encore de compte ?{' '}
         <Link
-          href="/register"
+          href={registerHref}
           className="text-[var(--accent)] font-medium hover:underline underline-offset-2"
         >
           Créer un compte

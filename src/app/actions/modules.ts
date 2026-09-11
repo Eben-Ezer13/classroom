@@ -137,49 +137,60 @@ export async function updateModuleAction(
   })
 }
 
-export async function deleteModuleAction(formData: FormData): Promise<void> {
-  const { user } = await requireClassAdmin()
-  const moduleId = String(formData.get('moduleId') ?? '')
+export async function deleteModuleAction(formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const { user } = await requireClassAdmin()
+    const moduleId = String(formData.get('moduleId') ?? '')
 
-  const existing = await prisma.module.findFirst({
-    where: { id: moduleId, deletedAt: null },
-    select: {
-      id: true,
-      classGroupId: true,
-      code: true,
-      name: true,
-      _count: { select: { resources: true, schedule: true, projects: true } },
-    },
+    const existing = await prisma.module.findFirst({
+      where: { id: moduleId, deletedAt: null },
+      select: {
+        id: true,
+        classGroupId: true,
+        code: true,
+        name: true,
+        // Seul le contenu encore visible compte : une ressource supprimee
+        // ne doit pas bloquer la suppression du module.
+        _count: {
+          select: {
+            resources: { where: { deletedAt: null } },
+            schedule: { where: { deletedAt: null } },
+            projects: { where: { deletedAt: null } },
+          },
+        },
+      },
+    })
+    if (!existing) throw new NotFoundError('Module introuvable.')
+    assertCanManageClass(user, existing.classGroupId)
+
+    const attached =
+      existing._count.resources + existing._count.schedule + existing._count.projects
+    if (attached > 0) {
+      // Refus explicite plutot qu'une cascade silencieuse : supprimer un
+      // module ne doit pas faire disparaitre des ressources par surprise.
+      throw new AppError(
+        `Ce module est encore utilisé (${existing._count.resources} ressource(s), ` +
+          `${existing._count.schedule} séance(s), ${existing._count.projects} projet(s)). ` +
+          `Détachez-les avant de le supprimer.`,
+      )
+    }
+
+    await prisma.module.update({
+      where: { id: moduleId },
+      data: { deletedAt: new Date(), isActive: false },
+    })
+
+    await recordAudit({
+      actor: user,
+      action: 'MODULE_DELETED',
+      entityType: 'Module',
+      entityId: existing.id,
+      entityLabel: `${existing.code} — ${existing.name}`,
+      classGroupId: existing.classGroupId,
+      summary: `${user.firstName} ${user.lastName} a supprimé le module ${existing.code}.`,
+    })
+
+    revalidatePath('/modules')
+    return { ok: true, message: `Module ${existing.code} supprimé.` }
   })
-  if (!existing) throw new NotFoundError('Module introuvable.')
-  assertCanManageClass(user, existing.classGroupId)
-
-  const attached =
-    existing._count.resources + existing._count.schedule + existing._count.projects
-  if (attached > 0) {
-    // Refus explicite plutot qu'une cascade silencieuse : supprimer un
-    // module ne doit pas faire disparaitre des ressources par surprise.
-    throw new AppError(
-      `Ce module est encore utilise (${existing._count.resources} ressource(s), ` +
-        `${existing._count.schedule} séance(s), ${existing._count.projects} projet(s)). ` +
-        `Detachez-les avant de le supprimer.`,
-    )
-  }
-
-  await prisma.module.update({
-    where: { id: moduleId },
-    data: { deletedAt: new Date(), isActive: false },
-  })
-
-  await recordAudit({
-    actor: user,
-    action: 'MODULE_DELETED',
-    entityType: 'Module',
-    entityId: existing.id,
-    entityLabel: `${existing.code} — ${existing.name}`,
-    classGroupId: existing.classGroupId,
-    summary: `${user.firstName} ${user.lastName} a supprime le module ${existing.code}.`,
-  })
-
-  revalidatePath('/modules')
 }

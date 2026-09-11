@@ -13,6 +13,9 @@ import { AppError } from '@/lib/errors'
  * Inutilisable en production : le systeme de fichiers d'une fonction
  * serverless est en lecture seule et ephemere. `assertUsableDriver`
  * (storage/index.ts) refuse ce driver hors developpement.
+ *
+ * Le chemin enregistre est la cle relative ("classes/<id>/..."), jamais une
+ * URL : resolveSafe refuse toute cle qui sortirait du dossier de stockage.
  */
 
 const ROOT = path.join(process.cwd(), 'storage')
@@ -35,10 +38,6 @@ export async function put(
   await fs.mkdir(path.dirname(target), { recursive: true })
   await fs.writeFile(target, data)
   return key
-}
-
-export async function read(filePath: string): Promise<Buffer> {
-  return fs.readFile(resolveSafe(filePath))
 }
 
 /** Flux de lecture : le fichier n'est jamais charge entierement en memoire. */

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { requirePageUser } from '@/lib/auth/guards'
 import { prisma } from '@/lib/db'
+import { notificationScope } from '@/lib/notifications'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/feedback'
@@ -31,10 +32,10 @@ export default async function NotificationsPage({
   const pageRaw = Number(params.page ?? '1')
   const page = Number.isFinite(pageRaw) ? Math.max(1, Math.floor(pageRaw)) : 1
 
-  const where = {
-    userId: user.id,
-    ...(onlyUnread ? { readAt: null } : {}),
-  }
+  // Meme perimetre que le compteur de la barre laterale : la classe
+  // ouverte, plus les notifications independantes d'une classe.
+  const scope = notificationScope(user.id, user.classGroupId)
+  const where = { ...scope, ...(onlyUnread ? { readAt: null } : {}) }
 
   const [items, total, unread] = await Promise.all([
     prisma.notification.findMany({
@@ -44,7 +45,7 @@ export default async function NotificationsPage({
       take: PAGE_SIZE,
     }),
     prisma.notification.count({ where }),
-    prisma.notification.count({ where: { userId: user.id, readAt: null } }),
+    prisma.notification.count({ where: { ...scope, readAt: null } }),
   ])
 
   return (

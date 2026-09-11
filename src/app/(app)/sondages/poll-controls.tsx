@@ -9,6 +9,7 @@ import { Checkbox, Field, Input, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
 import { emptyActionState } from '@/lib/errors'
+import { useFormAction } from '@/components/ui/use-form-action'
 import {
   closePollAction,
   createPollAction,
@@ -17,7 +18,8 @@ import {
 } from '@/app/actions/polls'
 
 function PollForm({ onDone }: { onDone?: () => void }) {
-  const [state, formAction] = useActionState(createPollAction, emptyActionState)
+  const { state, formAction, value, checked } = useFormAction(createPollAction)
+  // Options controlees : leur saisie survit a un refus du serveur.
   const [options, setOptions] = useState(['', ''])
 
   useEffect(() => {
@@ -38,15 +40,19 @@ function PollForm({ onDone }: { onDone?: () => void }) {
           id="title"
           name="title"
           required
-          placeholder="Quelle date preferez-vous pour le rattrapage ?"
+          maxLength={160}
+          defaultValue={value('title')}
+          placeholder="Quelle date préférez-vous pour le rattrapage ?"
         />
       </Field>
 
-      <Field label="Precisions" htmlFor="description" error={state.fieldErrors?.description}>
+      <Field label="Précisions" htmlFor="description" error={state.fieldErrors?.description}>
         <Textarea
           id="description"
           name="description"
           rows={2}
+          maxLength={1000}
+          defaultValue={value('description')}
           placeholder="Le rattrapage durera 2 heures, en salle B12."
         />
       </Field>
@@ -56,11 +62,12 @@ function PollForm({ onDone }: { onDone?: () => void }) {
           Options <span className="text-[var(--danger)]">*</span>
         </p>
         <div className="space-y-2">
-          {options.map((value, index) => (
+          {options.map((option, index) => (
             <div key={index} className="flex items-center gap-2">
               <Input
                 name="options"
-                value={value}
+                value={option}
+                maxLength={160}
                 onChange={(e) => setOption(index, e.target.value)}
                 placeholder={`Option ${index + 1}`}
                 required
@@ -69,7 +76,7 @@ function PollForm({ onDone }: { onDone?: () => void }) {
                 <button
                   type="button"
                   onClick={() => setOptions((prev) => prev.filter((_, i) => i !== index))}
-                  aria-label={`Retirer l option ${index + 1}`}
+                  aria-label={`Retirer l’option ${index + 1}`}
                   className="shrink-0 size-9 grid place-items-center rounded-lg text-[var(--text-3)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] transition-colors"
                 >
                   <IconClose className="size-4" />
@@ -103,12 +110,26 @@ function PollForm({ onDone }: { onDone?: () => void }) {
         error={state.fieldErrors?.endsAt}
         required
       >
-        <Input id="endsAt" name="endsAt" type="datetime-local" required />
+        <Input
+          id="endsAt"
+          name="endsAt"
+          type="datetime-local"
+          required
+          defaultValue={value('endsAt')}
+        />
       </Field>
 
       <div className="space-y-2">
-        <Checkbox name="allowMultiple" label="Autoriser plusieurs réponses par étudiant" />
-        <Checkbox name="isAnonymous" label="Masquer le detail des votants" />
+        <Checkbox
+          name="allowMultiple"
+          label="Autoriser plusieurs réponses par étudiant"
+          defaultChecked={checked('allowMultiple')}
+        />
+        <Checkbox
+          name="isAnonymous"
+          label="Masquer le détail des votants"
+          defaultChecked={checked('isAnonymous')}
+        />
       </div>
 
       <div className="flex justify-end pt-1">
