@@ -95,9 +95,13 @@ n'est écrit en base**.
    | `STORAGE_DRIVER` | oui | `vercel-blob` en production |
    | `BLOB_READ_WRITE_TOKEN` | oui | Fourni par le store Vercel Blob |
    | `BLOB_ACCESS` | oui | `private` (défaut, recommandé) ou `public` : doit correspondre au store |
-   | `MAIL_DRIVER` | oui | `resend` en production |
-   | `RESEND_API_KEY`, `MAIL_FROM` | oui | Clé API et expéditeur Resend |
-   | `CRON_SECRET` | oui | Généré par Vercel, protège `/api/cron/reminders` |
+   | `MAIL_DRIVER` | recommandé | `resend` pour envoyer les liens « mot de passe oublié » |
+   | `RESEND_API_KEY`, `MAIL_FROM` | avec `resend` | Clé API et expéditeur Resend |
+   | `CRON_SECRET` | oui | Chaîne aléatoire (32 caractères ou plus) ; Vercel l'envoie au cron |
+
+   Sans service d'e-mail, la plateforme reste utilisable : le délégué génère un
+   lien de réinitialisation depuis **Administration → Membres et invitations →
+   Mot de passe** et le transmet à l'étudiant.
 
 3. Créer un store **Vercel Blob en accès privé** et le relier au projet (renseigne
    `BLOB_READ_WRITE_TOKEN`). Pour un store existant créé en accès public, définir
@@ -128,6 +132,28 @@ lève la même limite côté réponse.
 
 ---
 
+## Mise en route d'une classe
+
+1. **Le délégué** crée son compte (type « Délégué »), puis sa classe depuis
+   « Mes classes » : l'année académique et ses deux semestres sont créés
+   automatiquement.
+2. Il partage le **code de la classe** (Administration → Membres et invitations) ou
+   un **lien d'invitation** (durée, nombre d'utilisations, rôle étudiant ou délégué).
+3. **Les étudiants** créent leur compte avec ce code : ils arrivent directement sur
+   le tableau de bord de la classe (60 étudiants actifs au maximum par classe).
+4. Le délégué alimente l'espace : modules, programme de la semaine (ou photo/PDF de
+   l'emploi du temps officiel), ressources, échéances, projets, annonces (avec
+   mentions `@tous` ou nominatives) et sondages. Chaque publication notifie la classe.
+5. Les étudiants signalent une difficulté dans « Réclamations » ; seul le délégué
+   (et l'auteur) y a accès.
+
+Un étudiant qui a oublié son mot de passe utilise « Mot de passe oublié » (si
+Resend est configuré) ou demande un lien au délégué. Le lien est à usage unique,
+valable 24 h, journalisé, et l'étudiant en est notifié. Il ne peut pas être généré
+pour un compte qui appartient aussi à une autre classe.
+
+---
+
 ## Architecture du code
 
 ```
@@ -141,7 +167,7 @@ src/
     (app)/                 application authentifiée (coque avec sidebar + nav mobile)
       dashboard/ programme/ modules/ ressources/ recherche/
       projets/ echeances/ annonces/ sondages/
-      notifications/ reclamations/ etudiants/ profil/
+      notifications/ reclamations/ membres/ profil/ classes/ rejoindre/
       admin/               structure, classes, années, utilisateurs, archives,
                            statistiques, journal d'audit
     actions/               Server Actions, une par domaine — toutes les écritures
@@ -166,6 +192,12 @@ src/
 - **Lecture** : les pages (Server Components) appellent `lib/services/*`.
 - **Écriture** : uniquement via les Server Actions de `app/actions/*`.
 - **Autorisation** : `lib/permissions.ts` et `lib/auth/guards.ts`, jamais dans l'UI.
+- **Rafraîchissement** : les Server Actions n'appellent pas `revalidatePath`. Le
+  client rafraîchit la page une fois l'action terminée (`useRefreshOnSuccess` dans
+  `components/ui/use-form-action.ts`, utilisé par `useFormAction` et `ActionForm`).
+  En production, une action qui renvoyait l'arbre de la page laissait souvent le
+  formulaire bloqué sur « Enregistrement... ». Pour la même raison, le groupe
+  `(app)` n'a pas de `loading.tsx` : un indicateur s'affiche sur le lien cliqué.
 
 ---
 
@@ -189,6 +221,10 @@ src/
   est révocable instantanément — un changement de rôle, de classe, de mot de passe ou
   une désactivation ferme toutes les sessions du compte.
 - **Connexion** : réponse et temps de réponse identiques que l'email existe ou non.
+- **Adhésion** : le rôle vient toujours du code utilisé. Un délégué retiré qui
+  réutilise le code public revient comme étudiant ; une invitation nominative ne
+  sert qu'au compte de son adresse, et son quota d'utilisations est consommé de
+  façon atomique.
 - **Limitation des tentatives** (table `rate_limits`, partagée par toutes les
   instances) : 8 échecs de connexion par compte et 60 par adresse IP sur 15 min,
   3 demandes de réinitialisation par adresse par heure, inscriptions et jetons

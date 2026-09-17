@@ -21,7 +21,13 @@ import {
   IconPoll,
   IconUsers,
 } from '@/components/ui/icons'
-import { formatCalendarWeekday, formatRelative, formatWeekday, minutesToTime } from '@/lib/utils'
+import {
+  formatCalendarWeekday,
+  formatRelative,
+  formatWeekday,
+  minutesOfDay,
+  minutesToTime,
+} from '@/lib/utils'
 
 export const metadata: Metadata = { title: 'Tableau de bord' }
 
@@ -43,6 +49,8 @@ export default async function DashboardPage() {
     getStudentDashboard(user.classGroupId, user.id),
     isStaff ? getDelegateDashboard(user.classGroupId) : Promise.resolve(null),
   ])
+  // Le delegue voit aussi ses seances non publiees (brouillons) du jour.
+  const todayEntries = staffData?.todayEntries ?? data.todayEntries
 
   return (
     <>
@@ -77,12 +85,12 @@ export default async function DashboardPage() {
                 </div>
               ) : null}
 
-              {data.todayEntries.length > 0 ? (
+              {todayEntries.length > 0 ? (
                 <>
                   <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-3)]">
                     Toutes les séances du jour
                   </p>
-                  {data.todayEntries.map((entry) => (
+                  {todayEntries.map((entry) => (
                     <ScheduleItem key={entry.id} entry={entry} />
                   ))}
                 </>
@@ -103,7 +111,7 @@ export default async function DashboardPage() {
 
           <Card>
             <CardHeader
-              title="Dernieres annonces"
+              title="Dernières annonces"
               action={
                 <LinkButton href="/annonces" variant="ghost" size="sm">
                   Tout voir
@@ -131,7 +139,7 @@ export default async function DashboardPage() {
 
           <Card>
             <CardHeader
-              title="Dernieres ressources"
+              title="Dernières ressources"
               action={
                 <LinkButton href="/ressources" variant="ghost" size="sm">
                   Tout voir
@@ -202,9 +210,9 @@ export default async function DashboardPage() {
                         {poll.title}
                       </p>
                       {poll.hasVoted ? (
-                        <Badge tone="success">Vote</Badge>
+                        <Badge tone="success">Voté</Badge>
                       ) : (
-                        <Badge tone="warning">A voter</Badge>
+                        <Badge tone="warning">À voter</Badge>
                       )}
                     </div>
                     <p className="mt-1.5 text-[12px] text-[var(--text-3)]">
@@ -229,8 +237,8 @@ export default async function DashboardPage() {
 }
 
 function Greeting({ firstName, className }: { firstName: string; className?: string | null }) {
-  const hour = new Date().getHours()
-  const salutation = hour < 18 ? 'Bonjour' : 'Bonsoir'
+  // Heure lue dans le fuseau de la classe : sur Vercel, le serveur est en UTC.
+  const salutation = minutesOfDay() < 18 * 60 ? 'Bonjour' : 'Bonsoir'
   return (
     <div className="mb-5">
       <h1 className="text-[22px] sm:text-[26px] font-semibold tracking-[-0.02em] text-[var(--text-1)]">
@@ -239,7 +247,7 @@ function Greeting({ firstName, className }: { firstName: string; className?: str
       <p className="text-[13.5px] text-[var(--text-3)] mt-1">
         {className
           ? `Voici l’essentiel pour ${className} aujourd’hui.`
-          : "Voici l essentiel de votre journee."}
+          : 'Voici l’essentiel de votre journée.'}
       </p>
     </div>
   )
@@ -262,7 +270,7 @@ function DelegatePanel({
     <div className="mb-5 space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         <StatTile
-          label="Etudiants"
+          label="Étudiants"
           value={data.studentCount}
           tone="accent"
           icon={<IconUsers className="size-4" />}
@@ -320,8 +328,8 @@ function DelegatePanel({
       {data.recentActivity.length > 0 ? (
         <Card>
           <CardHeader
-            title="Activite recente"
-            description="Dernieres actions sur la classe"
+            title="Activité récente"
+            description="Dernières actions sur la classe"
             action={
               <LinkButton href="/admin/audit" variant="ghost" size="sm">
                 Journal complet

@@ -204,14 +204,14 @@ export const institutionSchema = z.object({
 })
 
 export const programSchema = z.object({
-  institutionId: z.string().min(1, 'Etablissement obligatoire.'),
+  institutionId: z.string().min(1, 'Établissement obligatoire.'),
   name: trimmed(2, 120, 'Nom'),
   code: trimmed(1, 20, 'Code').transform((v) => v.toUpperCase()),
   description: optionalText(500),
 })
 
 export const levelSchema = z.object({
-  programId: z.string().min(1, 'Filiere obligatoire.'),
+  programId: z.string().min(1, 'Filière obligatoire.'),
   name: trimmed(1, 80, 'Nom'),
   rank: z.coerce.number().int().min(1, 'Rang minimum : 1.').max(12),
 })
@@ -224,27 +224,27 @@ export const classSchema = z.object({
 
 export const academicYearSchema = z
   .object({
-    label: trimmed(4, 20, 'Libelle'),
-    startsAt: dateField('Date de debut'),
+    label: trimmed(4, 20, 'Libellé'),
+    startsAt: dateField('Date de début'),
     endsAt: dateField('Date de fin'),
     isCurrent: booleanField,
   })
   .refine((d) => d.endsAt > d.startsAt, {
-    message: 'La date de fin doit suivre la date de debut.',
+    message: 'La date de fin doit suivre la date de début.',
     path: ['endsAt'],
   })
 
 export const semesterSchema = z
   .object({
-    academicYearId: z.string().min(1, 'Annee academique obligatoire.'),
+    academicYearId: z.string().min(1, 'Année académique obligatoire.'),
     number: z.coerce.number().int().min(1).max(12),
-    label: trimmed(2, 60, 'Libelle'),
-    startsAt: dateField('Date de debut'),
+    label: trimmed(2, 60, 'Libellé'),
+    startsAt: dateField('Date de début'),
     endsAt: dateField('Date de fin'),
     isCurrent: booleanField,
   })
   .refine((d) => d.endsAt > d.startsAt, {
-    message: 'La date de fin doit suivre la date de debut.',
+    message: 'La date de fin doit suivre la date de début.',
     path: ['endsAt'],
   })
 
@@ -262,7 +262,7 @@ export const moduleSchema = z.object({
     .optional()
     .transform((v) => (v === '' || v === undefined ? undefined : Number(v)))
     .refine((v) => v === undefined || (Number.isInteger(v) && v >= 0 && v <= 60), {
-      message: 'Credits invalides (0 a 60).',
+      message: 'Crédits invalides (0 à 60).',
     }),
   color: optionalText(20),
 })
@@ -279,7 +279,7 @@ export const scheduleSchema = z
     type: z.enum(['COURS', 'TD', 'TP', 'EXAMEN', 'SOUTENANCE', 'AUTRE']),
     title: optionalText(140),
     date: dateField('Date'),
-    startTime: timeField('Heure de debut'),
+    startTime: timeField('Heure de début'),
     endTime: timeField('Heure de fin'),
     room: optionalText(60),
     teacherName: optionalText(120),
@@ -287,7 +287,7 @@ export const scheduleSchema = z
     isPublished: booleanField,
   })
   .refine((d) => d.endTime > d.startTime, {
-    message: "L'heure de fin doit suivre l'heure de debut.",
+    message: "L’heure de fin doit suivre l’heure de début.",
     path: ['endTime'],
   })
 
@@ -377,7 +377,7 @@ export const projectSchema = z
     dueAt: dateField('Date limite'),
   })
   .refine((d) => !d.startsAt || d.dueAt > d.startsAt, {
-    message: 'La date limite doit suivre la date de debut.',
+    message: 'La date limite doit suivre la date de début.',
     path: ['dueAt'],
   })
 
@@ -422,20 +422,20 @@ export const pollSchema = z
     description: optionalText(1000),
     allowMultiple: booleanField,
     isAnonymous: booleanField,
-    endsAt: dateField('Date de cloture'),
+    endsAt: dateField('Date de clôture'),
     options: z
       .array(z.string().trim().min(1).max(160))
-      .min(2, 'Au moins deux options sont necessaires.')
+      .min(2, 'Au moins deux options sont nécessaires.')
       .max(12, 'Douze options maximum.'),
   })
   .refine((d) => new Set(d.options.map((o) => o.toLowerCase())).size === d.options.length, {
-    message: 'Les options doivent etre distinctes.',
+    message: 'Les options doivent être distinctes.',
     path: ['options'],
   })
 
 export const voteSchema = z.object({
   pollId: z.string().min(1),
-  optionIds: z.array(z.string().min(1)).min(1, 'Selectionnez au moins une option.'),
+  optionIds: z.array(z.string().min(1)).min(1, 'Sélectionnez au moins une option.'),
 })
 
 // ---------------------------------------------------------------------------

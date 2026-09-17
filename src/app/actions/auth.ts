@@ -1,8 +1,6 @@
 'use server'
 
-import { createHash, randomBytes } from 'crypto'
 import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { hashPassword, verifyPassword } from '@/lib/auth/password'
@@ -14,6 +12,7 @@ import {
   revokeAllSessions,
 } from '@/lib/auth/session'
 import { requireUser } from '@/lib/auth/guards'
+import { hashResetToken, issuePasswordResetToken } from '@/lib/auth/reset-token'
 import { sendMail } from '@/lib/mailer'
 import { recordAudit } from '@/lib/audit'
 import { notifyClassStaff } from '@/lib/notifications'
@@ -42,10 +41,6 @@ import {
   resetPasswordSchema,
   updateProfileSchema,
 } from '@/lib/validation'
-
-function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex')
-}
 
 // ---------------------------------------------------------------------------
 // Inscription
@@ -339,18 +334,8 @@ export async function forgotPasswordAction(
 
     if (!user || !user.isActive || user.deletedAt) return confirmation
 
-    const token = randomBytes(32).toString('base64url')
-    await prisma.$transaction([
-      // Seul le dernier lien envoye reste valable.
-      prisma.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } }),
-      prisma.passwordResetToken.create({
-        data: {
-          userId: user.id,
-          tokenHash: hashToken(token),
-          expiresAt: new Date(Date.now() + RESET_TOKEN_DURATION_MINUTES * 60_000),
-        },
-      }),
-    ])
+    // Seul le dernier lien envoye reste valable.
+    const token = await issuePasswordResetToken(user.id, RESET_TOKEN_DURATION_MINUTES * 60_000)
 
     const link = `${env.appUrl}/reset-password?token=${token}`
 
@@ -390,7 +375,7 @@ export async function resetPasswordAction(
     }
 
     const record = await prisma.passwordResetToken.findUnique({
-      where: { tokenHash: hashToken(parsed.data.token) },
+      where: { tokenHash: hashResetToken(parsed.data.token) },
       select: { id: true, userId: true, expiresAt: true, usedAt: true },
     })
 
@@ -485,7 +470,6 @@ export async function updateProfileAction(
       }
     })
 
-    revalidatePath('/profil')
     return { ok: true, message: 'Profil mis à jour.' }
   })
 }
@@ -569,7 +553,6 @@ export async function updateAvatarAction(
 
     if (current?.avatarUrl) await removeFile(current.avatarUrl)
 
-    revalidatePath('/', 'layout')
     return { ok: true, message: 'Photo mise à jour.' }
   })
 }

@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { IconPlus } from '@/components/ui/icons'
 import { Checkbox, Field, Input, Select } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
-import { useFormAction } from '@/components/ui/use-form-action'
+import { useCloseOnSuccess, useFormAction } from '@/components/ui/use-form-action'
 import { createAcademicYearAction, createSemesterAction } from '@/app/actions/admin'
 
 /**
@@ -16,12 +15,6 @@ import { createAcademicYearAction, createSemesterAction } from '@/app/actions/ad
  */
 
 type Option = { id: string; label: string }
-
-function useCloseOnSuccess(ok: boolean, onDone?: () => void) {
-  useEffect(() => {
-    if (ok && onDone) onDone()
-  }, [ok, onDone])
-}
 
 /** Modale generique : bouton + titre + contenu de formulaire. */
 function FormModal({
@@ -66,7 +59,7 @@ export function AddYearButton() {
 
 function YearForm({ onDone }: { onDone: () => void }) {
   const { state, formAction, value, checked } = useFormAction(createAcademicYearAction)
-  useCloseOnSuccess(state.ok, onDone)
+  useCloseOnSuccess(state, onDone)
 
   return (
     <form action={formAction} className="space-y-4">
@@ -119,7 +112,7 @@ export function AddSemesterButton({ years }: { years: Option[] }) {
 
 function SemesterForm({ years, onDone }: { years: Option[]; onDone: () => void }) {
   const { state, formAction, value, checked } = useFormAction(createSemesterAction)
-  useCloseOnSuccess(state.ok, onDone)
+  useCloseOnSuccess(state, onDone)
 
   return (
     <form action={formAction} className="space-y-4">

@@ -1,7 +1,28 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { emptyActionState, type ActionState } from '@/lib/errors'
+import { notify } from './toast'
+
+/**
+ * Rafraichit la page une fois une action reussie TERMINEE.
+ *
+ * Les Server Actions n'appellent pas revalidatePath : en production, une
+ * action dont la reponse embarque l'arbre de la page (ce que declenche
+ * revalidatePath) laissait regulierement le formulaire bloque sur
+ * "Enregistrement..." alors que la donnee etait enregistree (transition
+ * React jamais validee, environ une soumission sur trois). Le
+ * rafraichissement est donc demande apres coup, hors de la transition de
+ * l'action. Les pages de l'application etant dynamiques, les autres pages
+ * sont de toute facon relues a chaque navigation.
+ */
+export function useRefreshOnSuccess(state: ActionState | null | undefined) {
+  const router = useRouter()
+  useEffect(() => {
+    if (state?.ok) router.refresh()
+  }, [state, router])
+}
 
 /**
  * Etat d'un formulaire soumis a une Server Action.
@@ -40,6 +61,8 @@ export function useFormAction(action: Action) {
     emptyActionState,
   )
 
+  useRefreshOnSuccess(state)
+
   const values = state.values
 
   return {
@@ -59,4 +82,17 @@ export function useFormAction(action: Action) {
       return values ? (values[name] ?? []) : initial
     },
   }
+}
+
+/**
+ * Formulaire en modale : ferme la modale apres un succes et reprend le
+ * message du serveur ("Annonce publiée", avertissement de chevauchement...)
+ * dans une notification, sans quoi il disparaitrait avec la modale.
+ */
+export function useCloseOnSuccess(state: ActionState, onDone?: () => void) {
+  useEffect(() => {
+    if (!state.ok) return
+    if (state.message) notify(state.message, 'success')
+    onDone?.()
+  }, [state, onDone])
 }

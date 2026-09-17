@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/feedback'
 import { Pagination } from '@/components/ui/pagination'
 import { Badge } from '@/components/ui/badge'
-import { ConfirmForm, IconSubmit } from '@/components/ui/confirm-form'
+import { ActionForm, ConfirmForm, IconSubmit } from '@/components/ui/confirm-form'
 import { buttonClasses } from '@/components/ui/button'
 import { IconBell, IconCheck, IconTrash } from '@/components/ui/icons'
 import { NOTIFICATION_TYPE_LABELS, PAGE_SIZE } from '@/lib/constants'
@@ -59,12 +59,12 @@ export default async function NotificationsPage({
         }
         actions={
           unread > 0 ? (
-            <form action={markAllNotificationsReadAction}>
+            <ActionForm action={markAllNotificationsReadAction}>
               <button type="submit" className={buttonClasses('secondary', 'sm')}>
                 <IconCheck className="size-4" />
                 Tout marquer comme lu
               </button>
-            </form>
+            </ActionForm>
           ) : null
         }
       />
@@ -101,7 +101,7 @@ export default async function NotificationsPage({
             title={onlyUnread ? 'Aucune notification non lue' : 'Aucune notification'}
             description={
               onlyUnread
-                ? 'Vous avez tout consulte.'
+                ? 'Vous avez tout consulté.'
                 : 'Les nouvelles ressources, annonces et échéances apparaîtront ici.'
             }
           />
@@ -166,16 +166,14 @@ export default async function NotificationsPage({
 
                     <div className="shrink-0 flex items-center gap-0.5">
                       {isUnread ? (
-                        <form action={markNotificationReadAction}>
-                          <input
-                            type="hidden"
-                            name="notificationId"
-                            value={notification.id}
-                          />
+                        <ActionForm
+                          action={markNotificationReadAction}
+                          hidden={{ notificationId: notification.id }}
+                        >
                           <IconSubmit label="Marquer comme lue">
                             <IconCheck className="size-[17px]" />
                           </IconSubmit>
-                        </form>
+                        </ActionForm>
                       ) : null}
                       <ConfirmForm
                         action={deleteNotificationAction}

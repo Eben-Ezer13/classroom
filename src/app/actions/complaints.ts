@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireClassAdmin, requireUser } from '@/lib/auth/guards'
 import { assertCanManageClass, requireClassId } from '@/lib/permissions'
@@ -101,7 +100,6 @@ export async function createComplaintAction(
       { excludeUserId: user.id },
     )
 
-    revalidatePath('/reclamations')
     return { ok: true, message: 'Réclamation envoyée.' }
   })
 }
@@ -161,7 +159,6 @@ export async function addComplaintMessageAction(
       )
     }
 
-    revalidatePath(`/reclamations/${complaint.id}`)
     return { ok: true, message: 'Message envoyé.' }
   })
 }
@@ -220,8 +217,6 @@ export async function updateComplaintStatusAction(
       )
     }
 
-    revalidatePath('/reclamations')
-    revalidatePath(`/reclamations/${existing.id}`)
     return { ok: true, message: `Statut mis à jour : ${COMPLAINT_STATUS_LABELS[status]}.` }
   })
 }

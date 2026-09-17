@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { requirePageUser } from '@/lib/auth/guards'
 import { prisma } from '@/lib/db'
 import { getClassModules } from '@/lib/services/class-context'
+import { listClassMembers } from '@/lib/services/classes'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/feedback'
@@ -15,6 +16,7 @@ import {
   ANNOUNCEMENT_CATEGORY_LABELS,
   ANNOUNCEMENT_LEVEL_LABELS,
   PAGE_SIZE,
+  isLabelKey,
 } from '@/lib/constants'
 import { normalizeSearch } from '@/lib/utils'
 import { AddAnnouncementButton, AnnouncementActions } from './announcement-controls'
@@ -42,9 +44,10 @@ export default async function AnnouncementsPage({
   // Seul le delegue de la classe active peut gerer le contenu.
   const canManage = user.role === 'ADMIN'
   const q = normalizeSearch(raw.q)
-  const level = raw.level && raw.level in ANNOUNCEMENT_LEVEL_LABELS ? raw.level : undefined
-  const category =
-    raw.category && raw.category in ANNOUNCEMENT_CATEGORY_LABELS ? raw.category : undefined
+  const level = isLabelKey(ANNOUNCEMENT_LEVEL_LABELS, raw.level) ? raw.level : undefined
+  const category = isLabelKey(ANNOUNCEMENT_CATEGORY_LABELS, raw.category)
+    ? raw.category
+    : undefined
   const moduleId = raw.moduleId || undefined
   const pageRaw = Number(raw.page ?? '1')
   const page = Number.isFinite(pageRaw) ? Math.max(1, Math.floor(pageRaw)) : 1
@@ -83,7 +86,7 @@ export default async function AnnouncementsPage({
     ...(conditions.length > 0 ? { AND: conditions } : {}),
   }
 
-  const [items, total, modules] = await Promise.all([
+  const [items, total, modules, members] = await Promise.all([
     prisma.announcement.findMany({
       where,
       select: {
@@ -96,6 +99,10 @@ export default async function AnnouncementsPage({
         publishedAt: true,
         expiresAt: true,
         moduleId: true,
+        mentionsAll: true,
+        mentions: {
+          select: { userId: true, user: { select: { firstName: true, lastName: true } } },
+        },
         module: { select: { code: true, name: true } },
         author: { select: { firstName: true, lastName: true } },
       },
@@ -105,19 +112,27 @@ export default async function AnnouncementsPage({
     }),
     prisma.announcement.count({ where }),
     getClassModules(user.classGroupId),
+    canManage ? listClassMembers(user.classGroupId) : Promise.resolve([]),
   ])
 
   const moduleOptions = modules.map((m) => ({ id: m.id, code: m.code, name: m.name }))
+  const memberOptions = members
+    .filter((m) => m.userId !== user.id)
+    .map((m) => ({ id: m.userId, name: `${m.firstName} ${m.lastName}` }))
   const hasFilters = Boolean(q || level || category || moduleId)
 
   return (
     <>
       <PageHeader
         title="Annonces"
-        description="Informations, changements de salle et evenements de la classe."
+        description="Informations, changements de salle et événements de la classe."
         actions={
           canManage ? (
-            <AddAnnouncementButton modules={moduleOptions} autoOpen={raw.nouveau === '1'} />
+            <AddAnnouncementButton
+              modules={moduleOptions}
+              members={memberOptions}
+              autoOpen={raw.nouveau === '1'}
+            />
           ) : null
         }
       />
@@ -136,7 +151,7 @@ export default async function AnnouncementsPage({
             ))}
           </Select>
         </FilterField>
-        <FilterField label="Categorie" htmlFor="category">
+        <FilterField label="Catégorie" htmlFor="category">
           <Select id="category" name="category" defaultValue={category ?? ''}>
             <option value="">Toutes</option>
             {Object.entries(ANNOUNCEMENT_CATEGORY_LABELS).map(([value, label]) => (
@@ -162,13 +177,13 @@ export default async function AnnouncementsPage({
         <Card>
           <EmptyState
             icon={<IconMegaphone />}
-            title={hasFilters ? 'Aucun resultat' : 'Aucune annonce'}
+            title={hasFilters ? 'Aucun résultat' : 'Aucune annonce'}
             description={
               hasFilters
-                ? 'Aucune annonce ne correspond a ces filtres.'
+                ? 'Aucune annonce ne correspond à ces filtres.'
                 : canManage
-                  ? 'Publiez la premiere annonce de la classe.'
-                  : 'Les annonces du delegue apparaitront ici.'
+                  ? 'Publiez la première annonce de la classe.'
+                  : 'Les annonces du délégué apparaîtront ici.'
             }
           />
         </Card>
@@ -179,6 +194,7 @@ export default async function AnnouncementsPage({
               <AnnouncementCard
                 key={announcement.id}
                 announcement={announcement}
+                currentUserId={user.id}
                 actions={
                   canManage ? (
                     <AnnouncementActions
@@ -191,8 +207,11 @@ export default async function AnnouncementsPage({
                         isPinned: announcement.isPinned,
                         moduleId: announcement.moduleId,
                         expiresAt: announcement.expiresAt,
+                        mentionsAll: announcement.mentionsAll,
+                        mentionedUserIds: announcement.mentions.map((m) => m.userId),
                       }}
                       modules={moduleOptions}
+                      members={memberOptions}
                     />
                   ) : null
                 }

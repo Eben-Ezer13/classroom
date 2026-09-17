@@ -37,7 +37,7 @@ export default async function ResetPasswordPage({
           href="/login"
           className="text-[var(--accent)] font-medium hover:underline underline-offset-2"
         >
-          Retour a la connexion
+          Retour à la connexion
         </Link>
       </p>
     </div>

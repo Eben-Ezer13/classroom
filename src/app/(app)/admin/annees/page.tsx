@@ -58,7 +58,7 @@ export default async function AdminYearsPage() {
                   <span className="flex items-center gap-2 flex-wrap">
                     {year.label}
                     {year.isCurrent ? <Badge tone="success">Année courante</Badge> : null}
-                    {year.isArchived ? <Badge tone="warning">Archivee</Badge> : null}
+                    {year.isArchived ? <Badge tone="warning">Archivée</Badge> : null}
                   </span>
                 }
                 description={`${formatCalendarDate(year.startsAt)} → ${formatCalendarDate(year.endsAt)}`}
@@ -111,7 +111,7 @@ export default async function AdminYearsPage() {
                             {semester.isCurrent ? (
                               <Badge tone="success">Courant</Badge>
                             ) : null}
-                            {semester.isArchived ? <Badge tone="warning">Archive</Badge> : null}
+                            {semester.isArchived ? <Badge tone="warning">Archivé</Badge> : null}
                           </div>
                           <p className="mt-1 text-[12px] text-[var(--text-3)]">
                             {formatCalendarDate(semester.startsAt)} → {formatCalendarDate(semester.endsAt)}
@@ -126,9 +126,9 @@ export default async function AdminYearsPage() {
                           <ConfirmForm
                             action={setCurrentSemesterAction}
                             hidden={{ semesterId: semester.id }}
-                            message={`Definir ${semester.label} comme semestre courant ?`}
+                            message={`Définir ${semester.label} comme semestre courant ?`}
                           >
-                            <IconSubmit label="Definir comme semestre courant">
+                            <IconSubmit label="Définir comme semestre courant">
                               <IconCheck className="size-[17px]" />
                             </IconSubmit>
                           </ConfirmForm>

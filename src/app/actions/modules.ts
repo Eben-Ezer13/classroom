@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireClassAdmin } from '@/lib/auth/guards'
 import {
@@ -11,6 +10,18 @@ import {
 import { recordAudit } from '@/lib/audit'
 import { runAction, AppError, NotFoundError, type ActionState } from '@/lib/errors'
 import { moduleSchema, parseForm } from '@/lib/validation'
+
+/**
+ * Un module supprime (suppression douce) garde sa ligne, donc son code : la
+ * contrainte d'unicite (classe, semestre, code) empecherait de recreer un
+ * module du meme code. Le code de la ligne supprimee est libere.
+ */
+async function releaseDeletedModuleCode(classGroupId: string, semesterId: string, code: string) {
+  await prisma.module.updateMany({
+    where: { classGroupId, semesterId, code, deletedAt: { not: null } },
+    data: { code: `${code}~${Date.now().toString(36)}` },
+  })
+}
 
 export async function createModuleAction(
   _prev: ActionState,
@@ -27,16 +38,17 @@ export async function createModuleAction(
     await assertSemesterInClass(data.semesterId, classGroupId)
 
     const duplicate = await prisma.module.findFirst({
-      where: { classGroupId, semesterId: data.semesterId, code: data.code },
-      select: { id: true, deletedAt: true },
+      where: { classGroupId, semesterId: data.semesterId, code: data.code, deletedAt: null },
+      select: { id: true },
     })
     if (duplicate) {
       return {
         ok: false,
-        message: `Le code ${data.code} existe deja pour ce semestre.`,
-        fieldErrors: { code: ['Code deja utilise sur ce semestre.'] },
+        message: `Le code ${data.code} existe déjà pour ce semestre.`,
+        fieldErrors: { code: ['Code déjà utilisé sur ce semestre.'] },
       }
     }
+    await releaseDeletedModuleCode(classGroupId, data.semesterId, data.code)
 
     const created = await prisma.module.create({
       data: {
@@ -63,7 +75,6 @@ export async function createModuleAction(
       summary: `${user.firstName} ${user.lastName} a créé le module ${created.code} (${created.name}).`,
     })
 
-    revalidatePath('/modules')
     return { ok: true, message: 'Module créé.' }
   })
 }
@@ -94,6 +105,7 @@ export async function updateModuleAction(
         classGroupId: existing.classGroupId,
         semesterId: data.semesterId,
         code: data.code,
+        deletedAt: null,
         id: { not: moduleId },
       },
       select: { id: true },
@@ -101,10 +113,11 @@ export async function updateModuleAction(
     if (duplicate) {
       return {
         ok: false,
-        message: `Le code ${data.code} existe deja pour ce semestre.`,
-        fieldErrors: { code: ['Code deja utilise sur ce semestre.'] },
+        message: `Le code ${data.code} existe déjà pour ce semestre.`,
+        fieldErrors: { code: ['Code déjà utilisé sur ce semestre.'] },
       }
     }
+    await releaseDeletedModuleCode(existing.classGroupId, data.semesterId, data.code)
 
     const updated = await prisma.module.update({
       where: { id: moduleId },
@@ -131,8 +144,6 @@ export async function updateModuleAction(
       summary: `${user.firstName} ${user.lastName} a modifié le module ${updated.code}.`,
     })
 
-    revalidatePath('/modules')
-    revalidatePath(`/modules/${moduleId}`)
     return { ok: true, message: 'Module mis à jour.' }
   })
 }
@@ -190,7 +201,6 @@ export async function deleteModuleAction(formData: FormData): Promise<ActionStat
       summary: `${user.firstName} ${user.lastName} a supprimé le module ${existing.code}.`,
     })
 
-    revalidatePath('/modules')
     return { ok: true, message: `Module ${existing.code} supprimé.` }
   })
 }

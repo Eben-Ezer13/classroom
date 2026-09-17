@@ -79,7 +79,7 @@ export default async function AdminStatsPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <StatTile label="Ressources" value={totalResources} tone="accent" />
-        <StatTile label="Telechargements" value={totalDownloads} tone="info" />
+        <StatTile label="Téléchargements" value={totalDownloads} tone="info" />
         <StatTile
           label="Membres actifs"
           value={activeUsers}
@@ -100,7 +100,7 @@ export default async function AdminStatsPage() {
       <div className="grid lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader
-            title="Repartition des ressources"
+            title="Répartition des ressources"
             description="Par type de document"
           />
           <CardBody className="space-y-2.5">
@@ -133,13 +133,13 @@ export default async function AdminStatsPage() {
 
         <Card>
           <CardHeader
-            title="Ressources les plus telechargees"
+            title="Ressources les plus téléchargées"
             description="Dans votre classe"
           />
           <CardBody>
             {topResources.length === 0 ? (
               <p className="text-[13px] text-[var(--text-3)]">
-                Aucun telechargement enregistre.
+                Aucun téléchargement enregistré.
               </p>
             ) : (
               <ol className="space-y-2.5">
@@ -165,7 +165,7 @@ export default async function AdminStatsPage() {
         </Card>
 
         <Card className="lg:col-span-2">
-          <CardHeader title="Synthese de la classe" />
+          <CardHeader title="Synthèse de la classe" />
           <CardBody className="p-0">
             <Table>
               <THead>
@@ -188,7 +188,7 @@ export default async function AdminStatsPage() {
                   <TD align="right">{modules}</TD>
                 </TR>
                 <TR>
-                  <TD>Stockage utilise</TD>
+                  <TD>Stockage utilisé</TD>
                   <TD align="right">
                     {formatFileSize(storage.used)} / {formatFileSize(storage.quota)}
                   </TD>
@@ -200,7 +200,7 @@ export default async function AdminStatsPage() {
       </div>
 
       <p className="mt-4 text-[12px] text-[var(--text-3)]">
-        Donnees calculees en direct depuis PostgreSQL · {formatRelative(now)}
+        Données calculées en direct · {formatRelative(now)}
       </p>
     </>
   )

@@ -10,7 +10,7 @@ import { emptyActionState } from '@/lib/errors'
 import { Field, Input } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
-import { useFormAction } from '@/components/ui/use-form-action'
+import { useFormAction, useRefreshOnSuccess } from '@/components/ui/use-form-action'
 import { AVATAR_MAX_SIZE, AVATAR_MIME_TYPES } from '@/lib/constants'
 import { formatFileSize } from '@/lib/utils'
 
@@ -89,6 +89,7 @@ export function ProfileForm({
 
 export function AvatarForm() {
   const [state, formAction] = useActionState(updateAvatarAction, emptyActionState)
+  useRefreshOnSuccess(state)
 
   return (
     <form action={formAction} className="space-y-3">

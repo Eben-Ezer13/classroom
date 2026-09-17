@@ -85,7 +85,7 @@ export default async function AdminAuditPage({
     <>
       <PageHeader
         title="Journal d'audit"
-        description="Actions sensibles effectuees dans votre classe, avec auteur et horodatage."
+        description="Actions sensibles effectuées dans votre classe, avec auteur et horodatage."
         breadcrumb={[{ label: 'Administration', href: '/admin' }, { label: 'Audit' }]}
       />
 
@@ -93,7 +93,7 @@ export default async function AdminAuditPage({
         <FilterField label="Recherche" htmlFor="q" className="min-w-[200px] flex-[2]">
           <Input id="q" name="q" defaultValue={q} placeholder="Auteur, action, objet..." />
         </FilterField>
-        <FilterField label="Type d objet" htmlFor="entityType">
+        <FilterField label="Type d’objet" htmlFor="entityType">
           <Select id="entityType" name="entityType" defaultValue={entityType ?? ''}>
             <option value="">Tous</option>
             {ENTITY_TYPES.map((type) => (
@@ -110,7 +110,7 @@ export default async function AdminAuditPage({
           <EmptyState
             icon={<IconShield />}
             title="Aucune entrée"
-            description="Aucune action ne correspond a ces filtres."
+            description="Aucune action ne correspond à ces filtres."
           />
         ) : (
           <>

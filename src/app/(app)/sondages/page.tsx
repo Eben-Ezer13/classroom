@@ -91,11 +91,15 @@ export default async function PollsPage({
       ) : (
         <div className="grid lg:grid-cols-2 gap-4">
           {polls.map((poll) => {
-            const isClosed = Boolean(poll.closedAt) || poll.endsAt.getTime() < now
+            const expired = poll.endsAt.getTime() < now
+            const isClosed = Boolean(poll.closedAt) || expired
             const hasVoted = votedPolls.has(poll.id)
             // Les resultats sont reveles apres le vote ou la cloture : voir
-            // les scores avant de voter influencerait les reponses.
+            // les scores avant de voter influencerait les reponses. Le
+            // delegue les voit toujours, et peut aussi voter : il fait partie
+            // de la classe.
             const showResults = hasVoted || isClosed || canManage
+            const showVoteForm = !hasVoted && !isClosed
             const totalVotes = poll.options.reduce((sum, o) => sum + o._count.votes, 0)
 
             return (
@@ -103,7 +107,11 @@ export default async function PollsPage({
                 <CardHeader
                   title={poll.title}
                   description={poll.description ?? undefined}
-                  action={canManage ? <PollActions pollId={poll.id} isClosed={isClosed} /> : null}
+                  action={
+                    canManage ? (
+                      <PollActions pollId={poll.id} isClosed={isClosed} canToggle={!expired} />
+                    ) : null
+                  }
                 />
                 <CardBody className="space-y-3.5">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -114,10 +122,18 @@ export default async function PollsPage({
                         Ouvert
                       </Badge>
                     )}
-                    {hasVoted ? <Badge tone="accent">Vous avez vote</Badge> : null}
+                    {hasVoted ? <Badge tone="accent">Vous avez voté</Badge> : null}
                     {poll.allowMultiple ? <Badge tone="info">Choix multiple</Badge> : null}
                     {poll.isAnonymous ? <Badge>Anonyme</Badge> : null}
                   </div>
+
+                  {showVoteForm ? (
+                    <VoteForm
+                      pollId={poll.id}
+                      options={poll.options.map((o) => ({ id: o.id, label: o.label }))}
+                      allowMultiple={poll.allowMultiple}
+                    />
+                  ) : null}
 
                   {showResults ? (
                     <div className="space-y-2.5">
@@ -153,13 +169,7 @@ export default async function PollsPage({
                         )
                       })}
                     </div>
-                  ) : (
-                    <VoteForm
-                      pollId={poll.id}
-                      options={poll.options.map((o) => ({ id: o.id, label: o.label }))}
-                      allowMultiple={poll.allowMultiple}
-                    />
-                  )}
+                  ) : null}
 
                   <p className="text-[12px] text-[var(--text-3)] pt-1 border-t border-[var(--border)]">
                     {totalVotes} vote{totalVotes > 1 ? 's' : ''}

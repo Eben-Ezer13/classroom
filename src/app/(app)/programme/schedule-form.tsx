@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import {
   createScheduleEntryAction,
   updateScheduleEntryAction,
@@ -8,7 +7,7 @@ import {
 import { Checkbox, Field, Input, Select, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
-import { useFormAction } from '@/components/ui/use-form-action'
+import { useCloseOnSuccess, useFormAction } from '@/components/ui/use-form-action'
 import { SCHEDULE_TYPE_LABELS } from '@/lib/constants'
 import { minutesToTime } from '@/lib/utils'
 
@@ -50,9 +49,9 @@ export function ScheduleForm({
 
   // Effet et non appel direct : fermer la modale pendant le rendu
   // declencherait une mise a jour d etat sur un composant en cours de rendu.
-  useEffect(() => {
-    if (state.ok && onDone) onDone()
-  }, [state.ok, onDone])
+  // La modale se ferme : le message (et un eventuel avertissement de
+  // chevauchement) est repris dans une notification.
+  useCloseOnSuccess(state, onDone)
 
   const dateValue = entry ? entry.date.toISOString().slice(0, 10) : ''
 

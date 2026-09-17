@@ -18,6 +18,7 @@ import {
   COMPLAINT_PRIORITY_TONE,
   COMPLAINT_STATUS_LABELS,
   COMPLAINT_STATUS_TONE,
+  isLabelKey,
 } from '@/lib/constants'
 import { formatRelative } from '@/lib/utils'
 import { AddComplaintButton } from './complaint-controls'
@@ -43,9 +44,10 @@ export default async function ComplaintsPage({
 
   // Seul le delegue de la classe active dispose des vues de gestion.
   const isStaff = user.role === 'ADMIN'
-  const status = raw.status && raw.status in COMPLAINT_STATUS_LABELS ? raw.status : undefined
-  const category =
-    raw.category && raw.category in COMPLAINT_CATEGORY_LABELS ? raw.category : undefined
+  const status = isLabelKey(COMPLAINT_STATUS_LABELS, raw.status) ? raw.status : undefined
+  const category = isLabelKey(COMPLAINT_CATEGORY_LABELS, raw.category)
+    ? raw.category
+    : undefined
   const pageRaw = Number(raw.page ?? '1')
   const page = Number.isFinite(pageRaw) ? Math.max(1, Math.floor(pageRaw)) : 1
 
@@ -141,7 +143,7 @@ export default async function ComplaintsPage({
                           ? ` · ${complaint._count.messages} message(s)`
                           : ''}
                         {complaint._count.attachments > 0
-                          ? ` · ${complaint._count.attachments} piece(s) jointe(s)`
+                          ? ` · ${complaint._count.attachments} pièce(s) jointe(s)`
                           : ''}
                       </p>
                     </div>

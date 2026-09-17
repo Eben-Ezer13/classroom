@@ -119,6 +119,15 @@ export const COMPLAINT_STATUS_TONE: Record<string, string> = {
   FERME: 'neutral',
 }
 
+/**
+ * Filtre d'URL (?kind=, ?status=...) accepte seulement s'il designe une cle
+ * PROPRE du dictionnaire : `"toString" in LABELS` est vrai, et la valeur
+ * partirait telle quelle vers Prisma, qui la rejetterait (erreur 500).
+ */
+export function isLabelKey(labels: Record<string, string>, value: unknown): value is string {
+  return typeof value === 'string' && Object.hasOwn(labels, value)
+}
+
 export const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
   RESSOURCE: 'Ressource',
   ANNONCE: 'Annonce',
@@ -197,6 +206,8 @@ export const DEFAULT_CLASS_STORAGE_QUOTA = 10 * 1024 * 1024 * 1024 // 10 Go
 export const SESSION_COOKIE = 'cp_session'
 export const SESSION_DURATION_DAYS = 30
 export const RESET_TOKEN_DURATION_MINUTES = 60
+/** Lien genere par le delegue : transmis a la main, il doit durer plus longtemps. */
+export const MEMBER_RESET_LINK_HOURS = 24
 
 // ---------------------------------------------------------------------------
 // Presence

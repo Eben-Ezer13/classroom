@@ -96,10 +96,10 @@ export function ResourceActions({
         message={
           isArchived
             ? 'Sortir cette ressource des archives ?'
-            : 'Archiver cette ressource ? Elle sera masquee de la liste courante.'
+            : 'Archiver cette ressource ? Elle sera masquée de la liste courante.'
         }
       >
-        <IconSubmit label={isArchived ? 'Desarchiver' : 'Archiver'}>
+        <IconSubmit label={isArchived ? 'Désarchiver' : 'Archiver'}>
           <IconArchive className="size-[17px]" />
         </IconSubmit>
       </ConfirmForm>
@@ -107,7 +107,7 @@ export function ResourceActions({
       <ConfirmForm
         action={deleteResourceAction}
         hidden={{ resourceId: resource.id }}
-        message="Supprimer definitivement cette ressource et son fichier ?"
+        message="Supprimer définitivement cette ressource et son fichier ?"
       >
         <IconSubmit label="Supprimer la ressource" tone="danger">
           <IconTrash className="size-[17px]" />

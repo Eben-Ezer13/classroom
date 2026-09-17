@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireClassAdmin } from '@/lib/auth/guards'
 import {
@@ -116,10 +115,6 @@ export async function createResourceAction(
       { excludeUserId: user.id },
     )
 
-    revalidatePath('/ressources')
-    revalidatePath('/dashboard')
-    revalidatePath('/modules', 'layout')
-    if (resource.projectId) revalidatePath(`/projets/${resource.projectId}`)
     return { ok: true, message: 'Ressource ajoutée.' }
   })
 }
@@ -166,8 +161,6 @@ export async function updateResourceAction(
       summary: `${user.firstName} ${user.lastName} a modifié la ressource ${updated.title}.`,
     })
 
-    revalidatePath('/ressources')
-    revalidatePath('/modules', 'layout')
     return { ok: true, message: 'Ressource mise à jour.' }
   })
 }
@@ -211,10 +204,6 @@ export async function deleteResourceAction(formData: FormData): Promise<ActionSt
       summary: `${user.firstName} ${user.lastName} a supprimé la ressource ${existing.title}.`,
     })
 
-    revalidatePath('/ressources')
-    revalidatePath('/modules', 'layout')
-    revalidatePath('/dashboard')
-    if (existing.projectId) revalidatePath(`/projets/${existing.projectId}`)
     return { ok: true, message: 'Ressource supprimée.' }
   })
 }
@@ -248,7 +237,6 @@ export async function toggleResourceArchiveAction(formData: FormData): Promise<A
       } la ressource ${existing.title}.`,
     })
 
-    revalidatePath('/ressources')
     return {
       ok: true,
       message: existing.isArchived ? 'Ressource désarchivée.' : 'Ressource archivée.',

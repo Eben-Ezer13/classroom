@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useActionState, useState } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Checkbox, Field, Input, Select } from '@/components/ui/field'
@@ -8,20 +8,15 @@ import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
 import { ActionForm, ConfirmForm } from '@/components/ui/confirm-form'
 import { IconPlus } from '@/components/ui/icons'
-import { useFormAction } from '@/components/ui/use-form-action'
+import { useCloseOnSuccess, useFormAction } from '@/components/ui/use-form-action'
 import {
   changeMemberRoleAction,
   createInvitationAction,
+  createMemberResetLinkAction,
   removeMemberAction,
   updateMemberStudentIdAction,
+  type ResetLinkState,
 } from '@/app/actions/classes'
-
-/** Ferme la modale une fois l'action reussie, apres le rendu. */
-function useCloseOnSuccess(ok: boolean, onDone: () => void) {
-  useEffect(() => {
-    if (ok) onDone()
-  }, [ok, onDone])
-}
 
 /** Bouton de creation d'un lien d'invitation. */
 export function NewInvitationButton() {
@@ -44,7 +39,7 @@ export function NewInvitationButton() {
 
 function InvitationForm({ onDone }: { onDone: () => void }) {
   const { state, formAction, value } = useFormAction(createInvitationAction)
-  useCloseOnSuccess(state.ok, onDone)
+  useCloseOnSuccess(state, onDone)
 
   return (
     <form action={formAction} className="space-y-4">
@@ -180,6 +175,67 @@ export function RemoveMemberButton({
   )
 }
 
+/**
+ * Lien de reinitialisation du mot de passe, a transmettre a l'etudiant
+ * (utile tant qu'aucun service d'e-mail n'est configure).
+ */
+export function ResetPasswordLinkButton({
+  membershipId,
+  name,
+}: {
+  membershipId: string
+  name: string
+}) {
+  return (
+    <Modal
+      trigger="Mot de passe"
+      triggerVariant="ghost"
+      triggerSize="sm"
+      title={`Mot de passe oublié — ${name}`}
+      description="Générez un lien à usage unique et transmettez-le à l’étudiant."
+    >
+      {() => <ResetLinkForm membershipId={membershipId} />}
+    </Modal>
+  )
+}
+
+function ResetLinkForm({ membershipId }: { membershipId: string }) {
+  const [state, formAction] = useActionState<ResetLinkState, FormData>(
+    createMemberResetLinkAction,
+    { ok: false },
+  )
+
+  if (state.ok && state.link) {
+    return (
+      <div className="space-y-3">
+        <Alert tone="success">{state.message}</Alert>
+        <Input readOnly value={state.link} onFocus={(e) => e.currentTarget.select()} aria-label="Lien de réinitialisation" />
+        <div className="flex justify-end">
+          <CopyButton value={state.link} label="Copier le lien" />
+        </div>
+        <p className="text-[12.5px] text-[var(--text-3)] leading-relaxed">
+          Envoyez ce lien uniquement à l’étudiant concerné : il permet de choisir un
+          nouveau mot de passe. Ses sessions ouvertes seront fermées.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <form action={formAction} className="space-y-4">
+      <input type="hidden" name="membershipId" value={membershipId} />
+      {state.message ? <Alert tone="danger">{state.message}</Alert> : null}
+      <p className="text-[13px] text-[var(--text-2)] leading-relaxed">
+        Le lien est valable 24 heures et ne sert qu’une fois. L’étudiant est prévenu
+        par une notification, et l’action est inscrite au journal d’audit.
+      </p>
+      <div className="flex justify-end">
+        <SubmitButton pendingLabel="Génération...">Générer le lien</SubmitButton>
+      </div>
+    </form>
+  )
+}
+
 export function EditStudentIdButton({
   membershipId,
   name,
@@ -217,7 +273,7 @@ function StudentIdForm({
   onDone: () => void
 }) {
   const { state, formAction, value } = useFormAction(updateMemberStudentIdAction)
-  useCloseOnSuccess(state.ok, onDone)
+  useCloseOnSuccess(state, onDone)
 
   return (
     <form action={formAction} className="space-y-4">

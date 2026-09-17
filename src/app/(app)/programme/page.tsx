@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { requirePageUser } from '@/lib/auth/guards'
+import { prisma } from '@/lib/db'
 import { getWeekSchedule, groupByDay } from '@/lib/services/schedule'
 import {
   getClassModules,
@@ -21,6 +22,7 @@ import {
   todayDateOnly,
 } from '@/lib/utils'
 import { AddScheduleButton, ScheduleEntryActions } from './schedule-controls'
+import { ScheduleDocuments } from './schedule-documents'
 
 export const metadata: Metadata = { title: 'Programme' }
 
@@ -48,12 +50,29 @@ export default async function ProgrammePage({
   const rawOffset = Number(params.semaine ?? '0')
   const offset = Number.isFinite(rawOffset) ? Math.max(-52, Math.min(52, rawOffset)) : 0
 
-  const [{ monday, sunday, entries }, modules, semesters, defaultSemesterId] =
+  const [{ monday, sunday, entries }, modules, semesters, defaultSemesterId, documents] =
     await Promise.all([
       getWeekSchedule(user.classGroupId, offset, { includeUnpublished: canManage }),
       getClassModules(user.classGroupId),
       getClassSemesters(user.classGroupId),
       getDefaultSemesterId(user.classGroupId),
+      // Emploi du temps officiel televerse (photo ou PDF du planning).
+      prisma.scheduleDocument.findMany({
+        where: { classGroupId: user.classGroupId, deletedAt: null },
+        select: {
+          id: true,
+          title: true,
+          note: true,
+          fileName: true,
+          fileSize: true,
+          mimeType: true,
+          isCurrent: true,
+          createdAt: true,
+          uploadedBy: { select: { firstName: true, lastName: true } },
+        },
+        orderBy: [{ isCurrent: 'desc' }, { createdAt: 'desc' }],
+        take: 10,
+      }),
     ])
 
   const byDay = groupByDay(entries)
@@ -84,9 +103,16 @@ export default async function ProgrammePage({
         }
       />
 
+      <ScheduleDocuments
+        documents={documents}
+        canManage={canManage}
+        semesters={semesterOptions}
+        defaultSemesterId={defaultSemesterId}
+      />
+
       <Card className="mb-4">
         <CardBody className="flex items-center justify-between gap-3 py-3">
-          <WeekLink offset={offset - 1} label="Semaine precedente" />
+          <WeekLink offset={offset - 1} label="Semaine précédente" />
           <div className="text-center">
             <p className="text-[13.5px] font-medium text-[var(--text-1)]">
               {offset === 0
@@ -94,7 +120,7 @@ export default async function ProgrammePage({
                 : offset === 1
                   ? 'Semaine prochaine'
                   : offset === -1
-                    ? 'Semaine derniere'
+                    ? 'Semaine dernière'
                     : `Semaine ${offset > 0 ? '+' : ''}${offset}`}
             </p>
             {offset !== 0 ? (
@@ -102,7 +128,7 @@ export default async function ProgrammePage({
                 href="/programme"
                 className="text-[12px] text-[var(--accent)] hover:underline underline-offset-2"
               >
-                Revenir a cette semaine
+                Revenir à cette semaine
               </Link>
             ) : (
               <p className="text-[12px] text-[var(--text-3)]">

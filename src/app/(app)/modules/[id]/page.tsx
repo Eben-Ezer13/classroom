@@ -28,6 +28,7 @@ const TABS = [
   { key: 'tp', label: 'TP' },
   { key: 'projets', label: 'Projets' },
   { key: 'examens', label: 'Examens' },
+  { key: 'autres', label: 'Autres documents' },
   { key: 'annonces', label: 'Annonces' },
 ] as const
 
@@ -83,11 +84,14 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
     td: ['TD'],
     tp: ['TP'],
     examens: ['EXAMEN', 'CORRECTION'],
+    // Sans cet onglet, un document de projet ou administratif depose dans
+    // le module n'apparaissait nulle part sur sa page.
+    autres: ['PROJET', 'ADMINISTRATIF', 'AUTRE'],
   }
 
   const [resources, projects, announcements, schedule, counts, modules, semesters] =
     await Promise.all([
-      tab in kindByTab
+      Object.hasOwn(kindByTab, tab)
         ? prisma.resource.findMany({
             where: {
               moduleId: mod.id,
@@ -261,7 +265,7 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
                 <EmptyState
                   icon={<IconProject />}
                   title="Aucun projet"
-                  description="Aucun projet n est rattache a ce module."
+                  description="Aucun projet n’est rattaché à ce module."
                 />
               )
             ) : tab === 'annonces' ? (
@@ -291,7 +295,7 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
                 description={
                   canManage
                     ? 'Déposez le premier document de cette rubrique.'
-                    : 'Rien n a encore ete depose dans cette rubrique.'
+                    : 'Rien n’a encore été déposé dans cette rubrique.'
                 }
               />
             )}
@@ -303,7 +307,7 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
             <CardHeader title="Informations" />
             <CardBody className="space-y-3">
               <InfoRow label="Code" value={mod.code} />
-              <InfoRow label="Professeur" value={mod.teacherName ?? 'Non renseigne'} />
+              <InfoRow label="Professeur" value={mod.teacherName ?? 'Non renseigné'} />
               {mod.teacherEmail ? (
                 <InfoRow
                   label="Contact"
@@ -318,11 +322,11 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
                 />
               ) : null}
               <InfoRow label="Semestre" value={mod.semester.label} />
-              <InfoRow label="Annee" value={mod.semester.academicYear.label} />
-              {mod.credits ? <InfoRow label="Credits" value={String(mod.credits)} /> : null}
+              <InfoRow label="Année" value={mod.semester.academicYear.label} />
+              {mod.credits ? <InfoRow label="Crédits" value={String(mod.credits)} /> : null}
               {mod.semester.isArchived ? (
                 <div className="pt-1">
-                  <Badge tone="warning">Semestre archive</Badge>
+                  <Badge tone="warning">Semestre archivé</Badge>
                 </div>
               ) : null}
             </CardBody>
@@ -331,10 +335,11 @@ export default async function ModuleDetailPage({ params, searchParams }: Props) 
           <Card>
             <CardHeader title="Contenu disponible" />
             <CardBody className="space-y-2">
-              <CountRow label="Cours et presentations" value={countFor(['COURS', 'PRESENTATION'])} />
+              <CountRow label="Cours et présentations" value={countFor(['COURS', 'PRESENTATION'])} />
               <CountRow label="TD" value={countFor(['TD'])} />
               <CountRow label="TP" value={countFor(['TP'])} />
               <CountRow label="Examens et corrections" value={countFor(['EXAMEN', 'CORRECTION'])} />
+              <CountRow label="Autres documents" value={countFor(['PROJET', 'ADMINISTRATIF', 'AUTRE'])} />
             </CardBody>
           </Card>
 

@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireClassAdmin } from '@/lib/auth/guards'
 import {
@@ -69,8 +68,6 @@ export async function createDeadlineAction(
       { excludeUserId: user.id },
     )
 
-    revalidatePath('/echeances')
-    revalidatePath('/dashboard')
     return { ok: true, message: 'Échéance ajoutée.' }
   })
 }
@@ -141,8 +138,6 @@ export async function updateDeadlineAction(
       )
     }
 
-    revalidatePath('/echeances')
-    revalidatePath('/dashboard')
     return { ok: true, message: 'Échéance mise à jour.' }
   })
 }
@@ -174,8 +169,6 @@ export async function deleteDeadlineAction(formData: FormData): Promise<ActionSt
       summary: `${user.firstName} ${user.lastName} a supprimé l’échéance ${existing.title}.`,
     })
 
-    revalidatePath('/echeances')
-    revalidatePath('/dashboard')
     return { ok: true, message: 'Échéance supprimée.' }
   })
 }

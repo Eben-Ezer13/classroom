@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireUser } from '@/lib/auth/guards'
 import { notificationScope } from '@/lib/notifications'
@@ -20,7 +19,6 @@ export async function markNotificationReadAction(formData: FormData): Promise<vo
     data: { readAt: new Date() },
   })
 
-  revalidatePath('/notifications')
 }
 
 export async function markAllNotificationsReadAction(): Promise<void> {
@@ -33,7 +31,6 @@ export async function markAllNotificationsReadAction(): Promise<void> {
     data: { readAt: new Date() },
   })
 
-  revalidatePath('/', 'layout')
 }
 
 export async function deleteNotificationAction(formData: FormData): Promise<void> {
@@ -44,5 +41,4 @@ export async function deleteNotificationAction(formData: FormData): Promise<void
     where: { id: notificationId, userId: user.id },
   })
 
-  revalidatePath('/notifications')
 }

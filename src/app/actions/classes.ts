@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
@@ -27,7 +26,9 @@ import {
   joinClass,
   resolveJoinCode,
 } from '@/lib/services/classes'
-import { MAX_CLASSES_PER_USER } from '@/lib/constants'
+import { MAX_CLASSES_PER_USER, MEMBER_RESET_LINK_HOURS } from '@/lib/constants'
+import { issuePasswordResetToken } from '@/lib/auth/reset-token'
+import { env } from '@/lib/env'
 
 /**
  * Cycle de vie des espaces de classe.
@@ -83,7 +84,6 @@ export async function createClassAction(
       summary: `${user.firstName} ${user.lastName} a créé la classe ${created.name}.`,
     })
 
-    revalidatePath('/', 'layout')
     redirect(`/admin?bienvenue=1`)
   })
 }
@@ -126,7 +126,6 @@ export async function joinClassAction(
       })
     }
 
-    revalidatePath('/', 'layout')
     redirect('/dashboard')
   })
 }
@@ -147,7 +146,6 @@ export async function switchClassAction(formData: FormData): Promise<ActionState
       data: { activeClassGroupId: parsed.data.classGroupId },
     })
 
-    revalidatePath('/', 'layout')
     redirect('/dashboard')
   })
 }
@@ -197,7 +195,6 @@ export async function leaveClassAction(formData: FormData): Promise<ActionState>
       summary: `${user.firstName} ${user.lastName} a quitté la classe ${membership.classGroup.name}.`,
     })
 
-    revalidatePath('/', 'layout')
     redirect('/classes')
   })
 }
@@ -239,7 +236,6 @@ export async function updateClassAction(
       summary: `${user.firstName} ${user.lastName} a modifié les paramètres de la classe.`,
     })
 
-    revalidatePath('/', 'layout')
     return { ok: true, message: 'Paramètres de la classe mis à jour.' }
   })
 }
@@ -261,7 +257,6 @@ export async function rotateClassCodeAction(): Promise<ActionState> {
       summary: `${user.firstName} ${user.lastName} a régénéré le code d’inscription de la classe.`,
     })
 
-    revalidatePath('/', 'layout')
     return { ok: true, message: 'Nouveau code généré. L’ancien ne fonctionne plus.' }
   })
 }
@@ -305,7 +300,6 @@ export async function createInvitationAction(
       metadata: { role: parsed.data.role, days: parsed.data.days },
     })
 
-    revalidatePath('/admin/membres')
     return { ok: true, message: 'Lien d’invitation créé.' }
   })
 }
@@ -332,7 +326,6 @@ export async function revokeInvitationAction(formData: FormData): Promise<Action
       summary: `${user.firstName} ${user.lastName} a révoqué un lien d’invitation.`,
     })
 
-    revalidatePath('/admin/membres')
     return { ok: true, message: 'Lien d’invitation révoqué.' }
   })
 }
@@ -424,7 +417,6 @@ export async function changeMemberRoleAction(formData: FormData): Promise<Action
       metadata: { from: membership.role, to: parsed.data.role },
     })
 
-    revalidatePath('/admin/membres')
     return {
       ok: true,
       message: `${membership.user.firstName} ${membership.user.lastName} est désormais ${
@@ -476,11 +468,92 @@ export async function updateMemberStudentIdAction(
       entityId: membership.id,
       entityLabel: `${membership.user.firstName} ${membership.user.lastName}`,
       classGroupId: classId,
-      summary: `${user.firstName} ${user.lastName} a mis a jour le numero etudiant de ${membership.user.firstName} ${membership.user.lastName}.`,
+      summary: `${user.firstName} ${user.lastName} a mis à jour le numéro étudiant de ${membership.user.firstName} ${membership.user.lastName}.`,
     })
 
-    revalidatePath('/admin/membres')
     return { ok: true, message: 'Numéro étudiant mis à jour.' }
+  })
+}
+
+export type ResetLinkState = ActionState & { link?: string }
+
+/**
+ * Lien de reinitialisation du mot de passe genere par le delegue.
+ *
+ * Indispensable quand aucun service d'e-mail n'est configure : sans lui, un
+ * etudiant qui oublie son mot de passe ne peut plus se connecter. Le lien
+ * est affiche au delegue, qui le transmet (messagerie de la classe...).
+ *
+ * Garde-fous : le compte ne doit appartenir a AUCUNE autre classe (un
+ * delegue ne peut pas prendre la main sur un compte qu'il n'administre pas
+ * entierement), l'action est journalisee et l'interesse est notifie.
+ */
+export async function createMemberResetLinkAction(
+  _prev: ResetLinkState,
+  formData: FormData,
+): Promise<ResetLinkState> {
+  return runAction(async () => {
+    const { user, classId } = await requireClassAdmin()
+    const membershipId = String(formData.get('membershipId') ?? '')
+    const membership = await loadMembership(membershipId, classId)
+
+    if (membership.userId === user.id) {
+      throw new AppError('Pour votre propre compte, utilisez « Mon profil ».')
+    }
+    if (!membership.isActive) {
+      throw new AppError('Ce membre a été retiré de la classe.')
+    }
+
+    const [otherClasses, account] = await Promise.all([
+      prisma.membership.count({
+        where: { userId: membership.userId, isActive: true, classGroupId: { not: classId } },
+      }),
+      prisma.user.findUnique({
+        where: { id: membership.userId },
+        select: { isActive: true, deletedAt: true },
+      }),
+    ])
+    if (!account?.isActive || account.deletedAt) {
+      throw new AppError('Ce compte est désactivé.')
+    }
+    if (otherClasses > 0) {
+      throw new AppError(
+        'Ce compte appartient aussi à une autre classe : son titulaire doit passer par « Mot de passe oublié ».',
+      )
+    }
+
+    const token = await issuePasswordResetToken(
+      membership.userId,
+      MEMBER_RESET_LINK_HOURS * 3_600_000,
+    )
+    const link = `${env.appUrl}/reset-password?token=${token}`
+
+    await notifyUser(
+      membership.userId,
+      {
+        type: 'SYSTEME',
+        title: 'Lien de réinitialisation du mot de passe',
+        body: `${user.firstName} ${user.lastName} a généré un lien pour redéfinir votre mot de passe. Si vous ne l’avez pas demandé, prévenez-le.`,
+      },
+      classId,
+    )
+
+    await recordAudit({
+      actor: user,
+      action: 'MEMBER_RESET_LINK_CREATED',
+      entityType: 'Membership',
+      entityId: membership.id,
+      entityLabel: `${membership.user.firstName} ${membership.user.lastName}`,
+      classGroupId: classId,
+      summary: `${user.firstName} ${user.lastName} a généré un lien de réinitialisation du mot de passe pour ${membership.user.firstName} ${membership.user.lastName}.`,
+    })
+
+    const result: ResetLinkState = {
+      ok: true,
+      message: `Lien valable ${MEMBER_RESET_LINK_HOURS} h, utilisable une seule fois.`,
+      link,
+    }
+    return result
   })
 }
 
@@ -546,7 +619,6 @@ export async function removeMemberAction(formData: FormData): Promise<ActionStat
       summary: `${user.firstName} ${user.lastName} a retiré ${membership.user.firstName} ${membership.user.lastName} de la classe.`,
     })
 
-    revalidatePath('/admin/membres')
     return {
       ok: true,
       message: `${membership.user.firstName} ${membership.user.lastName} a été retiré de la classe.`,

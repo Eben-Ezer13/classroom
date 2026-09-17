@@ -112,7 +112,7 @@ export default async function ProjectsPage({
               : 'text-[var(--text-2)] hover:bg-[var(--surface-3)]',
           )}
         >
-          Termines
+          Terminés
         </Link>
       </div>
 
@@ -120,13 +120,13 @@ export default async function ProjectsPage({
         <Card>
           <EmptyState
             icon={<IconProject />}
-            title={showPast ? 'Aucun projet termine' : 'Aucun projet en cours'}
+            title={showPast ? 'Aucun projet terminé' : 'Aucun projet en cours'}
             description={
               showPast
-                ? 'Les projets dont la date de rendu est passee apparaitront ici.'
+                ? 'Les projets dont la date de rendu est passée apparaîtront ici.'
                 : canManage
                   ? 'Créez un projet pour donner les consignes à la classe.'
-                  : 'Aucun projet n est en cours pour le moment.'
+                  : 'Aucun projet n’est en cours pour le moment.'
             }
           />
         </Card>

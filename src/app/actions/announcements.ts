@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireClassAdmin } from '@/lib/auth/guards'
 import {
@@ -116,7 +115,7 @@ export async function createAnnouncementAction(
         mentioned,
         {
           type: 'MENTION',
-          title: `${user.firstName} ${user.lastName} vous a mentionne`,
+          title: `${user.firstName} ${user.lastName} vous a mentionné`,
           body: truncate(`${created.title} — ${data.content}`, 160),
           url: '/annonces',
           entityType: 'Announcement',
@@ -126,8 +125,6 @@ export async function createAnnouncementAction(
       )
     }
 
-    revalidatePath('/annonces')
-    revalidatePath('/dashboard')
     return {
       ok: true,
       message:
@@ -211,8 +208,6 @@ export async function updateAnnouncementAction(
       )
     }
 
-    revalidatePath('/annonces')
-    revalidatePath('/dashboard')
     return {
       ok: true,
       message: `Annonce mise à jour (${ANNOUNCEMENT_LEVEL_LABELS[updated.level]}).`,
@@ -247,8 +242,6 @@ export async function deleteAnnouncementAction(formData: FormData): Promise<Acti
       summary: `${user.firstName} ${user.lastName} a supprimé l’annonce ${existing.title}.`,
     })
 
-    revalidatePath('/annonces')
-    revalidatePath('/dashboard')
     return { ok: true, message: 'Annonce supprimée.' }
   })
 }

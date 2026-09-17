@@ -1,9 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
-import Link from 'next/link'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/feedback'
-import { IconCalendar, IconDownload } from '@/components/ui/icons'
+import { buttonClasses } from '@/components/ui/button'
+import { IconCalendar, IconDownload, IconFile } from '@/components/ui/icons'
 import { formatDateTime, formatFileSize } from '@/lib/utils'
 import {
   ScheduleDocumentActions,
@@ -74,7 +74,7 @@ export function ScheduleDocuments({
         <EmptyState
           icon={<IconCalendar />}
           title="Aucun document téléversé"
-          description="Une photo ou un PDF du planning officiel peut completer la saisie manuelle."
+          description="Une photo ou un PDF du planning officiel peut compléter la saisie manuelle."
         />
       ) : (
         <CardBody className="space-y-3">
@@ -85,13 +85,13 @@ export function ScheduleDocuments({
               {current.fileName} · {formatFileSize(current.fileSize)}
             </span>
             <div className="ml-auto flex items-center gap-2">
-              <Link
+              <a
                 href={`/api/schedule-documents/${current.id}?telecharger=1`}
                 className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[var(--accent)] hover:underline underline-offset-2"
               >
                 <IconDownload className="size-4" />
                 Télécharger
-              </Link>
+              </a>
               {canManage ? (
                 <ScheduleDocumentActions
                   documentId={current.id}
@@ -106,37 +106,44 @@ export function ScheduleDocuments({
             <p className="text-[13px] text-[var(--text-2)] leading-relaxed">{current.note}</p>
           ) : null}
 
-          <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--surface-2)]">
-            {current.mimeType === 'application/pdf' ? (
-              <object
-                data={`/api/schedule-documents/${current.id}`}
-                type="application/pdf"
-                className="w-full h-[70vh] min-h-[420px]"
-                aria-label={current.title}
+          {current.mimeType === 'application/pdf' ? (
+            // Pas d'apercu integre : la politique de securite du site interdit
+            // l'integration de documents (object-src, frame-ancestors), et la
+            // plupart des navigateurs mobiles n'affichent pas un PDF integre.
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
+              <IconFile className="size-5 text-[var(--text-3)] shrink-0" />
+              <p className="flex-1 min-w-[180px] text-[13px] text-[var(--text-2)]">
+                Document PDF : ouvrez-le dans un nouvel onglet pour le consulter.
+              </p>
+              <a
+                href={`/api/schedule-documents/${current.id}`}
+                target="_blank"
+                rel="noopener"
+                className={buttonClasses('primary', 'sm')}
               >
-                <p className="p-4 text-[13px] text-[var(--text-2)]">
-                  L apercu PDF n est pas disponible sur cet appareil.{' '}
-                  <Link
-                    href={`/api/schedule-documents/${current.id}?telecharger=1`}
-                    className="text-[var(--accent)] underline"
-                  >
-                    Télécharger le document
-                  </Link>
-                </p>
-              </object>
-            ) : (
+                Ouvrir le PDF
+              </a>
+            </div>
+          ) : (
+            <a
+              href={`/api/schedule-documents/${current.id}`}
+              target="_blank"
+              rel="noopener"
+              className="block rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--surface-2)]"
+              title="Afficher en grand"
+            >
               <img
                 src={`/api/schedule-documents/${current.id}`}
                 alt={current.title}
                 className="w-full h-auto"
               />
-            )}
-          </div>
+            </a>
+          )}
 
           {others.length > 0 ? (
             <details className="text-[13px]">
               <summary className="cursor-pointer text-[var(--text-2)] hover:text-[var(--text-1)]">
-                Versions precedentes ({others.length})
+                Versions précédentes ({others.length})
               </summary>
               <ul className="mt-2 space-y-1.5">
                 {others.map((document) => (
@@ -150,12 +157,14 @@ export function ScheduleDocuments({
                       {formatFileSize(document.fileSize)}
                     </span>
                     <div className="ml-auto flex items-center gap-2">
-                      <Link
+                      <a
                         href={`/api/schedule-documents/${document.id}`}
+                        target="_blank"
+                        rel="noopener"
                         className="text-[12.5px] text-[var(--accent)] hover:underline"
                       >
                         Ouvrir
-                      </Link>
+                      </a>
                       {canManage ? (
                         <ScheduleDocumentActions
                           documentId={document.id}

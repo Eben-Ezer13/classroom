@@ -101,7 +101,7 @@ export default async function ProfilePage() {
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatTile label="Telechargements" value={downloads} tone="accent" />
+            <StatTile label="Téléchargements" value={downloads} tone="accent" />
             <StatTile label="Sondages" value={votes.length} tone="info" />
             <StatTile label="Réclamations" value={complaints} tone="warning" />
             <StatTile label="Sessions actives" value={sessions} tone="success" />
@@ -110,9 +110,9 @@ export default async function ProfilePage() {
           <Card>
             <CardHeader
               title="Informations personnelles"
-              description={`Compte cree le ${formatDate(profile.createdAt)}${
+              description={`Compte créé le ${formatDate(profile.createdAt)}${
                 profile.lastLoginAt
-                  ? ` · derniere connexion ${formatRelative(profile.lastLoginAt)}`
+                  ? ` · dernière connexion ${formatRelative(profile.lastLoginAt)}`
                   : ''
               }`}
             />
@@ -130,8 +130,8 @@ export default async function ProfilePage() {
 
           <Card>
             <CardHeader
-              title="Securite"
-              description="Changez votre mot de passe regulierement."
+              title="Sécurité"
+              description="Changez votre mot de passe régulièrement."
             />
             <CardBody>
               <PasswordForm />

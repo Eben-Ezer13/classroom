@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireClassAdmin } from '@/lib/auth/guards'
 import {
@@ -82,9 +81,6 @@ export async function createProjectAction(
       { excludeUserId: user.id },
     )
 
-    revalidatePath('/projets')
-    revalidatePath('/echeances')
-    revalidatePath('/dashboard')
     return { ok: true, message: 'Projet créé.' }
   })
 }
@@ -159,9 +155,6 @@ export async function updateProjectAction(
       summary: `${user.firstName} ${user.lastName} a modifié le projet ${updated.title}.`,
     })
 
-    revalidatePath('/projets')
-    revalidatePath(`/projets/${projectId}`)
-    revalidatePath('/echeances')
     return { ok: true, message: 'Projet mis à jour.' }
   })
 }
@@ -196,9 +189,6 @@ export async function deleteProjectAction(formData: FormData): Promise<ActionSta
       summary: `${user.firstName} ${user.lastName} a supprimé le projet ${existing.title}.`,
     })
 
-    revalidatePath('/projets')
-    revalidatePath('/echeances')
-    revalidatePath('/dashboard')
     return { ok: true, message: 'Projet supprimé.' }
   })
 }
@@ -229,8 +219,7 @@ export async function addProjectLinkAction(
       },
     })
 
-    revalidatePath(`/projets/${project.id}`)
-    return { ok: true, message: 'Lien ajoute.' }
+    return { ok: true, message: 'Lien ajouté.' }
   })
 }
 
@@ -247,7 +236,6 @@ export async function deleteProjectLinkAction(formData: FormData): Promise<Actio
     assertCanManageClass(user, link.project.classGroupId)
 
     await prisma.projectLink.delete({ where: { id: linkId } })
-    revalidatePath(`/projets/${link.projectId}`)
     return { ok: true, message: 'Lien supprimé.' }
   })
 }

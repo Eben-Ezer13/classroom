@@ -43,12 +43,12 @@ export default async function MembersPage({
     )
   }
 
+  const isAdmin = user.role === 'ADMIN'
+
   const [members, stats] = await Promise.all([
-    listClassMembers(user.classGroupId, { q }),
+    listClassMembers(user.classGroupId, { q, searchEmail: isAdmin }),
     classMemberStats(user.classGroupId),
   ])
-
-  const isAdmin = user.role === 'ADMIN'
 
   return (
     <>
@@ -58,7 +58,7 @@ export default async function MembersPage({
         actions={
           isAdmin ? (
             <LinkButton href="/admin/membres" size="sm">
-              Gerer les membres
+              Gérer les membres
             </LinkButton>
           ) : null
         }
@@ -70,7 +70,7 @@ export default async function MembersPage({
         <StatTile
           label="En ligne"
           value={stats.online}
-          hint="activite < 5 min"
+          hint="activité < 5 min"
           tone={stats.online > 0 ? 'success' : 'neutral'}
         />
         <StatTile label="Total" value={stats.total} />
@@ -78,7 +78,12 @@ export default async function MembersPage({
 
       <FilterBar action="/membres" hasFilters={Boolean(q)}>
         <FilterField label="Recherche" htmlFor="q" className="min-w-[220px] flex-1">
-          <Input id="q" name="q" defaultValue={q} placeholder="Nom, e-mail, numéro..." />
+          <Input
+            id="q"
+            name="q"
+            defaultValue={q}
+            placeholder={isAdmin ? 'Nom, e-mail, numéro...' : 'Nom ou numéro...'}
+          />
         </FilterField>
       </FilterBar>
 
@@ -86,10 +91,10 @@ export default async function MembersPage({
         {members.length === 0 ? (
           <EmptyState
             icon={<IconUsers />}
-            title={q ? 'Aucun resultat' : 'Aucun membre'}
+            title={q ? 'Aucun résultat' : 'Aucun membre'}
             description={
               q
-                ? 'Aucun membre ne correspond a cette recherche.'
+                ? 'Aucun membre ne correspond à cette recherche.'
                 : 'Les étudiants apparaîtront ici dès qu’ils auront rejoint la classe.'
             }
           />
@@ -98,9 +103,9 @@ export default async function MembersPage({
             <THead>
               <TH>Membre</TH>
               <TH>Numéro</TH>
-              <TH>Role</TH>
+              <TH>Rôle</TH>
               <TH>Statut</TH>
-              <TH align="right">Derniere activite</TH>
+              <TH align="right">Dernière activité</TH>
             </THead>
             <TBody>
               {members.map((member) => (
@@ -117,9 +122,13 @@ export default async function MembersPage({
                         <p className="text-[13.5px] font-medium text-[var(--text-1)] truncate">
                           {member.firstName} {member.lastName}
                         </p>
-                        <p className="text-[12px] text-[var(--text-3)] truncate">
-                          {member.email}
-                        </p>
+                        {/* Les adresses restent reservees au delegue : un etudiant
+                            ne voit pas celles de ses camarades. */}
+                        {isAdmin ? (
+                          <p className="text-[12px] text-[var(--text-3)] truncate">
+                            {member.email}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   </TD>

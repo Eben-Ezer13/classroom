@@ -1,13 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
 import { createResourceAction, updateResourceAction } from '@/app/actions/resources'
 import type { ActionState } from '@/lib/errors'
 import { Field, Input, Select, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
 import { uploadPendingLabel, useDirectUploads } from '@/components/features/direct-upload'
-import { useFormAction } from '@/components/ui/use-form-action'
+import { useCloseOnSuccess, useFormAction } from '@/components/ui/use-form-action'
 import { ALLOWED_EXTENSIONS, MAX_FILE_SIZE, RESOURCE_KIND_LABELS } from '@/lib/constants'
 import { formatFileSize } from '@/lib/utils'
 import type { ModuleOption, SemesterOption } from '../programme/schedule-form'
@@ -55,9 +54,7 @@ export function ResourceForm({
     },
   )
 
-  useEffect(() => {
-    if (state.ok && onDone) onDone()
-  }, [state.ok, onDone])
+  useCloseOnSuccess(state, onDone)
 
   return (
     <form action={formAction} className="space-y-4">

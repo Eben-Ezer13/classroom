@@ -1,7 +1,11 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
-import { useFormAction } from '@/components/ui/use-form-action'
+import { useActionState } from 'react'
+import {
+  useCloseOnSuccess,
+  useFormAction,
+  useRefreshOnSuccess,
+} from '@/components/ui/use-form-action'
 import { Modal } from '@/components/ui/modal'
 import { IconPlus } from '@/components/ui/icons'
 import { Field, Input, Select, Textarea } from '@/components/ui/field'
@@ -34,9 +38,7 @@ function ComplaintForm({ onDone }: { onDone?: () => void }) {
     },
   )
 
-  useEffect(() => {
-    if (state.ok && onDone) onDone()
-  }, [state.ok, onDone])
+  useCloseOnSuccess(state, onDone)
 
   return (
     <form action={formAction} className="space-y-4">
@@ -175,6 +177,7 @@ export function ComplaintStatusForm({
   status: string
 }) {
   const [state, formAction] = useActionState(updateComplaintStatusAction, emptyActionState)
+  useRefreshOnSuccess(state)
 
   return (
     <form action={formAction} className="space-y-2.5">

@@ -11,6 +11,11 @@ import { UploadConfigProvider } from '@/components/features/direct-upload'
 /**
  * Toutes les pages de ce groupe sont rendues a la demande : elles dependent
  * de la session et de donnees qui changent en permanence.
+ *
+ * Pas de loading.tsx dans ce groupe : en production, la frontiere Suspense
+ * qu'il ajoute autour de chaque page empechait parfois une page de se mettre
+ * a jour apres un rafraichissement (router.refresh) ou une Server Action.
+ * La navigation affiche a la place un indicateur sur le lien clique.
  */
 export const dynamic = 'force-dynamic'
 

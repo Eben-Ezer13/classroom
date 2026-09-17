@@ -31,9 +31,16 @@ const nextConfig = {
   async headers() {
     return [
       {
+        // La politique vise les pages HTML. Les fichiers relayes par /api
+        // (PDF de l'emploi du temps ouvert dans un onglet...) en sont exclus :
+        // `object-src 'none'` peut empecher le lecteur PDF du navigateur de
+        // s'afficher. Ils gardent les autres en-tetes ci-dessous.
+        source: '/:path((?!api/).*)',
+        headers: [{ key: 'Content-Security-Policy', value: contentSecurityPolicy }],
+      },
+      {
         source: '/:path*',
         headers: [
-          { key: 'Content-Security-Policy', value: contentSecurityPolicy },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },

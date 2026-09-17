@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { requirePageUser } from '@/lib/auth/guards'
+import { prisma } from '@/lib/db'
 import { getComplaintDetail, loadComplaintFor } from '@/lib/services/complaints'
 import { NotFoundError } from '@/lib/errors'
 import { PageHeader } from '@/components/layout/page-header'
@@ -15,7 +16,6 @@ import {
   COMPLAINT_PRIORITY_TONE,
   COMPLAINT_STATUS_LABELS,
   COMPLAINT_STATUS_TONE,
-  ROLE_LABELS,
 } from '@/lib/constants'
 import { formatDateTime, formatFileSize, formatRelative } from '@/lib/utils'
 import { ComplaintMessageForm, ComplaintStatusForm } from '../complaint-controls'
@@ -44,6 +44,26 @@ export default async function ComplaintDetailPage({
   if (!complaint) notFound()
 
   const isStaff = access.isStaff
+
+  // Le badge "Délégué" suit le role DANS la classe de la reclamation, pas le
+  // type de compte choisi a l'inscription.
+  const authorIds = [
+    ...new Set(complaint.messages.flatMap((m) => (m.author ? [m.author.id] : []))),
+  ]
+  const delegates = new Set(
+    authorIds.length > 0
+      ? (
+          await prisma.membership.findMany({
+            where: {
+              classGroupId: complaint.classGroupId,
+              role: 'ADMIN',
+              userId: { in: authorIds },
+            },
+            select: { userId: true },
+          })
+        ).map((m) => m.userId)
+      : [],
+  )
   const isClosed = complaint.status === 'FERME'
 
   return (
@@ -52,7 +72,7 @@ export default async function ComplaintDetailPage({
         title={complaint.title}
         breadcrumb={[
           { label: 'Réclamations', href: '/reclamations' },
-          { label: 'Detail' },
+          { label: 'Détail' },
         ]}
       />
 
@@ -71,7 +91,7 @@ export default async function ComplaintDetailPage({
               {complaint.attachments.length > 0 ? (
                 <div className="mt-4 space-y-2">
                   <p className="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-3)]">
-                    Pieces jointes
+                    Pièces jointes
                   </p>
                   {complaint.attachments.map((attachment) => (
                     <a
@@ -96,7 +116,7 @@ export default async function ComplaintDetailPage({
 
           <Card>
             <CardHeader
-              title="Echanges"
+              title="Échanges"
               description={
                 complaint.messages.length === 0
                   ? 'Aucun message pour le moment.'
@@ -121,10 +141,10 @@ export default async function ComplaintDetailPage({
                       <span className="text-[13px] font-medium text-[var(--text-1)]">
                         {message.author
                           ? `${message.author.firstName} ${message.author.lastName}`
-                          : 'Compte supprime'}
+                          : 'Compte supprimé'}
                       </span>
-                      {message.author && message.author.role !== 'ETUDIANT' ? (
-                        <Badge tone="accent">{ROLE_LABELS[message.author.role]}</Badge>
+                      {message.author && delegates.has(message.author.id) ? (
+                        <Badge tone="accent">Délégué</Badge>
                       ) : null}
                       <span className="text-[11.5px] text-[var(--text-3)]">
                         {formatRelative(message.createdAt)}
@@ -159,12 +179,12 @@ export default async function ComplaintDetailPage({
                   {COMPLAINT_STATUS_LABELS[complaint.status]}
                 </Badge>
               </Row>
-              <Row label="Priorite">
+              <Row label="Priorité">
                 <Badge tone={toTone(COMPLAINT_PRIORITY_TONE[complaint.priority])}>
                   {COMPLAINT_PRIORITY_LABELS[complaint.priority]}
                 </Badge>
               </Row>
-              <Row label="Categorie">
+              <Row label="Catégorie">
                 <span className="text-[13px] text-[var(--text-1)]">
                   {COMPLAINT_CATEGORY_LABELS[complaint.category]}
                 </span>
@@ -182,7 +202,7 @@ export default async function ComplaintDetailPage({
                 </Row>
               ) : null}
               {complaint.resolvedAt ? (
-                <Row label="Resolue le">
+                <Row label="Résolue le">
                   <span className="text-[13px] text-[var(--text-1)]">
                     {formatDateTime(complaint.resolvedAt)}
                   </span>
@@ -193,7 +213,7 @@ export default async function ComplaintDetailPage({
 
           {isStaff ? (
             <Card>
-              <CardHeader title="Traitement" description="Reserve aux responsables" />
+              <CardHeader title="Traitement" description="Réservé aux délégués" />
               <CardBody>
                 <ComplaintStatusForm complaintId={complaint.id} status={complaint.status} />
               </CardBody>

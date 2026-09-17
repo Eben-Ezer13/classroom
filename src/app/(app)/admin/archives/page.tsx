@@ -68,8 +68,8 @@ export default async function AdminArchivesPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <StatTile label="Années actives" value={active.length} tone="success" />
         <StatTile label="Années archivées" value={archived.length} tone="warning" />
-        <StatTile label="Semestres archives" value={archivedSemesters} />
-        <StatTile label="Ressources archivees" value={archivedResources} tone="info" />
+        <StatTile label="Semestres archivés" value={archivedSemesters} />
+        <StatTile label="Ressources archivées" value={archivedResources} tone="info" />
       </div>
 
       <div className="space-y-4">
@@ -122,13 +122,13 @@ export default async function AdminArchivesPage() {
         <Card>
           <CardHeader
             title="Années archivées"
-            description="Conservees en base, masquees de l affichage courant."
+            description="Conservées en base, masquées de l’affichage courant."
           />
           {archived.length === 0 ? (
             <EmptyState
               icon={<IconArchive />}
               title="Aucune archive"
-              description="Les annees terminees que vous archivez apparaitront ici."
+              description="Les années terminées que vous archivez apparaîtront ici."
             />
           ) : (
             <CardBody className="space-y-2.5">
@@ -144,7 +144,7 @@ export default async function AdminArchivesPage() {
                         <span className="text-[14px] font-medium text-[var(--text-2)]">
                           {year.label}
                         </span>
-                        <Badge tone="warning">Archivee</Badge>
+                        <Badge tone="warning">Archivée</Badge>
                       </div>
                       <p className="mt-1 text-[12px] text-[var(--text-3)]">
                         {year.semesters.length} semestre(s) · {t.modules} module(s) ·{' '}
@@ -155,9 +155,9 @@ export default async function AdminArchivesPage() {
                     <ConfirmForm
                       action={toggleYearArchiveAction}
                       hidden={{ yearId: year.id }}
-                      message={`Desarchiver ${year.label} ? Son contenu redeviendra visible.`}
+                      message={`Désarchiver ${year.label} ? Son contenu redeviendra visible.`}
                     >
-                      <IconSubmit label="Desarchiver cette annee">
+                      <IconSubmit label="Désarchiver cette année">
                         <IconArchive className="size-[17px]" />
                       </IconSubmit>
                     </ConfirmForm>

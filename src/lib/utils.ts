@@ -139,6 +139,28 @@ export function parseDateInput(value: string): Date {
   return new Date(value)
 }
 
+/**
+ * Bornes d'un filtre "du ... au ..." (valeurs d'<input type="date">) : de
+ * 00:00 le premier jour a 23:59:59.999 le dernier, dans le fuseau de
+ * reference. Une valeur mal formee est ignoree.
+ */
+export function dayRangeFilter(
+  from?: string | null,
+  to?: string | null,
+): { gte?: Date; lte?: Date } | undefined {
+  const day = /^\d{4}-\d{2}-\d{2}$/
+  const range: { gte?: Date; lte?: Date } = {}
+  if (from && day.test(from)) {
+    const start = parseDateInput(`${from}T00:00`)
+    if (!Number.isNaN(start.getTime())) range.gte = start
+  }
+  if (to && day.test(to)) {
+    const end = parseDateInput(`${to}T23:59`)
+    if (!Number.isNaN(end.getTime())) range.lte = new Date(end.getTime() + 59_999)
+  }
+  return range.gte || range.lte ? range : undefined
+}
+
 /** Valeur d'un <input type="datetime-local">, exprimee dans le fuseau de reference. */
 export function toDateTimeInputValue(date: Date | string | null | undefined): string {
   if (!date) return ''

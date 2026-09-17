@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Field, Input, Select, Textarea } from '@/components/ui/field'
@@ -10,7 +9,7 @@ import { ActionForm, ConfirmForm, IconSubmit } from '@/components/ui/confirm-for
 import { IconTrash, IconUpload } from '@/components/ui/icons'
 import { uploadPendingLabel, useDirectUploads } from '@/components/features/direct-upload'
 import type { ActionState } from '@/lib/errors'
-import { useFormAction } from '@/components/ui/use-form-action'
+import { useCloseOnSuccess, useFormAction } from '@/components/ui/use-form-action'
 import {
   deleteScheduleDocumentAction,
   setCurrentScheduleDocumentAction,
@@ -75,9 +74,7 @@ function DocumentForm({
     },
   )
 
-  useEffect(() => {
-    if (state.ok) onDone()
-  }, [state.ok, onDone])
+  useCloseOnSuccess(state, onDone)
 
   return (
     <form action={formAction} className="space-y-4">

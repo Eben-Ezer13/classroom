@@ -1,15 +1,19 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
+import { useActionState, useState } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { ConfirmForm, IconSubmit } from '@/components/ui/confirm-form'
-import { IconClose, IconPencil, IconPlus, IconTrash } from '@/components/ui/icons'
+import { IconClock, IconClose, IconPlus, IconTrash } from '@/components/ui/icons'
 import { Button } from '@/components/ui/button'
 import { Checkbox, Field, Input, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
 import { emptyActionState } from '@/lib/errors'
-import { useFormAction } from '@/components/ui/use-form-action'
+import {
+  useCloseOnSuccess,
+  useFormAction,
+  useRefreshOnSuccess,
+} from '@/components/ui/use-form-action'
 import {
   closePollAction,
   createPollAction,
@@ -22,9 +26,7 @@ function PollForm({ onDone }: { onDone?: () => void }) {
   // Options controlees : leur saisie survit a un refus du serveur.
   const [options, setOptions] = useState(['', ''])
 
-  useEffect(() => {
-    if (state.ok && onDone) onDone()
-  }, [state.ok, onDone])
+  useCloseOnSuccess(state, onDone)
 
   const setOption = (index: number, value: string) =>
     setOptions((prev) => prev.map((o, i) => (i === index ? value : o)))
@@ -169,6 +171,7 @@ export function VoteForm({
   allowMultiple: boolean
 }) {
   const [state, formAction] = useActionState(voteAction, emptyActionState)
+  useRefreshOnSuccess(state)
 
   return (
     <form action={formAction} className="space-y-2.5">
@@ -202,18 +205,29 @@ export function VoteForm({
   )
 }
 
-export function PollActions({ pollId, isClosed }: { pollId: string; isClosed: boolean }) {
+export function PollActions({
+  pollId,
+  isClosed,
+  canToggle,
+}: {
+  pollId: string
+  isClosed: boolean
+  /** Faux une fois la date de clôture passée : le sondage ne peut plus rouvrir. */
+  canToggle: boolean
+}) {
   return (
     <div className="flex items-center gap-0.5">
-      <ConfirmForm
-        action={closePollAction}
-        hidden={{ pollId }}
-        message={isClosed ? 'Rouvrir ce sondage ?' : 'Clore ce sondage maintenant ?'}
-      >
-        <IconSubmit label={isClosed ? 'Rouvrir le sondage' : 'Clore le sondage'}>
-          <IconPencil className="size-[17px]" />
-        </IconSubmit>
-      </ConfirmForm>
+      {canToggle ? (
+        <ConfirmForm
+          action={closePollAction}
+          hidden={{ pollId }}
+          message={isClosed ? 'Rouvrir ce sondage ?' : 'Clore ce sondage maintenant ?'}
+        >
+          <IconSubmit label={isClosed ? 'Rouvrir le sondage' : 'Clore le sondage'}>
+            <IconClock className="size-[17px]" />
+          </IconSubmit>
+        </ConfirmForm>
+      ) : null}
 
       <ConfirmForm
         action={deletePollAction}

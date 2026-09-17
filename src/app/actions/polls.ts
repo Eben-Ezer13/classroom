@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireClassAdmin, requireUser } from '@/lib/auth/guards'
 import {
@@ -75,8 +74,6 @@ export async function createPollAction(
       { excludeUserId: user.id },
     )
 
-    revalidatePath('/sondages')
-    revalidatePath('/dashboard')
     return { ok: true, message: 'Sondage créé.' }
   })
 }
@@ -112,7 +109,7 @@ export async function voteAction(
     const now = Date.now()
     if (poll.closedAt) throw new AppError('Ce sondage est clos.')
     if (poll.startsAt.getTime() > now) throw new AppError("Ce sondage n'est pas encore ouvert.")
-    if (poll.endsAt.getTime() < now) throw new AppError('Ce sondage est termine.')
+    if (poll.endsAt.getTime() < now) throw new AppError('Ce sondage est terminé.')
 
     if (!poll.allowMultiple && optionIds.length > 1) {
       throw new AppError('Ce sondage n’autorise qu’une seule réponse.')
@@ -126,27 +123,22 @@ export async function voteAction(
     }
 
     await prisma.$transaction(async (tx) => {
+      // Verrou transactionnel propre au couple (sondage, votant) : deux
+      // soumissions simultanees (double clic, deux onglets) s'executent
+      // l'une apres l'autre, la seconde voit donc le vote de la premiere.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`poll:${pollId}:${user.id}`}))`
+
       const already = await tx.pollVote.count({ where: { pollId, userId: user.id } })
       if (already > 0) {
-        throw new AppError('Vous avez deja participe a ce sondage.')
+        throw new AppError('Vous avez déjà participé à ce sondage.')
       }
 
       await tx.pollVote.createMany({
-        data: optionIds.map((optionId) => ({ pollId, optionId, userId: user.id })),
+        data: [...new Set(optionIds)].map((optionId) => ({ pollId, optionId, userId: user.id })),
       })
-
-      // Second controle DANS la transaction : deux soumissions simultanees
-      // passeraient toutes deux le premier test, mais la seconde verrait ici
-      // un total incoherent et provoquerait l'annulation de son insertion.
-      const total = await tx.pollVote.count({ where: { pollId, userId: user.id } })
-      if (total !== optionIds.length) {
-        throw new AppError('Vote deja enregistre.')
-      }
     })
 
-    revalidatePath('/sondages')
-    revalidatePath('/dashboard')
-    return { ok: true, message: 'Vote enregistre.' }
+    return { ok: true, message: 'Vote enregistré.' }
   })
 }
 
@@ -157,10 +149,18 @@ export async function closePollAction(formData: FormData): Promise<ActionState> 
 
     const poll = await prisma.poll.findFirst({
       where: { id: pollId, deletedAt: null },
-      select: { id: true, classGroupId: true, title: true, closedAt: true },
+      select: { id: true, classGroupId: true, title: true, closedAt: true, endsAt: true },
     })
     if (!poll) throw new NotFoundError('Sondage introuvable.')
     assertCanManageClass(user, poll.classGroupId)
+
+    // Rouvrir un sondage dont la date de cloture est passee ne le rendrait
+    // pas votable : on le dit plutot que de ne rien changer en silence.
+    if (poll.closedAt && poll.endsAt.getTime() <= Date.now()) {
+      throw new AppError(
+        'La date de clôture de ce sondage est dépassée : créez un nouveau sondage pour relancer le vote.',
+      )
+    }
 
     await prisma.poll.update({
       where: { id: pollId },
@@ -179,8 +179,6 @@ export async function closePollAction(formData: FormData): Promise<ActionState> 
       } le sondage ${poll.title}.`,
     })
 
-    revalidatePath('/sondages')
-    revalidatePath('/dashboard')
     return { ok: true, message: poll.closedAt ? 'Sondage rouvert.' : 'Sondage clos.' }
   })
 }
@@ -212,8 +210,6 @@ export async function deletePollAction(formData: FormData): Promise<ActionState>
       summary: `${user.firstName} ${user.lastName} a supprimé le sondage ${poll.title}.`,
     })
 
-    revalidatePath('/sondages')
-    revalidatePath('/dashboard')
     return { ok: true, message: 'Sondage supprimé.' }
   })
 }

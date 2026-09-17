@@ -13,7 +13,7 @@ export class AppError extends Error {
 
 /** 401 - non authentifie. */
 export class UnauthorizedError extends AppError {
-  constructor(message = 'Vous devez etre connecte.') {
+  constructor(message = 'Vous devez être connecté.') {
     super(message, 401)
     this.name = 'UnauthorizedError'
   }
@@ -29,7 +29,7 @@ export class ForbiddenError extends AppError {
 
 /** 404 - ressource inexistante ou hors du perimetre de l'utilisateur. */
 export class NotFoundError extends AppError {
-  constructor(message = 'Element introuvable.') {
+  constructor(message = 'Élément introuvable.') {
     super(message, 404)
     this.name = 'NotFoundError'
   }

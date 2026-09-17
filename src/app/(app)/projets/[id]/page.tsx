@@ -180,7 +180,7 @@ export default async function ProjectDetailPage({ params }: Props) {
           <Card>
             <CardHeader
               title="Documents"
-              description={`${project.documents.length} document(s) rattache(s) au projet`}
+              description={`${project.documents.length} document(s) rattaché(s) au projet`}
             />
             {project.documents.length > 0 ? (
               <CardBody className="space-y-2.5">
@@ -194,8 +194,8 @@ export default async function ProjectDetailPage({ params }: Props) {
                 title="Aucun document"
                 description={
                   canManage
-                    ? 'Ajoutez le sujet, le modele de rapport ou tout support utile.'
-                    : 'Aucun document n a encore ete joint a ce projet.'
+                    ? 'Ajoutez le sujet, le modèle de rapport ou tout support utile.'
+                    : 'Aucun document n’a encore été joint à ce projet.'
                 }
               />
             )}
@@ -206,14 +206,14 @@ export default async function ProjectDetailPage({ params }: Props) {
           <Card>
             <CardHeader title="Informations" />
             <CardBody className="space-y-3">
-              <Row label="Professeur" value={project.teacherName ?? 'Non renseigne'} />
+              <Row label="Professeur" value={project.teacherName ?? 'Non renseigné'} />
               {project.startsAt ? (
-                <Row label="Debut" value={formatDateTime(project.startsAt)} />
+                <Row label="Début" value={formatDateTime(project.startsAt)} />
               ) : null}
               <Row label="Rendu" value={formatDateTime(project.dueAt)} />
               {project.createdBy ? (
                 <Row
-                  label="Publie par"
+                  label="Publié par"
                   value={`${project.createdBy.firstName} ${project.createdBy.lastName}`}
                 />
               ) : null}

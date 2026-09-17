@@ -62,7 +62,7 @@ export default async function AdminHomePage({
       {params.bienvenue === '1' ? (
         <Alert tone="success" className="mb-4">
           Votre classe est créée. Partagez le code{' '}
-          <strong className="font-mono tracking-wider">{profile?.code}</strong> a vos
+          <strong className="font-mono tracking-wider">{profile?.code}</strong> à vos
           étudiants, ou générez un lien d’invitation depuis{' '}
           <Link href="/admin/membres" className="underline">
             Membres et invitations
@@ -81,7 +81,7 @@ export default async function AdminHomePage({
         <StatTile
           label="En ligne"
           value={members.online}
-          hint="activite < 5 min"
+          hint="activité < 5 min"
           tone={members.online > 0 ? 'success' : 'neutral'}
         />
         <StatTile label="Ressources" value={resources} tone="info" />
@@ -136,8 +136,8 @@ export default async function AdminHomePage({
 
         <Card>
           <CardHeader
-            title="Activite recente"
-            description="Dernieres actions dans votre classe"
+            title="Activité récente"
+            description="Dernières actions dans votre classe"
             action={
               <Link
                 href="/admin/audit"
@@ -149,7 +149,7 @@ export default async function AdminHomePage({
           />
           <CardBody>
             {recentAudit.length === 0 ? (
-              <p className="text-[13px] text-[var(--text-3)]">Aucune action enregistree.</p>
+              <p className="text-[13px] text-[var(--text-3)]">Aucune action enregistrée.</p>
             ) : (
               <ul className="space-y-2.5">
                 {recentAudit.map((entry) => (

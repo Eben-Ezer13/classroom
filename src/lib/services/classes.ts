@@ -38,7 +38,7 @@ export async function generateClassCode(): Promise<string> {
     })
     if (!exists) return code
   }
-  throw new AppError('Impossible de generer un code de classe, reessayez.')
+  throw new AppError('Impossible de générer un code de classe, réessayez.')
 }
 
 export async function generateInvitationCode(): Promise<string> {
@@ -50,7 +50,7 @@ export async function generateInvitationCode(): Promise<string> {
     })
     if (!exists) return code
   }
-  throw new AppError("Impossible de generer un lien d'invitation, reessayez.")
+  throw new AppError("Impossible de générer un lien d’invitation, réessayez.")
 }
 
 export type NewClassInput = {
@@ -88,7 +88,7 @@ export async function createClassSpace(
     })
     if (activeStudentMembership) {
       throw new AppError(
-        'Vous appartenez deja a une classe en tant qu etudiant. Quittez-la avant de creer une autre classe.',
+        'Vous êtes déjà étudiant dans une autre classe. Quittez-la avant de créer votre propre classe.',
       )
     }
 
@@ -181,6 +181,8 @@ export type JoinTarget = {
   schoolName: string
   role: 'ADMIN' | 'MEMBER'
   invitationId: string | null
+  /** Adresse a laquelle l'invitation est reservee, le cas echeant. */
+  email: string | null
 }
 
 /**
@@ -197,6 +199,7 @@ export async function resolveJoinCode(rawCode: string): Promise<JoinTarget> {
     select: {
       id: true,
       role: true,
+      email: true,
       expiresAt: true,
       revokedAt: true,
       maxUses: true,
@@ -209,10 +212,10 @@ export async function resolveJoinCode(rawCode: string): Promise<JoinTarget> {
 
   if (invitation) {
     if (invitation.revokedAt) {
-      throw new AppError("Cette invitation a ete revoquee par le delegue.", 410)
+      throw new AppError('Cette invitation a été révoquée par le délégué.', 410)
     }
     if (invitation.expiresAt && invitation.expiresAt.getTime() < Date.now()) {
-      throw new AppError('Cette invitation a expire. Demandez un nouveau lien.', 410)
+      throw new AppError('Cette invitation a expiré. Demandez un nouveau lien.', 410)
     }
     if (invitation.maxUses > 0 && invitation.usedCount >= invitation.maxUses) {
       throw new AppError(
@@ -229,6 +232,7 @@ export async function resolveJoinCode(rawCode: string): Promise<JoinTarget> {
       schoolName: invitation.classGroup.schoolName,
       role: invitation.role,
       invitationId: invitation.id,
+      email: invitation.email,
     }
   }
 
@@ -237,10 +241,7 @@ export async function resolveJoinCode(rawCode: string): Promise<JoinTarget> {
     select: { id: true, name: true, schoolName: true },
   })
   if (!classGroup) {
-    throw new AppError(
-      'Code inconnu. Verifiez le code fourni par votre delegue.',
-      404,
-    )
+    throw new AppError('Code inconnu. Vérifiez le code fourni par votre délégué.', 404)
   }
   return {
     classGroupId: classGroup.id,
@@ -248,6 +249,7 @@ export async function resolveJoinCode(rawCode: string): Promise<JoinTarget> {
     schoolName: classGroup.schoolName,
     role: 'MEMBER',
     invitationId: null,
+    email: null,
   }
 }
 
@@ -263,9 +265,17 @@ export async function joinClass(
   studentId?: string | null,
 ): Promise<{ alreadyMember: boolean }> {
   return prisma.$transaction(async (tx) => {
+    // Invitation nominative : seul le compte de l'adresse visee peut l'utiliser.
+    if (target.email) {
+      const account = await tx.user.findUnique({ where: { id: userId }, select: { email: true } })
+      if (account?.email.toLowerCase() !== target.email.toLowerCase()) {
+        throw new AppError('Cette invitation est réservée à une autre adresse e-mail.', 403)
+      }
+    }
+
     const existing = await tx.membership.findUnique({
       where: { userId_classGroupId: { userId, classGroupId: target.classGroupId } },
-      select: { id: true, isActive: true, role: true },
+      select: { id: true, isActive: true },
     })
 
     if (existing?.isActive) {
@@ -290,26 +300,45 @@ export async function joinClass(
     })
     if (activeStudentMembership) {
       throw new AppError(
-        `Vous appartenez deja a la classe ${activeStudentMembership.classGroup.name}. Quittez-la avant d en rejoindre une autre.`,
+        `Vous appartenez déjà à la classe ${activeStudentMembership.classGroup.name}. Quittez-la avant d’en rejoindre une autre.`,
       )
     }
 
-    const joiningRole = existing?.role ?? target.role
-    if (joiningRole === 'MEMBER') {
+    // Le role vient TOUJOURS du code utilise, jamais de l'ancienne
+    // appartenance : un delegue retire qui reutilise le code public de la
+    // classe revient comme etudiant, pas comme delegue.
+    if (target.role === 'MEMBER') {
       const studentCount = await tx.membership.count({
         where: { classGroupId: target.classGroupId, role: 'MEMBER', isActive: true },
       })
       if (studentCount >= MAX_STUDENTS_PER_CLASS) {
         throw new AppError(
-          `Cette classe a atteint sa capacite de ${MAX_STUDENTS_PER_CLASS} etudiants.`,
+          `Cette classe a atteint sa capacité de ${MAX_STUDENTS_PER_CLASS} étudiants.`,
         )
+      }
+    }
+
+    // Consommation atomique de l'invitation : deux adhesions simultanees ne
+    // peuvent pas depasser le nombre maximal d'utilisations.
+    if (target.invitationId) {
+      const claimed = await tx.invitation.updateMany({
+        where: {
+          id: target.invitationId,
+          revokedAt: null,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+          AND: [{ OR: [{ maxUses: 0 }, { usedCount: { lt: tx.invitation.fields.maxUses } }] }],
+        },
+        data: { usedCount: { increment: 1 } },
+      })
+      if (claimed.count === 0) {
+        throw new AppError("Cette invitation n'est plus valable. Demandez un nouveau lien.", 410)
       }
     }
 
     if (existing) {
       await tx.membership.update({
         where: { id: existing.id },
-        data: { isActive: true, ...(studentId ? { studentId } : {}) },
+        data: { isActive: true, role: target.role, ...(studentId ? { studentId } : {}) },
       })
     } else {
       await tx.membership.create({
@@ -319,13 +348,6 @@ export async function joinClass(
           role: target.role,
           studentId: studentId || null,
         },
-      })
-    }
-
-    if (target.invitationId) {
-      await tx.invitation.update({
-        where: { id: target.invitationId },
-        data: { usedCount: { increment: 1 } },
       })
     }
 
@@ -371,7 +393,7 @@ export type ClassMember = {
  */
 export async function listClassMembers(
   classGroupId: string,
-  options: { q?: string; includeInactive?: boolean } = {},
+  options: { q?: string; includeInactive?: boolean; searchEmail?: boolean } = {},
 ): Promise<ClassMember[]> {
   const q = options.q?.trim()
   const where: Prisma.MembershipWhereInput = {
@@ -385,7 +407,9 @@ export async function listClassMembers(
             { studentId: { contains: q, mode: 'insensitive' as const } },
             { user: { firstName: { contains: q, mode: 'insensitive' as const } } },
             { user: { lastName: { contains: q, mode: 'insensitive' as const } } },
-            { user: { email: { contains: q, mode: 'insensitive' as const } } },
+            ...(options.searchEmail === false
+              ? []
+              : [{ user: { email: { contains: q, mode: 'insensitive' as const } } }]),
           ],
         }
       : {}),

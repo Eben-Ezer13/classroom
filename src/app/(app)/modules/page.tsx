@@ -54,7 +54,13 @@ export default async function ModulesPage({
             academicYear: { select: { label: true } },
           },
         },
-        _count: { select: { resources: true, projects: true, schedule: true } },
+        _count: {
+          select: {
+            resources: { where: { deletedAt: null } },
+            projects: { where: { deletedAt: null } },
+            schedule: { where: { deletedAt: null } },
+          },
+        },
       },
       orderBy: [{ semester: { number: 'asc' } }, { code: 'asc' }],
     }),
@@ -102,7 +108,7 @@ export default async function ModulesPage({
             description={
               canManage
                 ? 'Créez les modules du semestre pour structurer les ressources et le programme.'
-                : 'Les modules du semestre apparaitront ici une fois crees.'
+                : 'Les modules du semestre apparaîtront ici une fois créés.'
             }
           />
         </Card>
@@ -114,7 +120,7 @@ export default async function ModulesPage({
                 <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--text-3)]">
                   {label}
                 </h2>
-                {items[0]?.semester.isArchived ? <Badge>Archive</Badge> : null}
+                {items[0]?.semester.isArchived ? <Badge>Archivé</Badge> : null}
               </div>
 
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -172,7 +178,7 @@ export default async function ModulesPage({
                         {mod._count.projects > 0 ? (
                           <Badge tone="warning">{mod._count.projects} projet(s)</Badge>
                         ) : null}
-                        {mod.credits ? <Badge>{mod.credits} credits</Badge> : null}
+                        {mod.credits ? <Badge>{mod.credits} crédits</Badge> : null}
                       </div>
 
                       <Link

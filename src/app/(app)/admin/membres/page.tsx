@@ -22,6 +22,7 @@ import {
   EditStudentIdButton,
   NewInvitationButton,
   RemoveMemberButton,
+  ResetPasswordLinkButton,
   RoleSelect,
   ShowInactiveToggle,
 } from './member-controls'
@@ -84,7 +85,7 @@ export default async function AdminMembersPage({
         <StatTile
           label="En ligne"
           value={stats.online}
-          hint="activite < 5 min"
+          hint="activité < 5 min"
           tone={stats.online > 0 ? 'success' : 'neutral'}
         />
       </div>
@@ -104,7 +105,7 @@ export default async function AdminMembersPage({
             message="Régénérer le code ? L’ancien code ne fonctionnera plus."
           >
             <Button type="submit" size="sm" variant="ghost">
-              Regenerer
+              Régénérer
             </Button>
           </ConfirmForm>
         </CardBody>
@@ -147,12 +148,12 @@ export default async function AdminMembersPage({
                     </TD>
                     <TD>
                       {invitation.usedCount}
-                      {invitation.maxUses > 0 ? ` / ${invitation.maxUses}` : ' / illimite'}
+                      {invitation.maxUses > 0 ? ` / ${invitation.maxUses}` : ' / illimité'}
                     </TD>
                     <TD>
                       {invitation.expiresAt ? (
                         expired ? (
-                          <Badge tone="danger">Expire</Badge>
+                          <Badge tone="danger">Expiré</Badge>
                         ) : (
                           formatDate(invitation.expiresAt)
                         )
@@ -169,7 +170,7 @@ export default async function AdminMembersPage({
                           message="Révoquer ce lien d’invitation ?"
                         >
                           <Button type="submit" size="sm" variant="ghost">
-                            Revoquer
+                            Révoquer
                           </Button>
                         </ConfirmForm>
                       </div>
@@ -195,10 +196,10 @@ export default async function AdminMembersPage({
         {members.length === 0 ? (
           <EmptyState
             icon={<IconUsers />}
-            title={q ? 'Aucun resultat' : 'Aucun membre'}
+            title={q ? 'Aucun résultat' : 'Aucun membre'}
             description={
               q
-                ? 'Aucun membre ne correspond a cette recherche.'
+                ? 'Aucun membre ne correspond à cette recherche.'
                 : 'Partagez le code de la classe ou créez un lien d’invitation.'
             }
           />
@@ -206,10 +207,10 @@ export default async function AdminMembersPage({
           <Table>
             <THead>
               <TH>Membre</TH>
-              <TH>Numero</TH>
+              <TH>Numéro</TH>
               <TH>Statut</TH>
-              <TH>Derniere activite</TH>
-              <TH>Role</TH>
+              <TH>Dernière activité</TH>
+              <TH>Rôle</TH>
               <TH align="right">Actions</TH>
             </THead>
             <TBody>
@@ -241,7 +242,7 @@ export default async function AdminMembersPage({
                     <TD>{member.studentId ?? '—'}</TD>
                     <TD>
                       {!member.isActive ? (
-                        <Badge tone="danger">Retire</Badge>
+                        <Badge tone="danger">Retiré</Badge>
                       ) : member.online ? (
                         <Badge tone="success" dot>
                           En ligne
@@ -268,10 +269,16 @@ export default async function AdminMembersPage({
                           studentId={member.studentId}
                         />
                         {isSelf || !member.isActive ? null : (
-                          <RemoveMemberButton
-                            membershipId={member.membershipId}
-                            name={`${member.firstName} ${member.lastName}`}
-                          />
+                          <>
+                            <ResetPasswordLinkButton
+                              membershipId={member.membershipId}
+                              name={`${member.firstName} ${member.lastName}`}
+                            />
+                            <RemoveMemberButton
+                              membershipId={member.membershipId}
+                              name={`${member.firstName} ${member.lastName}`}
+                            />
+                          </>
                         )}
                       </div>
                     </TD>

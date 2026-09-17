@@ -34,7 +34,7 @@ export default async function ClassSettingsPage() {
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
           <Card>
-            <CardHeader title="Identite" />
+            <CardHeader title="Identité" />
             <CardBody>
               <ClassSettingsForm
                 defaults={{

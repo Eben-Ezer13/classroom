@@ -46,7 +46,7 @@ export function assertCanViewClass(user: SessionUser, classGroupId: string): voi
 export function assertCanManageClass(user: SessionUser, classGroupId: string): void {
   if (!canViewClass(user, classGroupId)) throw new NotFoundError()
   if (!canManageClass(user, classGroupId)) {
-    throw new ForbiddenError('Action reservee au delegue de la classe.')
+    throw new ForbiddenError('Action réservée au délégué de la classe.')
   }
 }
 
@@ -66,7 +66,7 @@ export function requireClassId(user: SessionUser, requested?: string | null): st
     return requested
   }
   if (!user.classGroupId) {
-    throw new ForbiddenError("Votre compte n'est rattache a aucune classe.")
+    throw new ForbiddenError("Votre compte n’est rattaché à aucune classe.")
   }
   return user.classGroupId
 }

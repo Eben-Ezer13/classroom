@@ -1,6 +1,8 @@
 import 'server-only'
 import { prisma } from '@/lib/db'
 import type { Prisma } from '@prisma/client'
+import { RESOURCE_KIND_LABELS, isLabelKey } from '@/lib/constants'
+import { dayRangeFilter } from '@/lib/utils'
 
 /**
  * Recherche globale.
@@ -25,17 +27,6 @@ export type SearchFilters = {
 
 const PER_SCOPE = 10
 
-function dateRange(from?: string, to?: string): Prisma.DateTimeFilter | undefined {
-  const filter: Prisma.DateTimeFilter = {}
-  if (from && !Number.isNaN(Date.parse(from))) filter.gte = new Date(from)
-  if (to && !Number.isNaN(Date.parse(to))) {
-    const end = new Date(to)
-    end.setHours(23, 59, 59, 999)
-    filter.lte = end
-  }
-  return filter.gte || filter.lte ? filter : undefined
-}
-
 export async function globalSearch(classGroupId: string, filters: SearchFilters) {
   const { q } = filters
   if (!q) {
@@ -48,7 +39,7 @@ export async function globalSearch(classGroupId: string, filters: SearchFilters)
     }
   }
 
-  const created = dateRange(filters.from, filters.to)
+  const created = dayRangeFilter(filters.from, filters.to)
   const wantAll = filters.scope === 'tout'
   const page = Math.max(1, filters.page)
   const skip = wantAll ? 0 : (page - 1) * PER_SCOPE
@@ -60,7 +51,9 @@ export async function globalSearch(classGroupId: string, filters: SearchFilters)
     isArchived: false,
     ...(filters.moduleId ? { moduleId: filters.moduleId } : {}),
     ...(filters.semesterId ? { semesterId: filters.semesterId } : {}),
-    ...(filters.kind ? { kind: filters.kind as Prisma.EnumResourceKindFilter['equals'] } : {}),
+    ...(isLabelKey(RESOURCE_KIND_LABELS, filters.kind)
+      ? { kind: filters.kind as Prisma.EnumResourceKindFilter['equals'] }
+      : {}),
     ...(created ? { createdAt: created } : {}),
     OR: [
       { title: { contains: q, mode: 'insensitive' } },

@@ -21,7 +21,7 @@ export function Pagination({
   if (pageCount <= 1) {
     return total > 0 ? (
       <p className="px-5 py-3 text-[12.5px] text-[var(--text-3)] border-t border-[var(--border)]">
-        {total} resultat{total > 1 ? 's' : ''}
+        {total} résultat{total > 1 ? 's' : ''}
       </p>
     ) : null
   }
@@ -49,7 +49,7 @@ export function Pagination({
       className="flex items-center justify-between gap-3 px-5 py-3 border-t border-[var(--border)] flex-wrap"
     >
       <p className="text-[12.5px] text-[var(--text-3)]">
-        {total} resultat{total > 1 ? 's' : ''} &middot; page {page} sur {pageCount}
+        {total} résultat{total > 1 ? 's' : ''} &middot; page {page} sur {pageCount}
       </p>
       <div className="flex items-center gap-1.5">
         {page > 1 ? (
@@ -60,7 +60,7 @@ export function Pagination({
               'border-[var(--border-strong)] text-[var(--text-2)] hover:bg-[var(--surface-3)]',
             )}
           >
-            Precedent
+            Précédent
           </Link>
         ) : null}
         {pages.map((p) => (

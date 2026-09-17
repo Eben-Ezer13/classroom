@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireClassAdmin } from '@/lib/auth/guards'
 import { recordAudit } from '@/lib/audit'
@@ -49,7 +48,7 @@ export async function createAcademicYearAction(
       return {
         ok: false,
         message: 'Cette année existe déjà pour votre classe.',
-        fieldErrors: { label: ['Libelle deja utilise.'] },
+        fieldErrors: { label: ['Libellé déjà utilisé.'] },
       }
     }
 
@@ -84,7 +83,6 @@ export async function createAcademicYearAction(
       summary: `${user.firstName} ${user.lastName} a créé l’année ${created.label}.`,
     })
 
-    revalidatePath('/admin/annees')
     return { ok: true, message: 'Année académique créée.' }
   })
 }
@@ -147,7 +145,6 @@ export async function createSemesterAction(
       summary: `${user.firstName} ${user.lastName} a créé le semestre ${created.label}.`,
     })
 
-    revalidatePath('/admin/annees')
     return { ok: true, message: 'Semestre créé.' }
   })
 }
@@ -196,8 +193,6 @@ export async function toggleYearArchiveAction(formData: FormData): Promise<Actio
       summary: `${user.firstName} ${user.lastName} a ${archived ? 'archivé' : 'désarchivé'} l’année ${year.label}.`,
     })
 
-    revalidatePath('/admin/archives')
-    revalidatePath('/admin/annees')
     return {
       ok: true,
       message: archived ? `Année ${year.label} archivée.` : `Année ${year.label} désarchivée.`,
@@ -233,7 +228,6 @@ export async function setCurrentYearAction(formData: FormData): Promise<ActionSt
       summary: `${user.firstName} ${user.lastName} a défini ${year.label} comme année courante.`,
     })
 
-    revalidatePath('/admin/annees')
     return { ok: true, message: `${year.label} est l’année courante.` }
   })
 }
@@ -270,7 +264,6 @@ export async function setCurrentSemesterAction(formData: FormData): Promise<Acti
       summary: `${user.firstName} ${user.lastName} a défini ${semester.label} comme semestre courant.`,
     })
 
-    revalidatePath('/admin/annees')
     return { ok: true, message: `${semester.label} est le semestre courant.` }
   })
 }

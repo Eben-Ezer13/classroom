@@ -1,7 +1,8 @@
 import 'server-only'
 import { prisma } from '@/lib/db'
 import type { Prisma } from '@prisma/client'
-import { PAGE_SIZE } from '@/lib/constants'
+import { PAGE_SIZE, RESOURCE_KIND_LABELS, isLabelKey } from '@/lib/constants'
+import { dayRangeFilter } from '@/lib/utils'
 
 /**
  * Lecture paginee des ressources.
@@ -32,7 +33,9 @@ function buildWhere(
   if (!filters.includeArchived) where.isArchived = false
   if (filters.moduleId) where.moduleId = filters.moduleId
   if (filters.semesterId) where.semesterId = filters.semesterId
-  if (filters.kind) where.kind = filters.kind as Prisma.EnumResourceKindFilter['equals']
+  if (isLabelKey(RESOURCE_KIND_LABELS, filters.kind)) {
+    where.kind = filters.kind as Prisma.EnumResourceKindFilter['equals']
+  }
 
   if (filters.q) {
     where.OR = [
@@ -44,16 +47,8 @@ function buildWhere(
     ]
   }
 
-  const createdAt: Prisma.DateTimeFilter = {}
-  if (filters.from && !Number.isNaN(Date.parse(filters.from))) {
-    createdAt.gte = new Date(filters.from)
-  }
-  if (filters.to && !Number.isNaN(Date.parse(filters.to))) {
-    const to = new Date(filters.to)
-    to.setHours(23, 59, 59, 999)
-    createdAt.lte = to
-  }
-  if (createdAt.gte || createdAt.lte) where.createdAt = createdAt
+  const createdAt = dayRangeFilter(filters.from, filters.to)
+  if (createdAt) where.createdAt = createdAt
 
   return where
 }

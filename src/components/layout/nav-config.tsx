@@ -61,7 +61,7 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: 'Echanges',
+    title: 'Échanges',
     items: [
       {
         href: '/notifications',

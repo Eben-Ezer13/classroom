@@ -18,19 +18,27 @@ export type AnnouncementData = {
   isPinned?: boolean
   module?: { code: string; name: string } | null
   author: { firstName: string; lastName: string } | null
+  mentionsAll?: boolean
+  mentions?: Array<{ userId: string; user: { firstName: string; lastName: string } }>
 }
 
 export function AnnouncementCard({
   announcement,
   actions,
   compact = false,
+  currentUserId,
 }: {
   announcement: AnnouncementData
   actions?: ReactNode
   compact?: boolean
+  /** Met en evidence une mention du lecteur. */
+  currentUserId?: string
 }) {
   const urgent = announcement.level === 'URGENT'
   const important = announcement.level === 'IMPORTANT'
+  const mentions = announcement.mentions ?? []
+  const mentionsMe =
+    Boolean(currentUserId) && mentions.some((m) => m.userId === currentUserId)
 
   return (
     <article
@@ -64,6 +72,7 @@ export function AnnouncementCard({
               {announcement.title}
             </h3>
             {announcement.isPinned ? <Badge tone="accent">Épinglée</Badge> : null}
+            {mentionsMe ? <Badge tone="info">Vous êtes mentionné</Badge> : null}
           </div>
 
           <p
@@ -79,6 +88,17 @@ export function AnnouncementCard({
           >
             {announcement.content}
           </p>
+
+          {!compact && (announcement.mentionsAll || mentions.length > 0) ? (
+            <p className="mt-2 text-[12.5px] text-[var(--accent-strong)]">
+              {[
+                announcement.mentionsAll ? '@tous' : null,
+                ...mentions.map((m) => `@${m.user.firstName} ${m.user.lastName}`),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+          ) : null}
         </div>
 
         {actions ? <div className="shrink-0 flex items-start gap-1">{actions}</div> : null}

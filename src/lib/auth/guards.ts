@@ -53,7 +53,7 @@ export async function requireClassContext(): Promise<ClassContext> {
   const user = await requireUser()
   if (!user.classGroupId) {
     throw new ForbiddenError(
-      "Vous n'appartenez a aucune classe. Creez votre classe ou rejoignez-en une avec un code d'invitation.",
+      "Vous n’appartenez à aucune classe. Créez votre classe ou rejoignez-en une avec un code d’invitation.",
     )
   }
   return { user, classId: user.classGroupId, isAdmin: user.role === 'ADMIN' }
@@ -64,7 +64,7 @@ export async function requireClassAdmin(): Promise<ClassContext> {
   const context = await requireClassContext()
   if (!context.isAdmin) {
     throw new ForbiddenError(
-      'Action reservee au delegue de la classe.',
+      'Action réservée au délégué de la classe.',
     )
   }
   return context

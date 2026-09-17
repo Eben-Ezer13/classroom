@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireClassAdmin } from '@/lib/auth/guards'
 import {
@@ -13,6 +12,7 @@ import { recordAudit } from '@/lib/audit'
 import { notifyClass } from '@/lib/notifications'
 import { runAction, NotFoundError, type ActionState } from '@/lib/errors'
 import { parseForm, scheduleDocumentSchema, scheduleSchema } from '@/lib/validation'
+import { findOverlaps } from '@/lib/services/schedule'
 import {
   assertClassQuota,
   discardStoredFiles,
@@ -26,6 +26,25 @@ import {
   timeToMinutes,
   toDateOnly,
 } from '@/lib/utils'
+
+/**
+ * Avertissement (non bloquant) quand une seance en chevauche une autre le
+ * meme jour : un cours et un TD en parallele est souvent une erreur de saisie.
+ */
+async function overlapWarning(
+  classGroupId: string,
+  date: Date,
+  startMinutes: number,
+  endMinutes: number,
+  excludeId: string,
+): Promise<string> {
+  const overlaps = await findOverlaps(classGroupId, date, startMinutes, endMinutes, excludeId)
+  if (overlaps.length === 0) return ''
+  const slots = overlaps
+    .map((o) => `${minutesToTime(o.startMinutes)}–${minutesToTime(o.endMinutes)}`)
+    .join(', ')
+  return ` Attention : elle chevauche ${overlaps.length} autre(s) séance(s) ce jour-là (${slots}).`
+}
 
 /**
  * Gestion du programme. Reserve au delegue de la classe :
@@ -95,7 +114,7 @@ export async function createScheduleEntryAction(
         {
           type: 'PROGRAMME',
           title: 'Programme mis à jour',
-          body: `${label} le ${formatCalendarDateShort(entry.date)} a ${minutesToTime(startMinutes)}.`,
+          body: `${label} le ${formatCalendarDateShort(entry.date)} à ${minutesToTime(startMinutes)}.`,
           url: '/programme',
           entityType: 'ScheduleEntry',
           entityId: entry.id,
@@ -104,9 +123,9 @@ export async function createScheduleEntryAction(
       )
     }
 
-    revalidatePath('/programme')
-    revalidatePath('/dashboard')
-    return { ok: true, message: 'Séance ajoutée.' }
+    const warning = await overlapWarning(classGroupId, entry.date, startMinutes, endMinutes, entry.id)
+
+    return { ok: true, message: `Séance ajoutée.${warning}` }
   })
 }
 
@@ -185,9 +204,15 @@ export async function updateScheduleEntryAction(
       { excludeUserId: user.id },
     )
 
-    revalidatePath('/programme')
-    revalidatePath('/dashboard')
-    return { ok: true, message: 'Séance mise à jour.' }
+    const warning = await overlapWarning(
+      existing.classGroupId,
+      updated.date,
+      timeToMinutes(data.startTime),
+      timeToMinutes(data.endTime),
+      updated.id,
+    )
+
+    return { ok: true, message: `Séance mise à jour.${warning}` }
   })
 }
 
@@ -239,8 +264,6 @@ export async function deleteScheduleEntryAction(formData: FormData): Promise<Act
       { excludeUserId: user.id },
     )
 
-    revalidatePath('/programme')
-    revalidatePath('/dashboard')
     return { ok: true, message: 'Séance supprimée.' }
   })
 }
@@ -334,7 +357,6 @@ export async function uploadScheduleDocumentAction(
       { excludeUserId: user.id },
     )
 
-    revalidatePath('/programme')
     return { ok: true, message: 'Emploi du temps téléversé.' }
   })
 }
@@ -384,7 +406,6 @@ export async function deleteScheduleDocumentAction(formData: FormData): Promise<
       summary: `${user.firstName} ${user.lastName} a supprimé un emploi du temps téléversé.`,
     })
 
-    revalidatePath('/programme')
     return { ok: true, message: 'Document supprimé.' }
   })
 }
@@ -414,7 +435,6 @@ export async function setCurrentScheduleDocumentAction(
       }),
     ])
 
-    revalidatePath('/programme')
     return { ok: true }
   })
 }

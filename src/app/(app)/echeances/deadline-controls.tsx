@@ -1,13 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { ConfirmForm, IconSubmit } from '@/components/ui/confirm-form'
 import { IconPencil, IconPlus, IconTrash } from '@/components/ui/icons'
 import { Field, Input, Select, Textarea } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
-import { useFormAction } from '@/components/ui/use-form-action'
+import { useCloseOnSuccess, useFormAction } from '@/components/ui/use-form-action'
 import { toDateTimeInputValue } from '@/lib/utils'
 import { DEADLINE_CATEGORY_LABELS } from '@/lib/constants'
 import {
@@ -41,9 +40,7 @@ function DeadlineForm({
     isEdit ? updateDeadlineAction : createDeadlineAction,
   )
 
-  useEffect(() => {
-    if (state.ok && onDone) onDone()
-  }, [state.ok, onDone])
+  useCloseOnSuccess(state, onDone)
 
   return (
     <form action={formAction} className="space-y-4">

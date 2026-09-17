@@ -26,13 +26,13 @@ export async function loadComplaintFor(user: SessionUser, complaintId: string) {
       status: true,
     },
   })
-  if (!complaint) throw new NotFoundError('Reclamation introuvable.')
+  if (!complaint) throw new NotFoundError('Réclamation introuvable.')
 
   const isAuthor = complaint.authorId === user.id
   const isStaff = canManageClass(user, complaint.classGroupId)
   // 404 et non 403 : un etudiant ne doit pas pouvoir deduire l'existence
   // de la reclamation d'un camarade en testant des identifiants.
-  if (!isAuthor && !isStaff) throw new NotFoundError('Reclamation introuvable.')
+  if (!isAuthor && !isStaff) throw new NotFoundError('Réclamation introuvable.')
 
   return { complaint, isAuthor, isStaff }
 }
@@ -118,7 +118,7 @@ export async function getComplaintDetail(complaintId: string) {
           body: true,
           createdAt: true,
           author: {
-            select: { id: true, firstName: true, lastName: true, role: true, avatarUrl: true },
+            select: { id: true, firstName: true, lastName: true, avatarUrl: true },
           },
         },
         orderBy: { createdAt: 'asc' },

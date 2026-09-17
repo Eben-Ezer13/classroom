@@ -19,6 +19,12 @@ export default function ForgotPasswordPage() {
 
       <ForgotPasswordForm />
 
+      <p className="mt-4 text-[12.5px] text-[var(--text-3)] leading-relaxed">
+        Pas d’e-mail reçu après quelques minutes ? Vérifiez vos courriers indésirables,
+        ou demandez à votre délégué de générer un lien de réinitialisation depuis
+        « Membres et invitations ».
+      </p>
+
       <p className="mt-6 text-center text-[13px] text-[var(--text-3)]">
         <Link
           href="/login"

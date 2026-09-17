@@ -1,11 +1,12 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useFormStatus } from 'react-dom'
 import type { ActionState } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 import { Spinner } from './submit-button'
 import { notify } from './toast'
+import { useRefreshOnSuccess } from './use-form-action'
 
 type FormAction = (formData: FormData) => Promise<ActionState | void>
 
@@ -31,13 +32,21 @@ export function ActionForm({
   className?: string
   hidden?: Record<string, string>
 }) {
+  // Resultat conserve dans un etat : la notification et le rafraichissement
+  // de la page partent apres l'action, pas pendant (voir useRefreshOnSuccess).
+  const [result, setResult] = useState<ActionState | null>(null)
+  useRefreshOnSuccess(result)
+  useEffect(() => {
+    if (result?.message) notify(result.message, result.ok ? 'success' : 'danger')
+  }, [result])
+
   return (
     <form
       className={className}
       action={async (formData) => {
-        const result = await action(formData)
-        if (!result?.message) return
-        notify(result.message, result.ok ? 'success' : 'danger')
+        const outcome = await action(formData)
+        // Une action sans retour (marquer comme lu...) est un succes.
+        setResult(outcome ? { ...outcome } : { ok: true })
       }}
       onSubmit={
         confirm

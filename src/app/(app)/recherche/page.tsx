@@ -180,15 +180,15 @@ export default async function SearchPage({
           <EmptyState
             icon={<IconSearch />}
             title="Lancez une recherche"
-            description="Saisissez un mot-cle pour retrouver un document, un module, un projet ou une annonce."
+            description="Saisissez un mot-clé pour retrouver un document, un module, un projet ou une annonce."
           />
         </Card>
       ) : scopeTotal === 0 ? (
         <Card>
           <EmptyState
             icon={<IconSearch />}
-            title="Aucun resultat"
-            description={`Aucun element ne correspond a "${q}" avec ces filtres.`}
+            title="Aucun résultat"
+            description={`Aucun élément ne correspond à « ${q} » avec ces filtres.`}
           />
         </Card>
       ) : (
@@ -197,7 +197,7 @@ export default async function SearchPage({
             <Card>
               <CardHeader
                 title="Ressources"
-                description={`${results.resources.total} resultat(s)`}
+                description={`${results.resources.total} résultat(s)`}
               />
               <CardBody className="space-y-2.5">
                 {results.resources.items.map((resource) => (
@@ -221,7 +221,7 @@ export default async function SearchPage({
 
           {(scope === 'tout' || scope === 'modules') && results.modules.items.length > 0 ? (
             <Card>
-              <CardHeader title="Modules" description={`${results.modules.total} resultat(s)`} />
+              <CardHeader title="Modules" description={`${results.modules.total} résultat(s)`} />
               <CardBody className="grid sm:grid-cols-2 gap-2.5">
                 {results.modules.items.map((mod) => (
                   <Link
@@ -265,7 +265,7 @@ export default async function SearchPage({
 
           {(scope === 'tout' || scope === 'projets') && results.projects.items.length > 0 ? (
             <Card>
-              <CardHeader title="Projets" description={`${results.projects.total} resultat(s)`} />
+              <CardHeader title="Projets" description={`${results.projects.total} résultat(s)`} />
               <CardBody className="space-y-2.5">
                 {results.projects.items.map((project) => (
                   <Link
@@ -314,7 +314,7 @@ export default async function SearchPage({
             <Card>
               <CardHeader
                 title="Annonces"
-                description={`${results.announcements.total} resultat(s)`}
+                description={`${results.announcements.total} résultat(s)`}
               />
               <CardBody className="space-y-3">
                 {results.announcements.items.map((announcement) => (

@@ -25,7 +25,7 @@ export function ScheduleItem({
   actions?: ReactNode
   highlight?: boolean
 }) {
-  const label = entry.module ? entry.module.name : (entry.title ?? 'Seance')
+  const label = entry.module ? entry.module.name : (entry.title ?? 'Séance')
   const accent = entry.module?.color ?? 'var(--border-strong)'
 
   return (
@@ -72,7 +72,7 @@ export function ScheduleItem({
             entry.teacherName,
           ]
             .filter(Boolean)
-            .join(' · ') || 'Aucun detail'}
+            .join(' · ') || 'Aucun détail'}
         </p>
 
         {entry.note ? (

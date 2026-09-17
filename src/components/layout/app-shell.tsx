@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link, { useLinkStatus } from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
@@ -8,6 +8,7 @@ import { CLASS_ROLE_LABELS } from '@/lib/constants'
 import type { ActionState } from '@/lib/errors'
 import { Avatar } from '@/components/ui/avatar'
 import { ActionForm } from '@/components/ui/confirm-form'
+import { Spinner } from '@/components/ui/submit-button'
 import { Toaster } from '@/components/ui/toast'
 import { ThemeToggle } from './theme'
 import {
@@ -188,6 +189,7 @@ export function AppShell({
                 >
                   <span className="relative">
                     <Icon className="size-5" />
+                    <LinkPending className="absolute -bottom-1 -right-2" />
                     {count > 0 ? (
                       <span className="absolute -top-1 -right-1.5 min-w-[15px] h-[15px] px-1 rounded-full bg-[var(--danger)] text-white text-[9.5px] font-semibold grid place-items-center">
                         {count > 9 ? '9+' : count}
@@ -205,6 +207,18 @@ export function AppShell({
       <Toaster />
     </div>
   )
+}
+
+/**
+ * Indicateur de chargement du lien clique. L'application n'a volontairement
+ * pas de loading.tsx global (voir app/(app)/layout.tsx) : ce retour visuel
+ * leger le remplace pendant la navigation.
+ */
+function LinkPending({ className }: { className?: string }) {
+  const { pending } = useLinkStatus()
+  return pending ? (
+    <Spinner className={cn('size-3.5 text-[var(--accent)]', className)} />
+  ) : null
 }
 
 function isActive(pathname: string, href: string): boolean {
@@ -272,6 +286,7 @@ function SidebarContent({
                         )}
                       />
                       <span className="truncate">{item.label}</span>
+                      <LinkPending className="ml-auto shrink-0" />
                       {count > 0 ? (
                         <span className="ml-auto min-w-[19px] h-[19px] px-1.5 rounded-full bg-[var(--danger)] text-white text-[10.5px] font-semibold grid place-items-center">
                           {count > 99 ? '99+' : count}
