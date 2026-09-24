@@ -115,6 +115,11 @@ export async function POST(request: Request) {
           addRandomSuffix: true,
           allowOverwrite: false,
           validUntil: Date.now() + 60 * 60 * 1000,
+          // Ne pas dependre de VERCEL_URL : certains projets desactivent
+          // l'exposition des variables systeme. Cette URL publique est deja
+          // requise par l'application et permet a Blob de confirmer la fin
+          // de l'envoi, y compris pour les fichiers multipart.
+          callbackUrl: `${env.appUrl}/api/uploads`,
         }
       },
       onUploadCompleted: async () => {
