@@ -64,11 +64,11 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: 'Requête invalide.' }, { status: 400 })
   }
-  // Le SDK appelle cette route deux fois : pour delivrer le jeton, puis
-  // apres l'ecriture du binaire. Le second appel doit etre laisse a
-  // `handleUpload` afin que la finalisation cote navigateur ne reste pas
-  // bloquee (les Server Actions rattachent ensuite la reference au modele).
-  if (body?.type !== 'blob.generate-client-token' && body?.type !== 'blob.upload-completed') {
+  // Le navigateur utilise le jeton court retourne ici pour ecrire le binaire
+  // directement dans Blob, puis la Server Action rattache sa reference.
+  // Aucun callback post-upload n'est necessaire : cela evite de laisser
+  // l'interface en attente d'un appel serveur supplementaire.
+  if (body?.type !== 'blob.generate-client-token') {
     return NextResponse.json({ error: 'Requête invalide.' }, { status: 400 })
   }
 
@@ -115,17 +115,7 @@ export async function POST(request: Request) {
           addRandomSuffix: true,
           allowOverwrite: false,
           validUntil: Date.now() + 60 * 60 * 1000,
-          // Ne pas dependre de VERCEL_URL : certains projets desactivent
-          // l'exposition des variables systeme. Cette URL publique est deja
-          // requise par l'application et permet a Blob de confirmer la fin
-          // de l'envoi, y compris pour les fichiers multipart.
-          callbackUrl: `${env.appUrl}/api/uploads`,
         }
-      },
-      onUploadCompleted: async () => {
-        // Le rattachement a la base est volontairement effectue par la
-        // Server Action du formulaire apres revalidation de la reference.
-        // Ce callback accuse uniquement reception a Vercel Blob.
       },
     })
     return NextResponse.json(result)
