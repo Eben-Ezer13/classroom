@@ -59,9 +59,10 @@ function driver() {
  */
 function assertUsableDriver(): void {
   if (env.storageDriver === 'local' && env.isProduction) {
+    const target = process.env.VERCEL_ENV === 'preview' ? 'Preview' : 'Production'
     throw new AppError(
-      'Stockage non configuré : renseignez BLOB_READ_WRITE_TOKEN (Vercel Blob) ' +
-        'pour activer le dépôt de fichiers en production.',
+      `Stockage non configuré pour ce déploiement ${target} : ajoutez ` +
+        'BLOB_READ_WRITE_TOKEN à cet environnement Vercel, puis redéployez.',
       503,
     )
   }

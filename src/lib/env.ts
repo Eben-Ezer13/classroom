@@ -42,8 +42,11 @@ export const env = {
   get storageDriver(): 'local' | 'vercel-blob' {
     const explicit = optional('STORAGE_DRIVER')
     if (explicit === 'vercel-blob') return 'vercel-blob'
-    if (explicit === 'local') return 'local'
-    return optional('BLOB_READ_WRITE_TOKEN') ? 'vercel-blob' : 'local'
+    const hasBlobToken = Boolean(optional('BLOB_READ_WRITE_TOKEN'))
+    if (explicit === 'local') {
+      return this.isProduction && hasBlobToken ? 'vercel-blob' : 'local'
+    }
+    return hasBlobToken ? 'vercel-blob' : 'local'
   },
   get blobToken() {
     return required('BLOB_READ_WRITE_TOKEN')
