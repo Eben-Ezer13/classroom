@@ -45,28 +45,6 @@ export function UploadConfigProvider({
 /** Au-dela, l'envoi est decoupe en parties envoyees en parallele et relancees. */
 const MULTIPART_THRESHOLD = 8 * 1024 * 1024
 
-async function requestToken(
-  pathname: string,
-  payload: { kind: UploadKind; classGroupId: string; size: number },
-  multipart: boolean,
-): Promise<string> {
-  const response = await fetch(UPLOAD_TOKEN_ROUTE, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      type: 'blob.generate-client-token',
-      payload: { pathname, clientPayload: JSON.stringify(payload), multipart },
-    }),
-  })
-  const data = (await response.json().catch(() => null)) as
-    | { clientToken?: string; error?: string }
-    | null
-  if (!response.ok || !data?.clientToken) {
-    throw new Error(data?.error ?? 'Envoi refusé par le serveur.')
-  }
-  return data.clientToken
-}
-
 function describeUploadError(error: unknown): string {
   const message = error instanceof Error ? error.message : ''
   if (/access/i.test(message) && /(private|public)/i.test(message)) {
@@ -121,21 +99,21 @@ export function useDirectUploads() {
       setProgress(0)
       try {
         // Charge a la demande : inutile de l'embarquer sur chaque page.
-        const { put } = await import('@vercel/blob/client')
+        const { upload } = await import('@vercel/blob/client')
         const refs: string[] = []
         for (const [index, file] of files.entries()) {
           const check = checks[index]
           if (!check.ok) return check.message
           const pathname = `${prefix}/${storageFileName(file.name)}`
           const multipart = file.size > MULTIPART_THRESHOLD
-          const token = await requestToken(
-            pathname,
-            { kind: options.kind, classGroupId, size: file.size },
-            multipart,
-          )
-          const blob = await put(pathname, file, {
+          const blob = await upload(pathname, file, {
             access: config.access,
-            token,
+            handleUploadUrl: UPLOAD_TOKEN_ROUTE,
+            clientPayload: JSON.stringify({
+              kind: options.kind,
+              classGroupId,
+              size: file.size,
+            }),
             contentType: check.mimeType,
             multipart,
             onUploadProgress: ({ loaded }) => {
