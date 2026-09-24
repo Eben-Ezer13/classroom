@@ -64,9 +64,11 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: 'Requête invalide.' }, { status: 400 })
   }
-  // Seule la delivrance de jeton est geree : les fichiers sont rattaches
-  // par les Server Actions, pas par un rappel du stockage.
-  if (body?.type !== 'blob.generate-client-token') {
+  // Le SDK appelle cette route deux fois : pour delivrer le jeton, puis
+  // apres l'ecriture du binaire. Le second appel doit etre laisse a
+  // `handleUpload` afin que la finalisation cote navigateur ne reste pas
+  // bloquee (les Server Actions rattachent ensuite la reference au modele).
+  if (body?.type !== 'blob.generate-client-token' && body?.type !== 'blob.upload-completed') {
     return NextResponse.json({ error: 'Requête invalide.' }, { status: 400 })
   }
 
@@ -114,6 +116,11 @@ export async function POST(request: Request) {
           allowOverwrite: false,
           validUntil: Date.now() + 60 * 60 * 1000,
         }
+      },
+      onUploadCompleted: async () => {
+        // Le rattachement a la base est volontairement effectue par la
+        // Server Action du formulaire apres revalidation de la reference.
+        // Ce callback accuse uniquement reception a Vercel Blob.
       },
     })
     return NextResponse.json(result)
