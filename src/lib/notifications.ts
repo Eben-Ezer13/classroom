@@ -63,10 +63,17 @@ export async function notifyClass(
   payload: NotifyPayload,
   options: { excludeUserId?: string } = {},
 ): Promise<number> {
-  const ids = await activeMemberIds(classGroupId, options)
-  if (ids.length === 0) return 0
-  await prisma.notification.createMany({ data: rows(ids, classGroupId, payload) })
-  return ids.length
+  try {
+    const ids = await activeMemberIds(classGroupId, options)
+    if (ids.length === 0) return 0
+    await prisma.notification.createMany({ data: rows(ids, classGroupId, payload) })
+    return ids.length
+  } catch (error) {
+    // Une notification est un effet secondaire : elle ne doit jamais faire
+    // croire que la creation d'un cours, document ou projet a echoue.
+    console.error('[notifications] diffusion de classe impossible', error)
+    return 0
+  }
 }
 
 /** Notifie un utilisateur precis, dans le contexte d'une classe. */
@@ -75,7 +82,11 @@ export async function notifyUser(
   payload: NotifyPayload,
   classGroupId: string | null = null,
 ): Promise<void> {
-  await prisma.notification.create({ data: rows([userId], classGroupId, payload)[0] })
+  try {
+    await prisma.notification.create({ data: rows([userId], classGroupId, payload)[0] })
+  } catch (error) {
+    console.error('[notifications] notification utilisateur impossible', error)
+  }
 }
 
 /**
@@ -89,12 +100,17 @@ export async function notifyMembers(
   payload: NotifyPayload,
   options: { excludeUserId?: string } = {},
 ): Promise<number> {
-  if (userIds.length === 0) return 0
-  const allowed = new Set(await activeMemberIds(classGroupId, options))
-  const targets = [...new Set(userIds)].filter((id) => allowed.has(id))
-  if (targets.length === 0) return 0
-  await prisma.notification.createMany({ data: rows(targets, classGroupId, payload) })
-  return targets.length
+  try {
+    if (userIds.length === 0) return 0
+    const allowed = new Set(await activeMemberIds(classGroupId, options))
+    const targets = [...new Set(userIds)].filter((id) => allowed.has(id))
+    if (targets.length === 0) return 0
+    await prisma.notification.createMany({ data: rows(targets, classGroupId, payload) })
+    return targets.length
+  } catch (error) {
+    console.error('[notifications] diffusion ciblee impossible', error)
+    return 0
+  }
 }
 
 /** Notifie les delegues d'une classe. */
@@ -103,9 +119,13 @@ export async function notifyClassStaff(
   payload: NotifyPayload,
   options: { excludeUserId?: string } = {},
 ): Promise<void> {
-  const ids = await activeMemberIds(classGroupId, { ...options, onlyAdmins: true })
-  if (ids.length === 0) return
-  await prisma.notification.createMany({ data: rows(ids, classGroupId, payload) })
+  try {
+    const ids = await activeMemberIds(classGroupId, { ...options, onlyAdmins: true })
+    if (ids.length === 0) return
+    await prisma.notification.createMany({ data: rows(ids, classGroupId, payload) })
+  } catch (error) {
+    console.error('[notifications] diffusion aux delegues impossible', error)
+  }
 }
 
 /**
