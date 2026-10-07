@@ -49,6 +49,7 @@ export type SessionUser = {
   firstName: string
   lastName: string
   avatarUrl: string | null
+  onboardingSeenAt: Date | null
   /** Role de plateforme : n'ouvre l'acces au contenu d'aucune classe. */
   platformRole: PlatformRole
   /** Classe actuellement affichee. Null si l'utilisateur n'a aucune classe. */
@@ -149,6 +150,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
           lastName: true,
           role: true,
           avatarUrl: true,
+          onboardingSeenAt: true,
           isActive: true,
           deletedAt: true,
           lastSeenAt: true,
@@ -242,6 +244,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     // Le chemin de stockage n est jamais expose : on renvoie l URL de la
     // route protegee qui sert l image.
     avatarUrl: user.avatarUrl ? `/api/users/${user.id}/avatar` : null,
+    onboardingSeenAt: user.onboardingSeenAt,
     platformRole: user.role,
     classGroupId: active?.classGroupId ?? null,
     role: active?.role ?? 'MEMBER',

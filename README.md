@@ -50,7 +50,7 @@ npm run dev               # http://localhost:3000
 | Commande | Rôle |
 |---|---|
 | `npm run dev` | Serveur de développement |
-| `npm run build` | `prisma generate` + build de production |
+| `npm run build` | `prisma migrate deploy` + `prisma generate` + build de production |
 | `npm start` | Serveur de production |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
@@ -103,17 +103,18 @@ n'est écrit en base**.
    lien de réinitialisation depuis **Administration → Membres et invitations →
    Mot de passe** et le transmet à l'étudiant.
 
+   Les alertes e-mail de classe sont facultatives et choisies par chaque étudiant
+   depuis **Mon profil → Alertes e-mail**. Elles signalent les publications du
+   délégué (ressources, annonces, programme, projets et échéances). Elles exigent
+   `MAIL_DRIVER=resend`, `RESEND_API_KEY` et `MAIL_FROM` ; une indisponibilité du
+   service e-mail ne bloque jamais une publication.
+
 3. Créer un store **Vercel Blob en accès privé** et le relier au projet (renseigne
    `BLOB_READ_WRITE_TOKEN`). Pour un store existant créé en accès public, définir
    `BLOB_ACCESS=public`.
-4. **Appliquer les migrations avant de déployer** (depuis la machine locale, avec
-   `DATABASE_URL`/`DIRECT_URL` de production) :
-   ```bash
-   npm run db:deploy
-   ```
-   La migration `20260911000000_rate_limits` crée la table de limitation des
-   tentatives. Tant qu'elle n'est pas appliquée, l'application fonctionne mais
-   sans limitation (erreur journalisée).
+4. Les migrations sont appliquées automatiquement avant le build Vercel par
+   `prisma migrate deploy`. Vérifier que `DATABASE_URL` et `DIRECT_URL` sont bien
+   définies dans l'environnement concerné.
 5. Le Cron déclaré dans `vercel.json` appelle `/api/cron/reminders` chaque jour à 7h
    (UTC) : rappels d'échéance et purge des sessions, jetons et compteurs expirés.
    La route refuse tout appel sans en-tête `Authorization: Bearer $CRON_SECRET`.

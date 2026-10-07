@@ -17,6 +17,20 @@ type Mail = {
   text: string
 }
 
+/**
+ * Les alertes de classe sont facultatives : elles ne doivent pas transformer
+ * une publication en erreur lorsque le service e-mail n'est pas encore
+ * configure. Les e-mails sensibles (mot de passe oublie) conservent, eux,
+ * leur verification explicite dans sendMail.
+ */
+export function canSendMail(): boolean {
+  return (
+    process.env.MAIL_DRIVER?.trim() === 'resend' &&
+    Boolean(process.env.RESEND_API_KEY?.trim()) &&
+    Boolean(process.env.MAIL_FROM?.trim())
+  )
+}
+
 export async function sendMail(mail: Mail): Promise<void> {
   const driver = process.env.MAIL_DRIVER?.trim() || 'console'
 

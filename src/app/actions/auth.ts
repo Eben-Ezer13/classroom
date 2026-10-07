@@ -34,6 +34,7 @@ import {
 import { safeNextPath } from '@/lib/utils'
 import {
   changePasswordSchema,
+  emailAlertsSchema,
   forgotPasswordSchema,
   loginSchema,
   parseForm,
@@ -471,6 +472,51 @@ export async function updateProfileAction(
     })
 
     return { ok: true, message: 'Profil mis à jour.' }
+  })
+}
+
+/** Enregistre le consentement de l'utilisateur pour les alertes de classe. */
+export async function updateEmailAlertsAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  return runAction(async () => {
+    const user = await requireUser()
+    const parsed = parseForm(emailAlertsSchema, formData)
+    if (!parsed.success) {
+      return { ok: false, message: parsed.message, fieldErrors: parsed.fieldErrors }
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailAlerts: parsed.data.emailAlerts },
+    })
+
+    return {
+      ok: true,
+      message: parsed.data.emailAlerts
+        ? 'Alertes e-mail activées.'
+        : 'Alertes e-mail désactivées.',
+    }
+  })
+}
+
+/** Memorise la fin du guide de prise en main de l'etudiant. */
+export async function completeStudentOnboardingAction(
+  _prev: ActionState,
+  _formData: FormData,
+): Promise<ActionState> {
+  return runAction(async () => {
+    const user = await requireUser()
+    if (user.platformRole !== 'ETUDIANT') {
+      return { ok: false, message: 'Ce guide est réservé aux étudiants.' }
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { onboardingSeenAt: new Date() },
+    })
+    return { ok: true, message: 'Guide terminé.' }
   })
 }
 

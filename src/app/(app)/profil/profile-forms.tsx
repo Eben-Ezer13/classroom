@@ -3,11 +3,12 @@
 import { useActionState } from 'react'
 import {
   changePasswordAction,
+  updateEmailAlertsAction,
   updateAvatarAction,
   updateProfileAction,
 } from '@/app/actions/auth'
 import { emptyActionState } from '@/lib/errors'
-import { Field, Input } from '@/components/ui/field'
+import { Checkbox, Field, Input } from '@/components/ui/field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
 import { useFormAction, useRefreshOnSuccess } from '@/components/ui/use-form-action'
@@ -115,6 +116,35 @@ export function AvatarForm() {
       <SubmitButton size="sm" variant="secondary" pendingLabel="Envoi...">
         Mettre à jour la photo
       </SubmitButton>
+    </form>
+  )
+}
+
+export function EmailAlertsForm({ enabled }: { enabled: boolean }) {
+  const { state, formAction, checked } = useFormAction(updateEmailAlertsAction)
+
+  return (
+    <form action={formAction} className="space-y-3">
+      {state.message ? (
+        <Alert tone={state.ok ? 'success' : 'danger'}>{state.message}</Alert>
+      ) : null}
+
+      <Checkbox
+        name="emailAlerts"
+        defaultChecked={checked('emailAlerts', enabled)}
+        label="M’envoyer un e-mail lors d’une nouvelle ressource, annonce, message ou modification du délégué."
+        className="items-start leading-5"
+      />
+      <p className="text-[12.5px] text-[var(--text-3)]">
+        Ces alertes complètent les notifications de la plateforme. L’administration doit
+        configurer le service e-mail pour qu’elles soient envoyées.
+      </p>
+
+      <div className="flex justify-end">
+        <SubmitButton size="sm" variant="secondary" pendingLabel="Enregistrement...">
+          Enregistrer les alertes
+        </SubmitButton>
+      </div>
     </form>
   )
 }
