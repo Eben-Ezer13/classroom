@@ -44,14 +44,25 @@ export function isBlobUrl(value: string): boolean {
 }
 
 export async function put(key: string, data: Buffer, contentType: string): Promise<string> {
-  const result = await blobPut(key, data, {
-    access: env.blobAccess,
-    contentType,
-    token: env.blobToken,
-    // Rend l'URL non devinable meme si l'on connait la classe et le nom.
-    addRandomSuffix: true,
-  })
-  return result.url
+  try {
+    const result = await blobPut(key, data, {
+      access: env.blobAccess,
+      contentType,
+      token: env.blobToken,
+      // Rend l'URL non devinable meme si l'on connait la classe et le nom.
+      addRandomSuffix: true,
+    })
+    return result.url
+  } catch (error) {
+    if (error instanceof BlobAccessError || error instanceof BlobStoreNotFoundError) {
+      throw new AppError(
+        'Vercel Blob refuse l’accès au stockage. Vérifiez que BLOB_READ_WRITE_TOKEN ' +
+          'est bien le jeton du store Classroom et que BLOB_ACCESS=public.',
+        503,
+      )
+    }
+    throw error
+  }
 }
 
 export type BlobMetadata = {

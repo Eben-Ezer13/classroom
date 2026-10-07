@@ -42,6 +42,24 @@ export type ActionState = {
   fieldErrors?: Record<string, string[]>
 }
 
+function unexpectedActionMessage(error: unknown): string {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? (error as { code?: unknown }).code
+      : undefined
+  if (code === 'P2021' || code === 'P2022') {
+    return 'La base de données doit encore être mise à jour. Attendez la fin du déploiement Vercel puis réessayez.'
+  }
+  if (code === 'P1001' || code === 'P1002' || code === 'P1008') {
+    return 'La base de données est momentanément indisponible. Réessayez dans quelques instants.'
+  }
+  const message = error instanceof Error ? error.message : ''
+  if (/vercel blob|blob.*access|access.*blob/i.test(message)) {
+    return 'Vercel Blob refuse l’accès au stockage. Vérifiez le jeton et le mode public du store.'
+  }
+  return 'Une erreur inattendue est survenue.'
+}
+
 export const emptyActionState: ActionState = { ok: false }
 
 /**
@@ -60,6 +78,6 @@ export async function runAction(fn: () => Promise<ActionState>): Promise<ActionS
       return { ok: false, message: error.message }
     }
     console.error('[action]', error)
-    return { ok: false, message: 'Une erreur inattendue est survenue.' }
+    return { ok: false, message: unexpectedActionMessage(error) }
   }
 }
