@@ -7,72 +7,141 @@ import { SubmitButton } from '@/components/ui/submit-button'
 import { useFormAction } from '@/components/ui/use-form-action'
 
 type GuideSlide = {
-  eyebrow: string
+  section: string
   icon: string
   title: string
   description: string
   hint?: string
 }
 
+/**
+ * Parcours complet de l'espace étudiant. Les écrans expliquent uniquement
+ * les fonctionnalités réellement accessibles avec le rôle MEMBER.
+ */
 const slides: GuideSlide[] = [
   {
-    eyebrow: 'Bienvenue',
+    section: 'Bienvenue',
     icon: '👋',
     title: 'Bienvenue sur Classroom',
     description:
-      "En moins d’une minute, découvrez où retrouver vos cours, les informations de la classe et vos échéances.",
+      "Cette visite vous montre où trouver vos cours, suivre votre travail et rester au courant de la vie de votre classe.",
+    hint: 'Utilisez Suivant, Précédent ou les points de progression pour vous déplacer dans le guide.',
   },
   {
-    eyebrow: 'Votre espace',
+    section: 'Navigation',
+    icon: '🧭',
+    title: 'Repérez-vous dans la plateforme',
+    description:
+      'Le menu latéral donne accès à tous les espaces. Sur téléphone, ouvrez le menu en haut à gauche et utilisez la barre de navigation en bas.',
+    hint: 'La barre supérieure permet aussi d’ouvrir la recherche, de changer le thème et d’accéder à votre compte.',
+  },
+  {
+    section: 'Accueil',
     icon: '📊',
-    title: 'Le tableau de bord',
+    title: 'Commencez par le tableau de bord',
     description:
-      'C’est votre point de départ : consultez les dernières publications, les prochaines échéances et les informations importantes.',
-    hint: 'Ouvrez « Tableau de bord » dans le menu pour revenir ici à tout moment.',
+      'C’est votre page d’accueil : vous y retrouvez les dernières publications, les prochaines échéances et les informations utiles de la classe.',
+    hint: 'Revenez-y lorsque vous voulez voir rapidement ce qui est nouveau.',
   },
   {
-    eyebrow: 'Apprendre',
-    icon: '📚',
-    title: 'Vos ressources de cours',
-    description:
-      'Retrouvez les cours, TD, documents et fichiers déposés par les délégués dans la rubrique Ressources.',
-    hint: 'Vous pouvez rechercher une ressource et la télécharger depuis sa fiche.',
-  },
-  {
-    eyebrow: 'S’organiser',
+    section: 'Organisation',
     icon: '🗓️',
-    title: 'Programme et emploi du temps',
+    title: 'Consultez le programme',
     description:
-      'Le programme, les emplois du temps et les informations de semestre sont accessibles depuis le menu.',
-    hint: 'Consultez-les régulièrement pour ne manquer aucun changement.',
+      'La rubrique Programme réunit le contenu prévu, les éléments associés aux semestres et les mises à jour publiées par les délégués.',
+    hint: 'Utilisez les informations de semestre pour savoir quelle période vous consultez.',
   },
   {
-    eyebrow: 'Suivre son travail',
+    section: 'Organisation',
+    icon: '📖',
+    title: 'Explorez les modules',
+    description:
+      'Les modules permettent de structurer les matières et leur contenu. Ouvrez-en un pour retrouver ce qui concerne un cours précis.',
+    hint: 'Les ressources sont souvent rattachées à un module ou à une matière.',
+  },
+  {
+    section: 'Cours',
+    icon: '📚',
+    title: 'Trouvez vos ressources',
+    description:
+      'Dans Ressources, accédez aux cours, TD, documents, liens et fichiers déposés pour la classe.',
+    hint: 'Ouvrez une fiche pour consulter ses détails ou télécharger un fichier autorisé.',
+  },
+  {
+    section: 'Cours',
+    icon: '🔎',
+    title: 'Recherchez plus vite',
+    description:
+      'La recherche globale vous aide à retrouver un document, une annonce ou une information sans parcourir toutes les rubriques.',
+    hint: 'Utilisez l’icône de loupe dans la barre supérieure, puis saisissez un mot-clé.',
+  },
+  {
+    section: 'Suivi',
     icon: '🎯',
-    title: 'Projets et échéances',
+    title: 'Suivez vos projets',
     description:
-      'Les projets à réaliser et les dates importantes sont regroupés dans des espaces dédiés.',
-    hint: 'Les dates proches apparaissent aussi sur votre tableau de bord.',
+      'La page Projets rassemble les travaux à réaliser, leurs détails et les informations partagées par les délégués.',
+    hint: 'Consultez régulièrement les projets en cours pour anticiper les livrables.',
   },
   {
-    eyebrow: 'Participer',
+    section: 'Suivi',
+    icon: '⏰',
+    title: 'Ne manquez aucune échéance',
+    description:
+      'Les contrôles, rendus et dates importantes se trouvent dans Échéances, avec leur date et les éventuelles consignes.',
+    hint: 'Les dates qui approchent sont aussi mises en avant sur le tableau de bord.',
+  },
+  {
+    section: 'Vie de classe',
     icon: '📣',
-    title: 'Annonces, sondages et réclamations',
+    title: 'Lisez les annonces',
     description:
-      'Lisez les annonces de la classe, répondez aux sondages et signalez une difficulté depuis Réclamations.',
-    hint: 'Vos réclamations restent visibles uniquement par vous et les délégués concernés.',
+      'Les délégués utilisent les annonces pour les communications importantes, les changements de dernière minute et les messages adressés à la classe.',
+    hint: 'Une annonce peut vous mentionner directement ou concerner tous les étudiants.',
   },
   {
-    eyebrow: 'Rester informé',
-    icon: '🔔',
-    title: 'Vos notifications',
+    section: 'Vie de classe',
+    icon: '🗳️',
+    title: 'Participez aux sondages',
     description:
-      'La cloche de la plateforme vous informe des nouvelles ressources, annonces et modifications publiées dans votre classe.',
-    hint: 'Le compteur indique les nouveautés que vous n’avez pas encore consultées.',
+      'Les sondages servent à recueillir l’avis de la classe sur une date, une activité ou une décision collective.',
+    hint: 'Répondez avant la date de clôture pour que votre choix soit pris en compte.',
+  },
+  {
+    section: 'Alertes',
+    icon: '🔔',
+    title: 'Consultez vos notifications',
+    description:
+      'La cloche vous avertit directement dans la plateforme lorsqu’une nouvelle ressource, annonce ou modification est publiée.',
+    hint: 'Le compteur affiche les nouveautés non lues. Ouvrez Notifications pour tout consulter et marquer les éléments comme lus.',
+  },
+  {
+    section: 'Échanges',
+    icon: '💬',
+    title: 'Signalez une difficulté',
+    description:
+      'Depuis Réclamations, vous pouvez transmettre une question ou un problème concernant la classe aux délégués.',
+    hint: 'Vos réclamations restent privées : seuls vous et les responsables concernés peuvent les consulter.',
+  },
+  {
+    section: 'Communauté',
+    icon: '👥',
+    title: 'Retrouvez les membres',
+    description:
+      'La page Membres vous permet de voir les personnes actives dans votre classe et de mieux identifier vos interlocuteurs.',
+    hint: 'Les droits de chacun sont appliqués automatiquement par la plateforme.',
+  },
+  {
+    section: 'Compte',
+    icon: '⚙️',
+    title: 'Gérez votre profil et vos classes',
+    description:
+      'Depuis votre avatar, accédez à Mon profil pour modifier vos informations, votre photo et votre mot de passe. Si vous appartenez à plusieurs classes, utilisez le sélecteur de classe dans le menu.',
+    hint: 'Vous êtes prêt : commencez à explorer votre espace de classe.',
   },
 ]
 
-/** Tutoriel pas à pas affiché une seule fois après la première connexion d'un étudiant. */
+/** Visite interactive, affichée une fois après la première connexion d'un étudiant. */
 export function StudentOnboarding() {
   const [step, setStep] = useState(0)
   const { state, formAction } = useFormAction(completeStudentOnboardingAction)
@@ -90,14 +159,20 @@ export function StudentOnboarding() {
         action={formAction}
         className="w-full max-w-2xl overflow-hidden rounded-[28px] border border-[var(--border-strong)] bg-[var(--surface-1)] shadow-2xl"
       >
-        <div className="min-h-[390px] px-6 py-8 text-center sm:px-12 sm:py-10">
-          <span className="inline-flex size-20 items-center justify-center rounded-full bg-[var(--accent-soft)] text-5xl shadow-[var(--shadow-sm)]">
+        <div className="min-h-[410px] px-6 py-8 text-center sm:px-12 sm:py-10" aria-live="polite">
+          <span
+            aria-hidden="true"
+            className="inline-flex size-20 items-center justify-center rounded-full bg-[var(--accent-soft)] text-5xl shadow-[var(--shadow-sm)]"
+          >
             {slide.icon}
           </span>
           <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent-strong)]">
-            {slide.eyebrow}
+            {slide.section}
           </p>
-          <h2 id="student-onboarding-title" className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text-1)] sm:text-3xl">
+          <h2
+            id="student-onboarding-title"
+            className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text-1)] sm:text-3xl"
+          >
             {slide.title}
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-[var(--text-2)] sm:text-lg">
@@ -110,17 +185,21 @@ export function StudentOnboarding() {
           ) : null}
 
           <div
-            className="mt-9 flex items-center justify-center gap-2"
+            className="mt-8 flex flex-wrap items-center justify-center gap-2"
             aria-label={'Étape ' + (step + 1) + ' sur ' + slides.length}
           >
             {slides.map((item, index) => (
-              <span
+              <button
                 key={item.title}
+                type="button"
+                onClick={() => setStep(index)}
+                aria-label={'Aller à l’étape ' + (index + 1) + ' : ' + item.title}
+                aria-current={index === step ? 'step' : undefined}
                 className={
-                  'h-2.5 rounded-full transition-all ' +
+                  'h-2.5 rounded-full transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ' +
                   (index === step
                     ? 'w-8 bg-[var(--accent)]'
-                    : 'w-2.5 bg-[var(--border-strong)]')
+                    : 'w-2.5 bg-[var(--border-strong)] hover:bg-[var(--text-3)]')
                 }
               />
             ))}
