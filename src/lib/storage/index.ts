@@ -100,11 +100,18 @@ export async function trackClassStorage(
   deltaBytes: number,
 ): Promise<void> {
   if (deltaBytes === 0) return
-  await prisma.$executeRaw`
-    UPDATE "classes"
-    SET "storageUsed" = GREATEST(0, "storageUsed" + ${BigInt(deltaBytes)}::bigint)
-    WHERE "id" = ${classGroupId}
-  `
+  try {
+    await prisma.$executeRaw`
+      UPDATE "classes"
+      SET "storageUsed" = GREATEST(0, "storageUsed" + ${BigInt(deltaBytes)}::bigint)
+      WHERE "id" = ${classGroupId}
+    `
+  } catch (error) {
+    // Le compteur est un indicateur de quota, pas la source de verite du
+    // document ou de la ressource. Une erreur ici ne doit jamais annuler
+    // une creation deja confirmee en base et dans Blob.
+    console.error('[storage] mise a jour du compteur impossible', error)
+  }
 }
 
 /**
