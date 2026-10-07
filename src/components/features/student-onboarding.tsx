@@ -38,8 +38,8 @@ export function StudentOnboarding() {
           <GuideStep number="3" title="Suivez le programme">
             Programme, emplois du temps, projets et échéances sont regroupés dans le menu.
           </GuideStep>
-          <GuideStep number="4" title="Activez vos alertes e-mail">
-            Dans Mon profil, vous pouvez demander un e-mail à chaque publication ou changement de classe.
+          <GuideStep number="4" title="Consultez vos notifications">
+            La cloche vous avertit directement sur la plateforme à chaque nouvelle publication ou changement.
           </GuideStep>
         </ol>
 

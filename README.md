@@ -103,12 +103,6 @@ n'est écrit en base**.
    lien de réinitialisation depuis **Administration → Membres et invitations →
    Mot de passe** et le transmet à l'étudiant.
 
-   Les alertes e-mail de classe sont facultatives et choisies par chaque étudiant
-   depuis **Mon profil → Alertes e-mail**. Elles signalent les publications du
-   délégué (ressources, annonces, programme, projets et échéances). Elles exigent
-   `MAIL_DRIVER=resend`, `RESEND_API_KEY` et `MAIL_FROM` ; une indisponibilité du
-   service e-mail ne bloque jamais une publication.
-
 3. Créer un store **Vercel Blob en accès privé** et le relier au projet (renseigne
    `BLOB_READ_WRITE_TOKEN`). Pour un store existant créé en accès public, définir
    `BLOB_ACCESS=public`.
