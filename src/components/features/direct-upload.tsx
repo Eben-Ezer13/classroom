@@ -44,6 +44,12 @@ export function UploadConfigProvider({
 
 /** Au-dela, l'envoi est decoupe en parties envoyees en parallele et relancees. */
 const MULTIPART_THRESHOLD = 8 * 1024 * 1024
+/**
+ * Les petits fichiers sont plus fiables via la Server Action : cela evite un
+ * second transfert navigateur -> Blob pour les captures et documents usuels.
+ * On reste volontairement bien sous la limite de corps des Functions Vercel.
+ */
+const DIRECT_UPLOAD_THRESHOLD = 3 * 1024 * 1024
 
 /** Demande un jeton a usage court pour un chemin et un fichier controles. */
 async function requestToken(
@@ -113,18 +119,25 @@ export function useDirectUploads() {
 
       if (!config || config.mode !== 'direct' || files.length === 0) return null
 
+      // Les petits fichiers restent dans le FormData : `receiveUploads` les
+      // enregistre via le SDK serveur. Seuls les gros fichiers ont besoin du
+      // transfert direct, indispensable au-dela de la limite Vercel.
+      const directFiles = files.filter((file) => file.size > DIRECT_UPLOAD_THRESHOLD)
+      if (directFiles.length === 0) return null
+
       const classGroupId = options.classGroupId || config.classGroupId
       if (!classGroupId) return 'Aucune classe active : rechargez la page.'
       const prefix = uploadPrefix(options.kind, classGroupId, config.userId)
 
-      const total = files.reduce((sum, file) => sum + file.size, 0)
+      const total = directFiles.reduce((sum, file) => sum + file.size, 0)
       let sent = 0
       setProgress(0)
       try {
         // Charge a la demande : inutile de l'embarquer sur chaque page.
         const { put } = await import('@vercel/blob/client')
         const refs: string[] = []
-        for (const [index, file] of files.entries()) {
+        for (const file of directFiles) {
+          const index = files.indexOf(file)
           const check = checks[index]
           if (!check.ok) return check.message
           const pathname = `${prefix}/${storageFileName(file.name)}`
@@ -148,7 +161,11 @@ export function useDirectUploads() {
         }
         // Les fichiers ne transitent plus par la Server Action : seules leurs
         // references sont transmises.
+        // Ne retire que les gros fichiers deja envoyes directement. Les
+        // petits restent dans le formulaire et sont traites par le serveur.
+        const serverFiles = files.filter((file) => file.size <= DIRECT_UPLOAD_THRESHOLD)
         formData.delete(options.field)
+        for (const file of serverFiles) formData.append(options.field, file)
         for (const ref of refs) formData.append(directUploadField(options.field), ref)
         return null
       } catch (error) {
