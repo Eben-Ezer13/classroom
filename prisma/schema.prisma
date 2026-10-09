@@ -399,6 +399,8 @@ model User {
   avatarUrl       String?
   phone           String?
   isActive        Boolean   @default(true)
+  /// Choix explicite de recevoir les alertes liees aux publications de classe.
+  emailAlerts     Boolean   @default(false)
   emailVerifiedAt DateTime?
   lastLoginAt     DateTime?
   /// Le guide de prise en main est affiche une premiere fois aux etudiants.

@@ -123,6 +123,10 @@ export const updateProfileSchema = z.object({
   studentId: optionalText(40),
 })
 
+export const emailAlertsSchema = z.object({
+  emailAlerts: booleanField,
+})
+
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Mot de passe actuel obligatoire.'),

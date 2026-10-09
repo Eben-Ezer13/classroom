@@ -17,6 +17,19 @@ type Mail = {
   text: string
 }
 
+/**
+ * Les alertes de classe sont facultatives : leur echec ne doit jamais
+ * transformer une publication en erreur. Les e-mails sensibles conservent
+ * leur validation explicite dans sendMail.
+ */
+export function canSendMail(): boolean {
+  return (
+    process.env.MAIL_DRIVER?.trim() === 'resend' &&
+    Boolean(process.env.RESEND_API_KEY?.trim()) &&
+    Boolean(process.env.MAIL_FROM?.trim())
+  )
+}
+
 export async function sendMail(mail: Mail): Promise<void> {
   const driver = process.env.MAIL_DRIVER?.trim() || 'console'
 

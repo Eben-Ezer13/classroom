@@ -95,13 +95,18 @@ n'est écrit en base**.
    | `STORAGE_DRIVER` | oui | `vercel-blob` en production |
    | `BLOB_READ_WRITE_TOKEN` | oui | Fourni par le store Vercel Blob |
    | `BLOB_ACCESS` | oui | `private` (défaut, recommandé) ou `public` : doit correspondre au store |
-   | `MAIL_DRIVER` | recommandé | `resend` pour envoyer les liens « mot de passe oublié » |
-   | `RESEND_API_KEY`, `MAIL_FROM` | avec `resend` | Clé API et expéditeur Resend |
+   | `MAIL_DRIVER` | recommandé | `resend` pour les liens de mot de passe oublié et les alertes de classe |
+   | `RESEND_API_KEY`, `MAIL_FROM` | avec `resend` | Clé API Resend et expéditeur utilisant un domaine vérifié |
    | `CRON_SECRET` | oui | Chaîne aléatoire (32 caractères ou plus) ; Vercel l'envoie au cron |
 
    Sans service d'e-mail, la plateforme reste utilisable : le délégué génère un
    lien de réinitialisation depuis **Administration → Membres et invitations →
    Mot de passe** et le transmet à l'étudiant.
+
+   Les alertes e-mail de classe sont facultatives : chaque membre les active depuis
+   **Mon profil → Alertes e-mail**. Elles complètent les notifications internes et
+   signalent les ressources, annonces, programmes, projets et échéances publiés.
+   Une erreur Resend ne bloque jamais une publication.
 
 3. Créer un store **Vercel Blob en accès privé** et le relier au projet (renseigne
    `BLOB_READ_WRITE_TOKEN`). Pour un store existant créé en accès public, définir

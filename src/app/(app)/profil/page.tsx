@@ -8,7 +8,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { StatTile } from '@/components/ui/feedback'
 import { CLASS_ROLE_LABELS } from '@/lib/constants'
 import { formatDate, formatRelative } from '@/lib/utils'
-import { AvatarForm, PasswordForm, ProfileForm } from './profile-forms'
+import { AvatarForm, EmailAlertsForm, PasswordForm, ProfileForm } from './profile-forms'
 
 export const metadata: Metadata = { title: 'Mon profil' }
 
@@ -25,6 +25,7 @@ export default async function ProfilePage() {
         phone: true,
         studentId: true,
         avatarUrl: true,
+        emailAlerts: true,
         createdAt: true,
         lastLoginAt: true,
       },
@@ -67,6 +68,16 @@ export default async function ProfilePage() {
                   {CLASS_ROLE_LABELS[user.role]}
                 </Badge>
               </div>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader
+              title="Alertes e-mail"
+              description="Recevez un e-mail lors des publications et modifications de votre classe."
+            />
+            <CardBody>
+              <EmailAlertsForm enabled={profile.emailAlerts} />
             </CardBody>
           </Card>
 
