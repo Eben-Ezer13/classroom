@@ -119,6 +119,20 @@ n'est écrit en base**.
    La route refuse tout appel sans en-tête `Authorization: Bearer $CRON_SECRET`.
    Sur un plan Pro, une fréquence horaire (`0 * * * *`) rend les rappels plus précis.
 
+### Contrôle après déploiement
+
+La route publique `/api/health` vérifie que l'application peut joindre PostgreSQL.
+Elle renvoie `200` avec `status: "ok"` si la base répond, ou `503` sans exposer
+les détails de connexion en cas d'indisponibilité. Après un déploiement, ouvre
+`https://<domaine-de-production>/api/health` et vérifie le statut avant de
+communiquer la nouvelle version aux utilisateurs.
+
+Avant l'ouverture aux utilisateurs, vérifie aussi dans Vercel que les variables
+Production sont renseignées, que la dernière migration Prisma a réussi et que le
+Cron `/api/cron/reminders` est actif. Fais un parcours manuel avec un compte
+délégué et un compte étudiant : connexion, création/publication, notification,
+téléchargement d'un document et récupération du mot de passe si Resend est activé.
+
 ### Fichiers volumineux
 
 Une requête vers une fonction Vercel est plafonnée à **4,5 Mo**. Les fichiers
