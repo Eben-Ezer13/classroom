@@ -14,6 +14,12 @@ import { runAction, NotFoundError, type ActionState } from '@/lib/errors'
 import { parseForm, projectLinkSchema, projectSchema } from '@/lib/validation'
 import { formatDateShort } from '@/lib/utils'
 
+const PROJECT_REMINDER_LEAD_MS = 24 * 60 * 60 * 1000
+
+function projectReminderAt(dueAt: Date): Date {
+  return new Date(dueAt.getTime() - PROJECT_REMINDER_LEAD_MS)
+}
+
 export async function createProjectAction(
   _prev: ActionState,
   formData: FormData,
@@ -51,6 +57,7 @@ export async function createProjectAction(
             title: `Rendu : ${data.title}`,
             category: 'PROJET',
             dueAt: data.dueAt,
+            reminderAt: projectReminderAt(data.dueAt),
             createdById: user.id,
           },
         },
@@ -108,29 +115,39 @@ export async function updateProjectAction(
     await assertSemesterInClass(data.semesterId, existing.classGroupId)
     await assertModuleInClass(data.moduleId, existing.classGroupId)
 
-    const updated = await prisma.project.update({
-      where: { id: projectId },
-      data: {
-        semesterId: data.semesterId,
-        moduleId: data.moduleId ?? null,
-        title: data.title,
-        description: data.description ?? null,
-        instructions: data.instructions ?? null,
-        teacherName: data.teacherName ?? null,
-        startsAt: data.startsAt ?? null,
-        dueAt: data.dueAt,
-      },
-      select: { id: true, title: true, dueAt: true },
-    })
-
-    // L'echeance liee suit la date du projet, sinon les deux affichages
-    // se contrediraient.
-    if (existing.dueAt.getTime() !== data.dueAt.getTime()) {
-      await prisma.deadline.updateMany({
-        where: { projectId, deletedAt: null, category: 'PROJET' },
-        data: { dueAt: data.dueAt },
+    const dueChanged = existing.dueAt.getTime() !== data.dueAt.getTime()
+    const updated = await prisma.$transaction(async (tx) => {
+      const project = await tx.project.update({
+        where: { id: projectId },
+        data: {
+          semesterId: data.semesterId,
+          moduleId: data.moduleId ?? null,
+          title: data.title,
+          description: data.description ?? null,
+          instructions: data.instructions ?? null,
+          teacherName: data.teacherName ?? null,
+          startsAt: data.startsAt ?? null,
+          dueAt: data.dueAt,
+        },
+        select: { id: true, title: true, dueAt: true },
       })
 
+      // L'echeance et son rappel automatique suivent la date du projet.
+      if (dueChanged) {
+        await tx.deadline.updateMany({
+          where: { projectId, deletedAt: null, category: 'PROJET' },
+          data: {
+            dueAt: data.dueAt,
+            reminderAt: projectReminderAt(data.dueAt),
+            reminderSent: false,
+          },
+        })
+      }
+
+      return project
+    })
+
+    if (dueChanged) {
       await notifyClass(
         existing.classGroupId,
         {

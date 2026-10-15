@@ -154,7 +154,8 @@ function ProjectForm({
 
       {!isEdit ? (
         <p className="text-[12.5px] text-[var(--text-3)]">
-          Une échéance de rendu sera créée automatiquement à la date limite.
+          Une échéance de rendu sera créée automatiquement. Les étudiants recevront un rappel
+          environ 24 h avant la date limite.
         </p>
       ) : null}
 

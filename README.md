@@ -125,7 +125,8 @@ n'est écrit en base**.
    `prisma migrate deploy`. Vérifier que `DATABASE_URL` et `DIRECT_URL` sont bien
    définies dans l'environnement concerné.
 5. Le Cron déclaré dans `vercel.json` appelle `/api/cron/reminders` chaque jour à 7h
-   (UTC) : rappels d'échéance et purge des sessions, jetons et compteurs expirés.
+   (UTC) : rappels personnalisés d'échéance, rappels automatiques des projets
+   environ 24 h avant la date limite et purge des sessions, jetons et compteurs expirés.
    La route refuse tout appel sans en-tête `Authorization: Bearer $CRON_SECRET`.
    Sur un plan Pro, une fréquence horaire (`0 * * * *`) rend les rappels plus précis.
 
