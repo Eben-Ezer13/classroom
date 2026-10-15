@@ -97,6 +97,7 @@ n'est écrit en base**.
    | `BLOB_ACCESS` | oui | `private` (défaut, recommandé) ou `public` : doit correspondre au store |
    | `MAIL_DRIVER` | recommandé | `resend` pour les liens de mot de passe oublié et les alertes de classe |
    | `RESEND_API_KEY`, `MAIL_FROM` | avec `resend` | Clé API Resend et expéditeur utilisant un domaine vérifié |
+   | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | facultatif | Notifications push sur les appareils inscrits ; générer une paire avec `npx web-push generate-vapid-keys` |
    | `CRON_SECRET` | oui | Chaîne aléatoire (32 caractères ou plus) ; Vercel l'envoie au cron |
 
    Sans service d'e-mail, la plateforme reste utilisable : le délégué génère un
@@ -107,6 +108,15 @@ n'est écrit en base**.
    **Mon profil → Alertes e-mail**. Elles complètent les notifications internes et
    signalent les ressources, annonces, programmes, projets et échéances publiés.
    Une erreur Resend ne bloque jamais une publication.
+
+   Les notifications push fonctionnent indépendamment de Resend. Pour les activer,
+   génère une paire VAPID avec `npx web-push generate-vapid-keys`, puis configure
+   les trois variables VAPID dans Vercel Production. Les utilisateurs activent
+   ensuite les notifications dans **Mon profil → Application et notifications**.
+   L'application s'installe depuis le menu du navigateur ; sur iPhone/iPad, ouvre-la
+   dans Safari puis utilise **Partager → Sur l'écran d'accueil**. Les notifications
+   nécessitent HTTPS et l'accord explicite de l'utilisateur. Le badge de l'icône
+   dépend du navigateur et de l'appareil et n'est pas disponible partout.
 
 3. Créer un store **Vercel Blob en accès privé** et le relier au projet (renseigne
    `BLOB_READ_WRITE_TOKEN`). Pour un store existant créé en accès public, définir

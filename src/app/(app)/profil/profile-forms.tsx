@@ -9,6 +9,7 @@ import {
 } from '@/app/actions/auth'
 import { emptyActionState } from '@/lib/errors'
 import { Checkbox, Field, Input } from '@/components/ui/field'
+import { PasswordInput } from '@/components/ui/password-input'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
 import { useFormAction, useRefreshOnSuccess } from '@/components/ui/use-form-action'
@@ -164,10 +165,9 @@ export function PasswordForm() {
         error={state.fieldErrors?.currentPassword}
         required
       >
-        <Input
+        <PasswordInput
           id="currentPassword"
           name="currentPassword"
-          type="password"
           autoComplete="current-password"
           required
         />
@@ -180,10 +180,9 @@ export function PasswordForm() {
         hint="10 caractères minimum, avec majuscule, minuscule et chiffre"
         required
       >
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="new-password"
           required
         />
@@ -195,10 +194,9 @@ export function PasswordForm() {
         error={state.fieldErrors?.confirmPassword}
         required
       >
-        <Input
+        <PasswordInput
           id="confirmPassword"
           name="confirmPassword"
-          type="password"
           autoComplete="new-password"
           required
         />

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { loginAction } from '@/app/actions/auth'
 import { Field, Input } from '@/components/ui/field'
+import { PasswordInput } from '@/components/ui/password-input'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
 import { useFormAction } from '@/components/ui/use-form-action'
@@ -34,10 +35,9 @@ export function LoginForm({ notice, next }: { notice: string | null; next: strin
         error={state.fieldErrors?.password}
         required
       >
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="current-password"
           required
           placeholder="Votre mot de passe"

@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { useActionState } from 'react'
 import { resetPasswordAction } from '@/app/actions/auth'
 import { emptyActionState } from '@/lib/errors'
-import { Field, Input } from '@/components/ui/field'
+import { Field } from '@/components/ui/field'
+import { PasswordInput } from '@/components/ui/password-input'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
 import { buttonClasses } from '@/components/ui/button'
@@ -35,10 +36,9 @@ export function ResetPasswordForm({ token }: { token: string }) {
         hint="10 caractères minimum, avec majuscule, minuscule et chiffre"
         required
       >
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="new-password"
           required
         />
@@ -50,10 +50,9 @@ export function ResetPasswordForm({ token }: { token: string }) {
         error={state.fieldErrors?.confirmPassword}
         required
       >
-        <Input
+        <PasswordInput
           id="confirmPassword"
           name="confirmPassword"
-          type="password"
           autoComplete="new-password"
           required
         />

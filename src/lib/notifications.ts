@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import type { NotificationType, Prisma } from '@prisma/client'
 import { canSendMail, sendMail } from '@/lib/mailer'
 import { env } from '@/lib/env'
+import { sendPushToUsers } from '@/lib/push'
 
 /**
  * Diffusion des notifications.
@@ -110,6 +111,43 @@ async function sendAlertEmails(members: ActiveMember[], payload: NotifyPayload):
   }
 }
 
+/** Notifications système pour les utilisateurs ayant accepté le Web Push. */
+async function sendPushAlerts(
+  userIds: string[],
+  classGroupId: string | null,
+  payload: NotifyPayload,
+): Promise<void> {
+  try {
+    const ids = [...new Set(userIds)]
+    const unread = await prisma.notification.groupBy({
+      by: ['userId'],
+      where: {
+        userId: { in: ids },
+        readAt: null,
+        ...(classGroupId ? { OR: [{ classGroupId }, { classGroupId: null }] } : {}),
+      },
+      _count: { _all: true },
+    })
+    const unreadCounts = Object.fromEntries(unread.map((row) => [row.userId, row._count._all]))
+
+    await sendPushToUsers(
+      ids,
+      {
+        title: payload.title,
+        // Les détails peuvent être privés (ex. réclamation) et apparaître
+        // sur un écran verrouillé ; le contenu complet reste dans l'app.
+        body: 'Une nouvelle information est disponible. Ouvre Classroom pour la consulter.',
+        url: payload.url ?? '/notifications',
+        tag: payload.entityId ? `${payload.type}-${payload.entityId}` : undefined,
+      },
+      unreadCounts,
+    )
+  } catch (error) {
+    // Une panne du fournisseur push n'annule pas la publication initiale.
+    console.error('[notifications] push indisponible', error)
+  }
+}
+
 /** Notifie tous les membres actifs d'une classe, sauf l'auteur de l'action. */
 export async function notifyClass(
   classGroupId: string,
@@ -121,7 +159,7 @@ export async function notifyClass(
     if (members.length === 0) return 0
     const ids = members.map((member) => member.userId)
     await prisma.notification.createMany({ data: rows(ids, classGroupId, payload) })
-    await sendAlertEmails(members, payload)
+    await Promise.all([sendAlertEmails(members, payload), sendPushAlerts(ids, classGroupId, payload)])
     return ids.length
   } catch (error) {
     // Une notification est un effet secondaire : elle ne doit jamais faire
@@ -139,6 +177,7 @@ export async function notifyUser(
 ): Promise<void> {
   try {
     await prisma.notification.create({ data: rows([userId], classGroupId, payload)[0] })
+    await sendPushAlerts([userId], classGroupId, payload)
   } catch (error) {
     console.error('[notifications] notification utilisateur impossible', error)
   }
@@ -162,13 +201,14 @@ export async function notifyMembers(
     const targets = [...new Set(userIds)].filter((id) => allowedById.has(id))
     if (targets.length === 0) return 0
     await prisma.notification.createMany({ data: rows(targets, classGroupId, payload) })
-    await sendAlertEmails(
-      targets.flatMap((id) => {
-        const member = allowedById.get(id)
-        return member ? [member] : []
-      }),
-      payload,
-    )
+    const recipients = targets.flatMap((id) => {
+      const member = allowedById.get(id)
+      return member ? [member] : []
+    })
+    await Promise.all([
+      sendAlertEmails(recipients, payload),
+      sendPushAlerts(targets, classGroupId, payload),
+    ])
     return targets.length
   } catch (error) {
     console.error('[notifications] diffusion ciblee impossible', error)
@@ -187,6 +227,7 @@ export async function notifyClassStaff(
     if (members.length === 0) return
     const ids = members.map((member) => member.userId)
     await prisma.notification.createMany({ data: rows(ids, classGroupId, payload) })
+    await sendPushAlerts(ids, classGroupId, payload)
   } catch (error) {
     console.error('[notifications] diffusion aux delegues impossible', error)
   }

@@ -9,6 +9,7 @@ import { StatTile } from '@/components/ui/feedback'
 import { CLASS_ROLE_LABELS } from '@/lib/constants'
 import { formatDate, formatRelative } from '@/lib/utils'
 import { AvatarForm, EmailAlertsForm, PasswordForm, ProfileForm } from './profile-forms'
+import { InstallAppButton, PushNotificationsSettings } from '@/components/features/push-settings'
 
 export const metadata: Metadata = { title: 'Mon profil' }
 
@@ -67,6 +68,19 @@ export default async function ProfilePage() {
                 <Badge tone={user.role === 'ADMIN' ? 'accent' : 'neutral'}>
                   {CLASS_ROLE_LABELS[user.role]}
                 </Badge>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader
+              title="Application et notifications"
+              description="Installe Classroom sur cet appareil et reçois les alertes même lorsque l’application est fermée."
+            />
+            <CardBody className="space-y-5">
+              <InstallAppButton />
+              <div className="border-t border-[var(--border)] pt-4">
+                <PushNotificationsSettings />
               </div>
             </CardBody>
           </Card>

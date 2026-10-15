@@ -8,6 +8,7 @@ import { switchClassAction } from '@/app/actions/classes'
 import { PresenceHeartbeat } from '@/components/features/presence-heartbeat'
 import { UploadConfigProvider } from '@/components/features/direct-upload'
 import { StudentOnboarding } from '@/components/features/student-onboarding'
+import { PushAppBootstrap } from '@/components/features/push-settings'
 
 /**
  * Toutes les pages de ce groupe sont rendues a la demande : elles dependent
@@ -61,6 +62,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         logout={logoutAction}
         switchClass={switchClassAction}
       >
+        <PushAppBootstrap unreadCount={unread} />
         <PresenceHeartbeat />
         {user.platformRole === 'ETUDIANT' && !user.onboardingSeenAt ? (
           <StudentOnboarding />

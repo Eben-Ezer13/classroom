@@ -2,6 +2,7 @@
 
 import { registerAction } from '@/app/actions/auth'
 import { Field, Input } from '@/components/ui/field'
+import { PasswordInput } from '@/components/ui/password-input'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Alert } from '@/components/ui/feedback'
 import { useFormAction } from '@/components/ui/use-form-action'
@@ -133,10 +134,9 @@ export function RegisterForm({
         hint="10 caractères minimum, avec majuscule, minuscule et chiffre"
         required
       >
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="new-password"
           minLength={10}
           maxLength={128}
@@ -150,10 +150,9 @@ export function RegisterForm({
         error={state.fieldErrors?.confirmPassword}
         required
       >
-        <Input
+        <PasswordInput
           id="confirmPassword"
           name="confirmPassword"
-          type="password"
           autoComplete="new-password"
           required
         />

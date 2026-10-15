@@ -427,6 +427,7 @@ model User {
   accounts            Account[]
   passwordResetTokens PasswordResetToken[]
   notifications       Notification[]
+  pushSubscriptions   PushSubscription[]
   downloads           Download[]
   uploadedResources   Resource[]             @relation("ResourceUploader")
   createdSchedule     ScheduleEntry[]        @relation("ScheduleAuthor")
@@ -701,6 +702,22 @@ model Notification {
   @@index([userId, createdAt])
   @@index([userId, classGroupId, readAt])
   @@map("notifications")
+}
+
+/// Abonnements Web Push associes aux appareils d'un utilisateur.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 // =====================================================================
