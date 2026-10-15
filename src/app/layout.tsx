@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     'Programme, ressources, annonces, projets et échéances centralisés pour toute la classe.',
   robots: { index: false, follow: false },
   appleWebApp: { capable: true, title: 'Classroom', statusBarStyle: 'default' },
-  icons: { apple: '/apple-icon' },
+  icons: { icon: '/icon.svg', apple: '/apple-icon' },
 }
 
 export const viewport: Viewport = {
