@@ -113,7 +113,7 @@ const slides: GuideSlide[] = [
     title: 'Consultez vos notifications',
     description:
       'La cloche vous avertit directement dans la plateforme lorsqu’une nouvelle ressource, annonce ou modification est publiée.',
-    hint: 'Le compteur affiche les nouveautés non lues. Ouvrez Notifications pour tout consulter et marquer les éléments comme lus.',
+    hint: 'Le compteur affiche les nouveautés non lues. Vous pouvez aussi activer les alertes e-mail depuis Mon profil.',
   },
   {
     section: 'Échanges',

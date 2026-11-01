@@ -98,7 +98,7 @@ export default async function DeadlinesPage({
         <StatTile label="Cette semaine" value={buckets.week} tone="warning" />
         <StatTile label="Ce mois" value={buckets.month} tone="info" />
         <StatTile
-            label="Dépassées"
+          label="Dépassées"
           value={buckets.overdue}
           tone={buckets.overdue > 0 ? 'danger' : 'neutral'}
         />

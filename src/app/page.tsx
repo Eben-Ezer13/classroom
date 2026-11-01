@@ -23,13 +23,13 @@ const FEATURES = [
   },
   {
     icon: IconFolder,
-    title: 'Ressources centralisees',
+    title: 'Ressources centralisées',
     text: 'Cours, TD, TP, corrections et sujets d’examen, classés par module et par semestre.',
   },
   {
     icon: IconClock,
     title: 'Échéances et projets',
-    text: 'Chaque rendu avec son compte a rebours, ses consignes et ses documents.',
+    text: 'Chaque rendu avec son compte à rebours, ses consignes et ses documents.',
   },
   {
     icon: IconMegaphone,
@@ -68,7 +68,7 @@ export default async function HomePage() {
           <Link href="/login" className={buttonClasses('secondary', 'sm')}>
             Connexion
           </Link>
-          <Link href="/register" className={buttonClasses('primary', 'sm', 'hidden sm:inline-flex')}>
+          <Link href="/register" className={buttonClasses('primary', 'sm')}>
             Créer un compte
           </Link>
         </div>

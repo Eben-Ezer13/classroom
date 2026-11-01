@@ -1,7 +1,7 @@
 'use client'
 
 import Link, { useLinkStatus } from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { CLASS_ROLE_LABELS } from '@/lib/constants'
@@ -66,7 +66,19 @@ export function AppShell({
 }) {
   const pathname = usePathname()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const router = useRouter()
   const sections = navForRole(user.role)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        router.push('/recherche')
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [router])
 
   // Toute navigation ferme le tiroir : sans cela il resterait ouvert
   // par-dessus la nouvelle page sur mobile.
@@ -156,10 +168,14 @@ export function AppShell({
           <div className="ml-auto flex items-center gap-1">
             <Link
               href="/recherche"
-              aria-label="Recherche globale"
-              className="size-9 grid place-items-center rounded-lg text-[var(--text-2)] hover:bg-[var(--surface-3)] hover:text-[var(--text-1)] transition-colors"
+              aria-label="Recherche globale (Ctrl+K)"
+              title="Recherche globale (Ctrl+K)"
+              className="h-9 px-2 sm:px-2.5 flex items-center gap-1.5 rounded-lg text-[var(--text-2)] hover:bg-[var(--surface-3)] hover:text-[var(--text-1)] transition-colors"
             >
               <IconSearch />
+              <kbd className="hidden sm:inline-flex items-center rounded border border-[var(--border-strong)] bg-[var(--surface-2)] px-1.5 py-0.5 text-[10.5px] font-medium text-[var(--text-3)] font-mono">
+                Ctrl+K
+              </kbd>
             </Link>
             <ThemeToggle />
             <UserMenu user={user} logout={logout} />

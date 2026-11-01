@@ -238,7 +238,8 @@ export default async function DashboardPage() {
 
 function Greeting({ firstName, className }: { firstName: string; className?: string | null }) {
   // Heure lue dans le fuseau de la classe : sur Vercel, le serveur est en UTC.
-  const salutation = minutesOfDay() < 18 * 60 ? 'Bonjour' : 'Bonsoir'
+  const mins = minutesOfDay()
+  const salutation = mins >= 5 * 60 && mins < 18 * 60 ? 'Bonjour' : 'Bonsoir'
   return (
     <div className="mb-5">
       <h1 className="text-[22px] sm:text-[26px] font-semibold tracking-[-0.02em] text-[var(--text-1)]">
