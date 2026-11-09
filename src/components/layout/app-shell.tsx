@@ -54,12 +54,14 @@ type SwitchClassAction = (formData: FormData) => Promise<ActionState>
 export function AppShell({
   user,
   unreadCount,
+  unreadMessagesCount,
   logout,
   switchClass,
   children,
 }: {
   user: ShellUser
   unreadCount: number
+  unreadMessagesCount: number
   logout: () => Promise<void>
   switchClass: SwitchClassAction
   children: ReactNode
@@ -101,6 +103,7 @@ export function AppShell({
           user={user}
           sections={sections}
           unreadCount={unreadCount}
+          unreadMessagesCount={unreadMessagesCount}
           pathname={pathname}
           switchClass={switchClass}
         />
@@ -127,6 +130,7 @@ export function AppShell({
               user={user}
               sections={sections}
               unreadCount={unreadCount}
+              unreadMessagesCount={unreadMessagesCount}
               pathname={pathname}
               switchClass={switchClass}
             />
@@ -193,7 +197,12 @@ export function AppShell({
           {MOBILE_NAV.map((item) => {
             const active = isActive(pathname, item.href)
             const Icon = item.icon
-            const count = item.badge === 'notifications' ? unreadCount : 0
+            const count =
+              item.badge === 'notifications'
+                ? unreadCount
+                : item.badge === 'messages'
+                  ? unreadMessagesCount
+                  : 0
             return (
               <li key={item.href}>
                 <Link
@@ -246,12 +255,14 @@ function SidebarContent({
   user,
   sections,
   unreadCount,
+  unreadMessagesCount,
   pathname,
   switchClass,
 }: {
   user: ShellUser
   sections: ReturnType<typeof navForRole>
   unreadCount: number
+  unreadMessagesCount: number
   pathname: string
   switchClass: SwitchClassAction
 }) {
@@ -283,7 +294,12 @@ function SidebarContent({
               {section.items.map((item: NavItem) => {
                 const active = isActive(pathname, item.href)
                 const Icon = item.icon
-                const count = item.badge === 'notifications' ? unreadCount : 0
+                const count =
+                  item.badge === 'notifications'
+                    ? unreadCount
+                    : item.badge === 'messages'
+                      ? unreadMessagesCount
+                      : 0
                 return (
                   <li key={item.href}>
                     <Link

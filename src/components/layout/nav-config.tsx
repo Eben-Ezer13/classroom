@@ -19,6 +19,7 @@ import {
   IconShield,
   IconUsers,
 } from '@/components/ui/icons'
+import { messagesEnabled } from '@/lib/messages/config'
 
 /** Role dans la classe active : seule dimension qui pilote la navigation. */
 export type Role = 'ADMIN' | 'MEMBER'
@@ -29,7 +30,7 @@ export type NavItem = {
   icon: ComponentType<SVGProps<SVGSVGElement>>
   roles: Role[]
   /** Affiche le compteur de notifications non lues. */
-  badge?: 'notifications'
+  badge?: 'notifications' | 'messages'
 }
 
 export type NavSection = {
@@ -63,6 +64,17 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Échanges',
     items: [
+      ...(messagesEnabled
+        ? [
+            {
+              href: '/messages',
+              label: 'Messages',
+              icon: IconUsers,
+              roles: ALL,
+              badge: 'messages' as const,
+            },
+          ]
+        : []),
       {
         href: '/notifications',
         label: 'Notifications',

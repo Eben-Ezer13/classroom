@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { requirePageUser } from '@/lib/auth/guards'
 import { unreadCount } from '@/lib/notifications'
+import { messagesEnabled } from '@/lib/messages/config'
+import { unreadMessageCount } from '@/lib/messages/access'
 import { env } from '@/lib/env'
 import { AppShell } from '@/components/layout/app-shell'
 import { logoutAction } from '@/app/actions/auth'
@@ -25,7 +27,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await requirePageUser()
   // Le compteur est borne a la classe ouverte : un membre de plusieurs
   // classes ne voit pas remonter les alertes d'un autre espace.
-  const unread = await unreadCount(user.id, user.classGroupId)
+  const [unread, unreadMessages] = await Promise.all([
+    unreadCount(user.id, user.classGroupId),
+    messagesEnabled ? unreadMessageCount(user.id, user.classGroupId) : 0,
+  ])
 
   return (
     <UploadConfigProvider
@@ -59,6 +64,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           })),
         }}
         unreadCount={unread}
+        unreadMessagesCount={unreadMessages}
         logout={logoutAction}
         switchClass={switchClassAction}
       >

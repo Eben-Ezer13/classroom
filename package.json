@@ -21,6 +21,8 @@
     "@vercel/blob": "^2.8.0",
     "bcryptjs": "^2.4.3",
     "next": "^15.1.6",
+    "pusher": "^5.3.4",
+    "pusher-js": "^8.6.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "web-push": "^3.6.7",

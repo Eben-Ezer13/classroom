@@ -178,6 +178,7 @@ model ClassGroup {
   complaints        Complaint[]
   notifications     Notification[]
   auditLogs         AuditLog[]
+  conversations     Conversation[]
 
   @@index([levelId])
   @@index([isActive])
@@ -428,6 +429,11 @@ model User {
   passwordResetTokens PasswordResetToken[]
   notifications       Notification[]
   pushSubscriptions   PushSubscription[]
+  conversationMemberships ConversationMember[]
+  authoredMessages    Message[]                 @relation("MessageAuthor")
+  messageMentions     MessageMention[]
+  messageAttachments  MessageAttachment[]        @relation("MessageAttachmentUploader")
+  messageReads        MessageRead[]
   downloads           Download[]
   uploadedResources   Resource[]             @relation("ResourceUploader")
   createdSchedule     ScheduleEntry[]        @relation("ScheduleAuthor")
@@ -702,6 +708,98 @@ model Notification {
   @@index([userId, createdAt])
   @@index([userId, classGroupId, readAt])
   @@map("notifications")
+}
+
+model Conversation {
+  id           String   @id @default(cuid())
+  classGroupId String   @unique
+  createdAt    DateTime @default(now())
+
+  classGroup ClassGroup          @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  members    ConversationMember[]
+  messages   Message[]
+
+  @@map("conversations")
+}
+
+model ConversationMember {
+  id             String   @id @default(cuid())
+  conversationId String
+  userId         String
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_members")
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  authorId       String?
+  replyToId      String?
+  body           String
+  createdAt      DateTime @default(now())
+
+  conversation Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author       User?             @relation("MessageAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  replyTo      Message?          @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies      Message[]         @relation("MessageReplies")
+  mentions     MessageMention[]
+  attachments  MessageAttachment[]
+  reads        MessageRead[]
+
+  @@index([conversationId, createdAt])
+  @@index([authorId])
+  @@map("messages")
+}
+
+model MessageMention {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([userId, createdAt])
+  @@map("message_mentions")
+}
+
+model MessageAttachment {
+  id           String   @id @default(cuid())
+  messageId    String
+  uploadedById String?
+  storageKey   String
+  fileName     String
+  mimeType     String
+  fileSize     Int
+  createdAt    DateTime @default(now())
+
+  message    Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  uploadedBy User?   @relation("MessageAttachmentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([messageId])
+  @@map("message_attachments")
+}
+
+model MessageRead {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([userId, readAt])
+  @@map("message_reads")
 }
 
 /// Abonnements Web Push associes aux appareils d'un utilisateur.
