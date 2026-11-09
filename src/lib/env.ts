@@ -27,11 +27,20 @@ export const env = {
   },
   get appUrl() {
     const explicit = optional('NEXT_PUBLIC_APP_URL')
-    if (explicit) return explicit.replace(/\/$/, '')
+    const isLocalhost =
+      /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?(?:\/|$)/i.test(explicit)
+    if (explicit && !(this.isProduction && isLocalhost)) {
+      return explicit.replace(/\/$/, '')
+    }
     // Vercel fournit l'URL du deploiement : evite un lien d'invitation
     // pointant vers localhost si la variable n'a pas ete renseignee.
     const vercel = optional('VERCEL_PROJECT_PRODUCTION_URL') || optional('VERCEL_URL')
     if (vercel) return `https://${vercel}`
+    if (this.isProduction) {
+      throw new Error(
+        'URL publique manquante : définissez NEXT_PUBLIC_APP_URL avec le domaine du site déployé.',
+      )
+    }
     return 'http://localhost:3000'
   },
   /**
