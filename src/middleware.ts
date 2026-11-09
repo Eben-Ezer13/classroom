@@ -33,6 +33,16 @@ export function middleware(request: NextRequest) {
 
   if (!hasCookie && !PUBLIC_PATHS.has(pathname)) {
     const url = request.nextUrl.clone()
+
+    // Si un étudiant non connecté clique sur un lien d'invitation (/rejoindre?code=...),
+    // il est directement orienté vers la création de son compte pour rejoindre la classe.
+    if (pathname === '/rejoindre' && request.nextUrl.searchParams.has('code')) {
+      const code = request.nextUrl.searchParams.get('code')?.trim() ?? ''
+      url.pathname = '/register'
+      url.search = `?code=${encodeURIComponent(code)}`
+      return NextResponse.redirect(url)
+    }
+
     url.pathname = '/login'
     // La destination complete (avec ?code=... d'une invitation) est
     // conservee : l'utilisateur y revient apres s'etre connecte.

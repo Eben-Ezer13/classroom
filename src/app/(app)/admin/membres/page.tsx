@@ -17,6 +17,7 @@ import { FilterBar, FilterField } from '@/components/features/filter-bar'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { IconUsers } from '@/components/ui/icons'
 import { formatDate, formatRelative, normalizeSearch } from '@/lib/utils'
+import { CopyInviteLinkButton } from '@/components/features/invite-link-share'
 import {
   CopyButton,
   EditStudentIdButton,
@@ -92,14 +93,21 @@ export default async function AdminMembersPage({
 
       <Card className="mb-4">
         <CardHeader
-          title="Code d’inscription"
-          description="Les étudiants saisissent ce code pour rejoindre la classe."
+          title="Lien d’invitation et code de la classe"
+          description="Partagez le lien d’invitation direct : vos étudiants n’auront qu’à créer leur compte pour rejoindre immédiatement la classe."
         />
         <CardBody className="flex flex-wrap items-center gap-3">
           <code className="rounded-lg bg-[var(--surface-3)] px-3 py-2 text-[16px] font-mono tracking-[0.2em] text-[var(--text-1)]">
             {profile?.code}
           </code>
-          <CopyButton value={profile?.code ?? ''} label="Copier le code" />
+          {profile?.code ? (
+            <CopyInviteLinkButton
+              code={profile.code}
+              variant="primary"
+              label="Copier le lien d’invitation"
+            />
+          ) : null}
+          <CopyButton value={profile?.code ?? ''} label="Copier le code seul" />
           <ConfirmForm
             action={rotateClassCodeAction}
             message="Régénérer le code ? L’ancien code ne fonctionnera plus."

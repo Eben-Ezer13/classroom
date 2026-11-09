@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { requirePageUser } from '@/lib/auth/guards'
 import { classMemberStats, listClassMembers } from '@/lib/services/classes'
 import { PageHeader } from '@/components/layout/page-header'
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/field'
 import { LinkButton } from '@/components/ui/button'
+import { CopyInviteLinkButton } from '@/components/features/invite-link-share'
 import { NoClassState } from '@/components/ui/no-class'
 import { FilterBar, FilterField } from '@/components/features/filter-bar'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
@@ -57,9 +58,17 @@ export default async function MembersPage({
         description={`Membres de ${user.className ?? 'votre classe'}.`}
         actions={
           isAdmin ? (
-            <LinkButton href="/admin/membres" size="sm">
-              Gérer les membres
-            </LinkButton>
+            <div className="flex items-center gap-2">
+              {user.classCode ? (
+                <CopyInviteLinkButton
+                  code={user.classCode}
+                  label="Inviter des membres"
+                />
+              ) : null}
+              <LinkButton href="/admin/membres" variant="secondary" size="sm">
+                Gérer les membres
+              </LinkButton>
+            </div>
           ) : null
         }
       />

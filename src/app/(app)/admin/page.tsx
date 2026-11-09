@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { requirePageClassAdmin } from '@/lib/auth/guards'
@@ -9,6 +9,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Alert, StatTile } from '@/components/ui/feedback'
 import { Badge } from '@/components/ui/badge'
 import { ADMIN_SECTION } from '@/components/layout/nav-config'
+import { InviteBanner } from '@/components/features/invite-link-share'
 import { formatFileSize, formatRelative } from '@/lib/utils'
 
 export const metadata: Metadata = { title: 'Administration' }
@@ -69,6 +70,16 @@ export default async function AdminHomePage({
           </Link>
           .
         </Alert>
+      ) : null}
+
+      {profile?.code ? (
+        <div className="mb-4">
+          <InviteBanner
+            code={profile.code}
+            className={profile.name}
+            schoolName={profile.schoolName}
+          />
+        </div>
       ) : null}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">

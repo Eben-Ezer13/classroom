@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import Link from 'next/link'
 import { requirePageUser } from '@/lib/auth/guards'
 import { getDelegateDashboard, getStudentDashboard } from '@/lib/services/dashboard'
@@ -11,6 +11,7 @@ import { ScheduleItem } from '@/components/features/schedule-item'
 import { AnnouncementCard } from '@/components/features/announcement-card'
 import { DeadlineItem } from '@/components/features/deadline-item'
 import { ResourceItem } from '@/components/features/resource-item'
+import { InviteBanner } from '@/components/features/invite-link-share'
 import {
   IconCalendar,
   IconClock,
@@ -56,7 +57,13 @@ export default async function DashboardPage() {
     <>
       <Greeting firstName={user.firstName} className={user.className} />
 
-      {staffData ? <DelegatePanel data={staffData} /> : null}
+      {staffData ? (
+        <DelegatePanel
+          data={staffData}
+          classCode={user.classCode}
+          className={user.className}
+        />
+      ) : null}
 
       <div className="grid lg:grid-cols-3 gap-4">
         {/* ---------------- Colonne principale ---------------- */}
@@ -256,8 +263,12 @@ function Greeting({ firstName, className }: { firstName: string; className?: str
 
 function DelegatePanel({
   data,
+  classCode,
+  className,
 }: {
   data: NonNullable<Awaited<ReturnType<typeof getDelegateDashboard>>>
+  classCode?: string | null
+  className?: string | null
 }) {
   const actions = [
     { href: '/ressources?nouveau=1', label: 'Ajouter une ressource', icon: IconFolder },
@@ -269,6 +280,7 @@ function DelegatePanel({
 
   return (
     <div className="mb-5 space-y-4">
+      {classCode ? <InviteBanner code={classCode} className={className} /> : null}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         <StatTile
           label="Étudiants"
