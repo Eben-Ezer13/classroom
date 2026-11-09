@@ -333,21 +333,6 @@ export function MessagesChat({
         </p>
       ) : null}
       <form onSubmit={send} className="border-t border-[var(--border)] p-3">
-        {replyTo ? (
-          <div className="mb-2 flex items-center justify-between rounded-lg bg-[var(--surface-2)] px-3 py-2 text-xs">
-            <span className="truncate text-[var(--text-2)]">
-              Réponse à {replyTo.author?.firstName ?? 'un membre'} : {replyTo.body}
-            </span>
-            <button
-              type="button"
-              onClick={() => setReplyTo(null)}
-              className="ml-2 text-[var(--text-3)] hover:text-[var(--text-1)]"
-              aria-label="Annuler la réponse"
-            >
-              ×
-            </button>
-          </div>
-        ) : null}
         <div className="flex items-end gap-2">
           <div className="relative min-w-0 flex-1">
             {mentionQuery !== null && (filteredMembers.length > 0 || canMentionAll) ? (
@@ -385,17 +370,37 @@ export function MessagesChat({
                 ))}
               </ul>
             ) : null}
-            <textarea
-              ref={textareaRef}
-              value={body}
-              onChange={(event) => updateBody(event.target.value, event.target.selectionStart)}
-              maxLength={2000}
-              rows={2}
-              placeholder="Écrire un message…"
-              aria-label="Votre message"
-              aria-autocomplete="list"
-              className="min-h-10 w-full resize-y rounded-xl border border-[var(--border-strong)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] placeholder:text-[var(--text-3)] focus:border-[var(--accent)] focus:outline-none"
-            />
+            <div className="overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[var(--surface-1)] focus-within:border-[var(--accent)]">
+              {replyTo ? (
+                <div className="m-1 flex items-center justify-between gap-3 rounded-lg border-l-4 border-[var(--accent)] bg-[var(--surface-2)] px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-[var(--accent)]">
+                      {replyTo.author?.firstName ?? 'Un membre'}
+                    </p>
+                    <p className="truncate text-sm text-[var(--text-2)]">{replyTo.body}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setReplyTo(null)}
+                    className="shrink-0 px-1 text-lg leading-none text-[var(--text-3)] hover:text-[var(--text-1)]"
+                    aria-label="Annuler la réponse"
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : null}
+              <textarea
+                ref={textareaRef}
+                value={body}
+                onChange={(event) => updateBody(event.target.value, event.target.selectionStart)}
+                maxLength={2000}
+                rows={2}
+                placeholder="Écrire un message…"
+                aria-label="Votre message"
+                aria-autocomplete="list"
+                className="min-h-10 w-full resize-y border-0 bg-transparent px-3 py-2 text-sm text-[var(--text-1)] placeholder:text-[var(--text-3)] focus:outline-none"
+              />
+            </div>
           </div>
           <Button type="submit" disabled={sending || !body.trim()}>
             {sending ? 'Envoi…' : 'Envoyer'}
