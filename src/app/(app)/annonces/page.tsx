@@ -65,6 +65,7 @@ export default async function AnnouncementsPage({
     })
   }
   if (moduleId) conditions.push({ moduleId })
+  if (raw.partage) conditions.push({ id: raw.partage })
   if (q) {
     conditions.push({
       OR: [
@@ -119,7 +120,7 @@ export default async function AnnouncementsPage({
   const memberOptions = members
     .filter((m) => m.userId !== user.id)
     .map((m) => ({ id: m.userId, name: `${m.firstName} ${m.lastName}` }))
-  const hasFilters = Boolean(q || level || category || moduleId)
+  const hasFilters = Boolean(q || level || category || moduleId || raw.partage)
 
   return (
     <>

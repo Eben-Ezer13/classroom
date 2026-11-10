@@ -434,6 +434,10 @@ model User {
   messageMentions     MessageMention[]
   messageAttachments  MessageAttachment[]        @relation("MessageAttachmentUploader")
   messageReads        MessageRead[]
+  messagePins         MessagePin[]                @relation("MessagePinner")
+  messageReactions    MessageReaction[]
+  messageReports     MessageReport[]             @relation("MessageReporter")
+  reviewedMessageReports MessageReport[]         @relation("MessageReportReviewer")
   downloads           Download[]
   uploadedResources   Resource[]             @relation("ResourceUploader")
   createdSchedule     ScheduleEntry[]        @relation("ScheduleAuthor")
@@ -750,11 +754,94 @@ model Message {
   replies      Message[]         @relation("MessageReplies")
   mentions     MessageMention[]
   attachments  MessageAttachment[]
+  linkPreview  MessageLinkPreview?
+  sharedItem   MessageShare?
+  pins         MessagePin[]
+  reactions    MessageReaction[]
+  reports      MessageReport[]
   reads        MessageRead[]
 
   @@index([conversationId, createdAt])
   @@index([authorId])
   @@map("messages")
+}
+
+model MessageShare {
+  id          String   @id @default(cuid())
+  messageId   String   @unique
+  shareType   String
+  entityId    String
+  title       String
+  description String?
+  url         String
+  createdAt   DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([shareType, entityId])
+  @@map("message_shares")
+}
+
+model MessagePin {
+  id         String   @id @default(cuid())
+  messageId  String
+  pinnedById String
+  createdAt  DateTime @default(now())
+
+  message  Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  pinnedBy User    @relation("MessagePinner", fields: [pinnedById], references: [id], onDelete: Cascade)
+
+  @@unique([messageId])
+  @@index([messageId, createdAt])
+  @@map("message_pins")
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId, emoji])
+  @@map("message_reactions")
+}
+
+model MessageReport {
+  id           String    @id @default(cuid())
+  messageId    String
+  reporterId   String
+  reason       String
+  status       String    @default("OPEN")
+  reviewedById String?
+  createdAt    DateTime  @default(now())
+  reviewedAt   DateTime?
+
+  message    Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  reporter   User    @relation("MessageReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reviewedBy User?   @relation("MessageReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([messageId, createdAt])
+  @@index([reporterId, createdAt])
+  @@index([status, createdAt])
+  @@map("message_reports")
+}
+
+model MessageLinkPreview {
+  id          String   @id @default(cuid())
+  messageId   String   @unique
+  url         String
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("message_link_previews")
 }
 
 model MessageMention {

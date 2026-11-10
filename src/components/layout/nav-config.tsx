@@ -13,6 +13,7 @@ import {
   IconGraduation,
   IconLayers,
   IconMegaphone,
+  IconMessages,
   IconPoll,
   IconProject,
   IconSearch,
@@ -69,7 +70,7 @@ export const NAV_SECTIONS: NavSection[] = [
             {
               href: '/messages',
               label: 'Messages',
-              icon: IconUsers,
+              icon: IconMessages,
               roles: ALL,
               badge: 'messages' as const,
             },
@@ -93,6 +94,7 @@ export const ADMIN_SECTION: NavSection = {
   title: 'Administration',
   items: [
     { href: '/admin', label: 'Vue générale', icon: IconShield, roles: STAFF },
+    { href: '/admin/guide', label: 'Guide du délégué', icon: IconBook, roles: STAFF },
     { href: '/admin/membres', label: 'Membres et invitations', icon: IconUsers, roles: STAFF },
     { href: '/admin/parametres', label: 'Paramètres de la classe', icon: IconBuilding, roles: STAFF },
     { href: '/admin/annees', label: 'Années et semestres', icon: IconLayers, roles: STAFF },

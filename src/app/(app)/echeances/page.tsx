@@ -26,7 +26,7 @@ const VIEWS = [
 export default async function DeadlinesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ vue?: string; nouveau?: string }>
+  searchParams: Promise<{ vue?: string; nouveau?: string; partage?: string }>
 }) {
   const user = await requirePageUser()
   const params = await searchParams
@@ -56,7 +56,11 @@ export default async function DeadlinesPage({
 
   const [deadlines, buckets, modules] = await Promise.all([
     prisma.deadline.findMany({
-      where: { classGroupId: user.classGroupId, deletedAt: null, dueAt: dueFilter },
+      where: {
+        classGroupId: user.classGroupId,
+        deletedAt: null,
+        ...(params.partage ? { id: params.partage } : { dueAt: dueFilter }),
+      },
       select: {
         id: true,
         title: true,

@@ -144,13 +144,14 @@ export function assertFileAllowed(file: File, rule: UploadRule): string {
 
 /** Un fichier deja rattache a une ligne ne peut pas etre reutilise. */
 async function isReferenced(filePath: string): Promise<boolean> {
-  const [resources, documents, attachments, avatars] = await Promise.all([
+  const [resources, documents, attachments, messageAttachments, avatars] = await Promise.all([
     prisma.resource.count({ where: { filePath } }),
     prisma.scheduleDocument.count({ where: { filePath } }),
     prisma.attachment.count({ where: { filePath } }),
+    prisma.messageAttachment.count({ where: { storageKey: filePath } }),
     prisma.user.count({ where: { avatarUrl: filePath } }),
   ])
-  return resources + documents + attachments + avatars > 0
+  return resources + documents + attachments + messageAttachments + avatars > 0
 }
 
 function parseRef(raw: string): DirectUploadRef | null {

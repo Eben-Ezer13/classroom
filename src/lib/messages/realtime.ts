@@ -26,3 +26,17 @@ export async function publishMessage(
 ): Promise<void> {
   await pusherClient().trigger(messageChannel(conversationId), 'message', message)
 }
+
+export async function publishTyping(
+  conversationId: string,
+  typing: Record<string, unknown>,
+): Promise<void> {
+  await pusherClient().trigger(messageChannel(conversationId), 'typing', typing)
+}
+
+export async function publishMessageUpdate(
+  conversationId: string,
+  update: Record<string, unknown>,
+): Promise<void> {
+  await pusherClient().trigger(messageChannel(conversationId), 'message-update', update)
+}

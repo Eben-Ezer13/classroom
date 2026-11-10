@@ -20,7 +20,7 @@ import { formatFileSize } from '@/lib/utils'
  * est annonce "application/vnd.ms-excel" sous Windows avec Excel installe).
  */
 
-export const UPLOAD_KINDS = ['resource', 'schedule', 'complaint'] as const
+export const UPLOAD_KINDS = ['resource', 'schedule', 'complaint', 'message'] as const
 export type UploadKind = (typeof UPLOAD_KINDS)[number]
 
 export type UploadRule = {
@@ -59,6 +59,22 @@ export const UPLOAD_RULES: Record<UploadKind, UploadRule> = {
     maxFiles: COMPLAINT_MAX_ATTACHMENTS,
     adminOnly: false,
     formats: ALLOWED_EXTENSIONS.join(', '),
+  },
+  message: {
+    folder: 'messages',
+    mimeTypes: {
+      ...ALLOWED_MIME_TYPES,
+      'image/gif': ['.gif'],
+      'image/heic': ['.heic'],
+      'image/heif': ['.heif'],
+      'video/mp4': ['.mp4'],
+      'video/webm': ['.webm'],
+      'video/quicktime': ['.mov'],
+    },
+    maxSize: 100 * 1024 * 1024,
+    maxFiles: 5,
+    adminOnly: false,
+    formats: 'PDF, Office, ZIP, texte, PNG, JPEG, WEBP, GIF, MP4, WEBM, MOV',
   },
 }
 

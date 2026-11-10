@@ -94,6 +94,8 @@ export type PrepareOptions = {
   kind: UploadKind
   /** Classe de rattachement, si differente de la classe active. */
   classGroupId?: string | null
+  /** Envoie egalement les petits fichiers directement vers le stockage Blob. */
+  forceDirect?: boolean
 }
 
 /**
@@ -122,7 +124,9 @@ export function useDirectUploads() {
       // Les petits fichiers restent dans le FormData : `receiveUploads` les
       // enregistre via le SDK serveur. Seuls les gros fichiers ont besoin du
       // transfert direct, indispensable au-dela de la limite Vercel.
-      const directFiles = files.filter((file) => file.size > DIRECT_UPLOAD_THRESHOLD)
+      const directFiles = options.forceDirect
+        ? files
+        : files.filter((file) => file.size > DIRECT_UPLOAD_THRESHOLD)
       if (directFiles.length === 0) return null
 
       const classGroupId = options.classGroupId || config.classGroupId

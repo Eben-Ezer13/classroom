@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'Messages' }
 export default async function MessagesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ messageId?: string }>
+  searchParams: Promise<{ messageId?: string; reports?: string }>
 }) {
   if (!messagesEnabled) notFound()
 
@@ -41,6 +41,7 @@ export default async function MessagesPage({
         currentUserId={user.id}
         canMentionAll={context.role === 'ADMIN'}
         focusMessageId={params.messageId ?? null}
+        initialReportsOpen={params.reports === '1' && context.role === 'ADMIN'}
       />
     </>
   )

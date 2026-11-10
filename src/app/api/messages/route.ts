@@ -2,18 +2,58 @@ import { after, NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
 import { getCurrentUser } from '@/lib/auth/session'
 import { prisma } from '@/lib/db'
+import { AppError } from '@/lib/errors'
 import { hitRateLimit, rateLimitKey } from '@/lib/rate-limit'
 import { messagesEnabled } from '@/lib/messages/config'
 import { getClassConversation } from '@/lib/messages/access'
 import { publishMessage } from '@/lib/messages/realtime'
 import { sendPushToUsers } from '@/lib/push'
+import {
+  assertClassQuota,
+  discardStoredFiles,
+  receiveUploads,
+  trackClassStorage,
+  type StoredFile,
+} from '@/lib/storage'
+import { UPLOAD_RULES, directUploadField } from '@/lib/uploads'
 
 const sendMessageSchema = z.object({
   conversationId: z.string().min(1).max(64),
-  body: z.string().trim().min(1).max(2000),
+  body: z.string().trim().max(2000).default(''),
   replyToId: z.string().max(64).nullable().optional(),
   mentionedUserIds: z.array(z.string().min(1).max(64)).max(100).default([]),
+  sharedEntity: z
+    .object({
+      type: z.enum(['announcement', 'deadline']),
+      id: z.string().min(1).max(64),
+    })
+    .nullable()
+    .optional(),
+  sharedLink: z
+    .object({
+      url: z
+        .string()
+        .url()
+        .max(2048)
+        .refine((value) => {
+          try {
+            const url = new URL(value)
+            return (
+              ['http:', 'https:'].includes(url.protocol) &&
+              !url.username &&
+              !url.password
+            )
+          } catch {
+            return false
+          }
+        }),
+      title: z.string().trim().min(1).max(120),
+      description: z.string().trim().max(300).nullable().optional(),
+    })
+    .nullable()
+    .optional(),
 })
+const directUploadRefSchema = z.object({ url: z.string().url(), name: z.string().min(1).max(180) })
 
 const SEND_LIMIT = { limit: 20, windowSeconds: 60 }
 
@@ -38,6 +78,37 @@ export async function GET(request: NextRequest) {
     requestedConversationId,
   )
   if (!context) return NextResponse.json({ error: 'Conversation introuvable.' }, { status: 404 })
+
+  if (request.nextUrl.searchParams.get('attachments') === '1') {
+    const query = request.nextUrl.searchParams.get('q')?.trim().slice(0, 100) ?? ''
+    const attachments = await prisma.messageAttachment.findMany({
+      where: {
+        message: { conversationId: context.conversation.id },
+        ...(query ? { fileName: { contains: query, mode: 'insensitive' } } : {}),
+      },
+      select: {
+        id: true,
+        fileName: true,
+        mimeType: true,
+        fileSize: true,
+        createdAt: true,
+        message: {
+          select: {
+            id: true,
+            body: true,
+            createdAt: true,
+            author: { select: { firstName: true, lastName: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    })
+    return NextResponse.json(
+      { attachments },
+      { headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
 
   const messages = await prisma.message.findMany({
     where: { conversationId: context.conversation.id },
@@ -64,6 +135,22 @@ export async function GET(request: NextRequest) {
           author: { select: { firstName: true, lastName: true } },
         },
       },
+      attachments: {
+        select: { id: true, fileName: true, mimeType: true, fileSize: true },
+        orderBy: { createdAt: 'asc' },
+      },
+      linkPreview: { select: { url: true, title: true, description: true } },
+      sharedItem: {
+        select: {
+          shareType: true,
+          entityId: true,
+          title: true,
+          description: true,
+          url: true,
+        },
+      },
+      reactions: { select: { userId: true, emoji: true } },
+      pins: { select: { id: true, pinnedById: true } },
     },
   })
 
@@ -92,6 +179,22 @@ export async function GET(request: NextRequest) {
               author: { select: { firstName: true, lastName: true } },
             },
           },
+          attachments: {
+            select: { id: true, fileName: true, mimeType: true, fileSize: true },
+            orderBy: { createdAt: 'asc' },
+          },
+          linkPreview: { select: { url: true, title: true, description: true } },
+          sharedItem: {
+            select: {
+              shareType: true,
+              entityId: true,
+              title: true,
+              description: true,
+              url: true,
+            },
+          },
+          reactions: { select: { userId: true, emoji: true } },
+          pins: { select: { id: true, pinnedById: true } },
         },
       })
     : null
@@ -131,9 +234,26 @@ export async function GET(request: NextRequest) {
     select: {
       userId: true,
       role: true,
-      user: { select: { firstName: true, lastName: true } },
+      user: { select: { firstName: true, lastName: true, avatarUrl: true } },
     },
     orderBy: [{ role: 'asc' }, { user: { firstName: 'asc' } }],
+  })
+  const pinnedMessages = await prisma.messagePin.findMany({
+    where: { message: { conversationId: context.conversation.id } },
+    select: {
+      message: {
+        select: {
+          id: true,
+          body: true,
+          createdAt: true,
+          author: { select: { firstName: true, lastName: true } },
+          sharedItem: { select: { title: true } },
+          linkPreview: { select: { title: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
   })
 
   return NextResponse.json(
@@ -143,7 +263,14 @@ export async function GET(request: NextRequest) {
         ...message,
         mentionAll: /(?:^|\s)@tous(?:$|\s|[.,!?])/i.test(message.body),
       })),
-      members,
+      pinnedMessages: pinnedMessages.map(({ message }) => message),
+      members: members.map((member) => ({
+        ...member,
+        user: {
+          ...member.user,
+          avatarUrl: member.user.avatarUrl ? `/api/users/${member.userId}/avatar` : null,
+        },
+      })),
       unreadCount,
     },
     { headers: { 'Cache-Control': 'no-store' } },
@@ -155,15 +282,61 @@ export async function POST(request: NextRequest) {
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Authentification requise.' }, { status: 401 })
 
+  const isMultipart = request.headers.get('content-type')?.includes('multipart/form-data')
+  let formData: FormData | null = null
   let input: unknown
   try {
-    input = await request.json()
+    if (isMultipart) {
+      formData = await request.formData()
+      const readJsonField = (name: string): unknown => {
+        const value = formData?.get(name)
+        if (typeof value !== 'string' || value.length === 0) return undefined
+        return JSON.parse(value) as unknown
+      }
+      input = {
+        conversationId: formData.get('conversationId'),
+        body: formData.get('body'),
+        replyToId: formData.get('replyToId') || null,
+        mentionedUserIds: readJsonField('mentionedUserIds') ?? [],
+        sharedLink: readJsonField('sharedLink') ?? null,
+        sharedEntity: readJsonField('sharedEntity') ?? null,
+      }
+    } else {
+      input = await request.json()
+    }
   } catch {
-    return NextResponse.json({ error: 'Corps JSON invalide.' }, { status: 400 })
+    return NextResponse.json({ error: 'Corps de message invalide.' }, { status: 400 })
   }
   const parsed = sendMessageSchema.safeParse(input)
   if (!parsed.success) {
     return NextResponse.json({ error: 'Message invalide.' }, { status: 400 })
+  }
+  const attachmentFiles = formData?.getAll('attachments')
+    .filter((file): file is File => file instanceof File && file.size > 0) ?? []
+  const rawRefs = formData?.getAll(directUploadField('attachments')) ?? []
+  const refs = rawRefs.map((value) => {
+    if (typeof value !== 'string') return null
+    try {
+      return directUploadRefSchema.safeParse(JSON.parse(value))
+    } catch {
+      return null
+    }
+  })
+  if (
+    attachmentFiles.length + refs.length > UPLOAD_RULES.message.maxFiles ||
+    refs.some((ref) => !ref?.success)
+  ) {
+    return NextResponse.json(
+      { error: `Ajoute au maximum ${UPLOAD_RULES.message.maxFiles} fichiers valides.` },
+      { status: 400 },
+    )
+  }
+  const { conversationId, body, replyToId, sharedLink, sharedEntity } = parsed.data
+  if (sharedLink && sharedEntity) {
+    return NextResponse.json({ error: 'Choisis un seul type de contenu à partager.' }, { status: 400 })
+  }
+  if (!body && !sharedLink && !sharedEntity && attachmentFiles.length + refs.length === 0) {
+    return NextResponse.json({ error: 'Écris un message ou ajoute un contenu à partager.' }, { status: 400 })
   }
 
   const limit = await hitRateLimit(
@@ -177,7 +350,6 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { conversationId, body, replyToId } = parsed.data
   const context = await getClassConversation(user.id, user.classGroupId, conversationId)
   if (!context) return NextResponse.json({ error: 'Conversation introuvable.' }, { status: 404 })
 
@@ -218,6 +390,56 @@ export async function POST(request: NextRequest) {
     .filter((member) => member.userId !== user.id)
   const mentionTargetIds = mentionTargets.map((member) => member.userId)
 
+  let sharedEntitySnapshot: {
+    title: string
+    description: string | null
+    url: string
+  } | null = null
+  if (sharedEntity?.type === 'announcement') {
+    const now = new Date()
+    const announcement = await prisma.announcement.findFirst({
+      where: {
+        id: sharedEntity.id,
+        classGroupId: context.conversation.classGroupId,
+        deletedAt: null,
+        ...(context.role === 'ADMIN'
+          ? {}
+          : {
+              publishedAt: { lte: now },
+              OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
+            }),
+      },
+      select: { id: true, title: true, content: true },
+    })
+    if (!announcement) {
+      return NextResponse.json({ error: 'Annonce introuvable dans cette classe.' }, { status: 404 })
+    }
+    sharedEntitySnapshot = {
+      title: announcement.title,
+      description: announcement.content.slice(0, 300),
+      url: `/annonces?partage=${encodeURIComponent(announcement.id)}`,
+    }
+  } else if (sharedEntity?.type === 'deadline') {
+    const deadline = await prisma.deadline.findFirst({
+      where: {
+        id: sharedEntity.id,
+        classGroupId: context.conversation.classGroupId,
+        deletedAt: null,
+      },
+      select: { id: true, title: true, description: true, dueAt: true },
+    })
+    if (!deadline) {
+      return NextResponse.json({ error: 'Échéance introuvable dans cette classe.' }, { status: 404 })
+    }
+    sharedEntitySnapshot = {
+      title: deadline.title,
+      description: deadline.description
+        ? `${deadline.description.slice(0, 230)} · À rendre le ${deadline.dueAt.toLocaleDateString('fr-FR')}`
+        : `À rendre le ${deadline.dueAt.toLocaleDateString('fr-FR')}`,
+      url: `/echeances?partage=${encodeURIComponent(deadline.id)}`,
+    }
+  }
+
   if (replyToId) {
     const replyTarget = await prisma.message.findFirst({
       where: { id: replyToId, conversationId: context.conversation.id },
@@ -228,6 +450,28 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  let uploadedFiles: StoredFile[] = []
+  try {
+    if (formData) {
+      uploadedFiles = await receiveUploads(formData, {
+        field: 'attachments',
+        kind: 'message',
+        classGroupId: context.conversation.classGroupId,
+        userId: user.id,
+      })
+    }
+    const incomingBytes = uploadedFiles.reduce((sum, file) => sum + file.fileSize, 0)
+    if (incomingBytes > 0) {
+      await assertClassQuota(context.conversation.classGroupId, incomingBytes)
+    }
+  } catch (error) {
+    await discardStoredFiles(uploadedFiles)
+    if (error instanceof AppError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+    throw error
+  }
+
   const message = await prisma.$transaction(async (tx) => {
     const savedMessage = await tx.message.create({
       data: {
@@ -235,6 +479,39 @@ export async function POST(request: NextRequest) {
         authorId: user.id,
         body,
         replyToId: replyToId ?? null,
+        attachments: {
+          create: uploadedFiles.map((file) => ({
+            uploadedById: user.id,
+            storageKey: file.filePath,
+            fileName: file.fileName,
+            mimeType: file.mimeType,
+            fileSize: file.fileSize,
+          })),
+        },
+        ...(sharedLink
+          ? {
+              linkPreview: {
+                create: {
+                  url: sharedLink.url,
+                  title: sharedLink.title,
+                  description: sharedLink.description || null,
+                },
+              },
+            }
+          : {}),
+        ...(sharedEntity && sharedEntitySnapshot
+          ? {
+              sharedItem: {
+                create: {
+                  shareType: sharedEntity.type,
+                  entityId: sharedEntity.id,
+                  title: sharedEntitySnapshot.title,
+                  description: sharedEntitySnapshot.description,
+                  url: sharedEntitySnapshot.url,
+                },
+              },
+            }
+          : {}),
         mentions: {
           createMany: { data: mentionTargetIds.map((userId) => ({ userId })) },
         },
@@ -253,6 +530,22 @@ export async function POST(request: NextRequest) {
             user: { select: { firstName: true, lastName: true } },
           },
         },
+        attachments: {
+          select: { id: true, fileName: true, mimeType: true, fileSize: true },
+          orderBy: { createdAt: 'asc' },
+        },
+        linkPreview: { select: { url: true, title: true, description: true } },
+        sharedItem: {
+          select: {
+            shareType: true,
+            entityId: true,
+            title: true,
+            description: true,
+            url: true,
+          },
+        },
+        reactions: { select: { userId: true, emoji: true } },
+        pins: { select: { id: true, pinnedById: true } },
       },
     })
 
@@ -273,7 +566,16 @@ export async function POST(request: NextRequest) {
     }
 
     return savedMessage
+  }).catch(async (error: unknown) => {
+    await discardStoredFiles(uploadedFiles)
+    throw error
   })
+  if (uploadedFiles.length > 0) {
+    await trackClassStorage(
+      context.conversation.classGroupId,
+      uploadedFiles.reduce((sum, file) => sum + file.fileSize, 0),
+    )
+  }
   const event = { ...message, mentionAll }
 
   if (mentionTargetIds.length > 0) {

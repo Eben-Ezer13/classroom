@@ -10,6 +10,7 @@ type AppBadgeNavigator = Navigator & {
 }
 
 type PushState = 'loading' | 'unsupported' | 'off' | 'on' | 'denied'
+type MessageTone = 'success' | 'warning' | 'danger'
 
 function applicationServerKey(value: string): ArrayBuffer {
   const padding = '='.repeat((4 - (value.length % 4)) % 4)
@@ -21,6 +22,7 @@ function applicationServerKey(value: string): ArrayBuffer {
 export function PushNotificationsSettings() {
   const [state, setState] = useState<PushState>('loading')
   const [message, setMessage] = useState('')
+  const [messageTone, setMessageTone] = useState<MessageTone>('success')
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
@@ -53,6 +55,7 @@ export function PushNotificationsSettings() {
       const permission = await Notification.requestPermission()
       if (permission !== 'granted') {
         setState(permission === 'denied' ? 'denied' : 'off')
+        setMessageTone('warning')
         setMessage('Autorise les notifications Classroom dans les réglages du navigateur.')
         return
       }
@@ -74,8 +77,10 @@ export function PushNotificationsSettings() {
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Activation des notifications impossible.')
       setState('on')
+      setMessageTone('success')
       setMessage('Les notifications sur cet appareil sont activées.')
     } catch (error) {
+      setMessageTone('danger')
       setMessage(error instanceof Error ? error.message : 'Activation des notifications impossible.')
     } finally {
       setBusy(false)
@@ -98,8 +103,10 @@ export function PushNotificationsSettings() {
         await subscription.unsubscribe()
       }
       setState('off')
+      setMessageTone('success')
       setMessage('Les notifications sur cet appareil sont désactivées.')
     } catch (error) {
+      setMessageTone('danger')
       setMessage(error instanceof Error ? error.message : 'Désactivation impossible.')
     } finally {
       setBusy(false)
@@ -111,7 +118,7 @@ export function PushNotificationsSettings() {
 
   return (
     <div className="space-y-3">
-      {message ? <Alert tone={state === 'on' || state === 'off' ? 'success' : 'danger'}>{message}</Alert> : null}
+      {message ? <Alert tone={messageTone}>{message}</Alert> : null}
       <p className="text-[12.5px] text-[var(--text-3)]">
         Sur iPhone ou iPad, ajoute d’abord Classroom à l’écran d’accueil depuis Safari ; les notifications push y sont disponibles dans l’application installée.
       </p>

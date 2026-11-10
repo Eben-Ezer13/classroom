@@ -96,6 +96,13 @@ export const IconComplaint = (p: IconProps) => (
   </Svg>
 )
 
+export const IconMessages = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.8 8.8 0 0 1-4-.9L3 21l1.9-4.9a8.7 8.7 0 0 1-.9-4.1A8.5 8.5 0 1 1 21 11.5z" />
+    <path d="M8 11.5h.01M12.5 11.5h.01M17 11.5h.01" />
+  </Svg>
+)
+
 export const IconSearch = (p: IconProps) => (
   <Svg {...p}>
     <circle cx="11" cy="11" r="7" />
