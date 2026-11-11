@@ -161,6 +161,7 @@ export function MessagesChat({
     announcements: ShareOption[]
     deadlines: ShareOption[]
   }>({ announcements: [], deadlines: [] })
+  const [shareOptionsError, setShareOptionsError] = useState<string | null>(null)
   const [selectedShareEntity, setSelectedShareEntity] = useState<{
     type: 'announcement' | 'deadline'
     id: string
@@ -537,6 +538,7 @@ export function MessagesChat({
   async function loadShareOptions() {
     if (shareOptionsLoading) return
     setShareOptionsLoading(true)
+    setShareOptionsError(null)
     setError(null)
     try {
       const response = await fetch('/api/messages/share-options', { cache: 'no-store' })
@@ -544,7 +546,9 @@ export function MessagesChat({
       if (!response.ok) throw new Error(result.error ?? 'Impossible de charger les annonces et échéances.')
       setShareOptions(result)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Impossible de charger les contenus à partager.')
+      setShareOptionsError(
+        cause instanceof Error ? cause.message : 'Impossible de charger les contenus à partager.',
+      )
     } finally {
       setShareOptionsLoading(false)
     }
@@ -713,7 +717,12 @@ export function MessagesChat({
           description: shareDescription.trim(),
         }
       : null
-    if ((!text && selectedFiles.length === 0 && !linkPreview) || sending) return
+    if (
+      (!text && selectedFiles.length === 0 && !linkPreview && !selectedShareEntity) ||
+      sending
+    ) {
+      return
+    }
 
     setSending(true)
     setError(null)
@@ -1310,30 +1319,78 @@ export function MessagesChat({
           <div className="mb-2 space-y-2 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3">
             {shareOptionsLoading ? (
               <p className="text-xs text-[var(--text-3)]">Chargement des contenus…</p>
+            ) : shareOptionsError ? (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p role="alert" className="text-xs text-[var(--danger)]">
+                  {shareOptionsError}
+                </p>
+                <Button type="button" size="sm" variant="secondary" onClick={() => void loadShareOptions()}>
+                  Réessayer
+                </Button>
+              </div>
             ) : (
-              <select
-                value={selectedShareEntity ? `${selectedShareEntity.type}:${selectedShareEntity.id}` : ''}
-                onChange={(event) => {
-                  const [type, id] = event.target.value.split(':')
-                  setSelectedShareEntity(
-                    (type === 'announcement' || type === 'deadline') && id ? { type, id } : null,
-                  )
-                }}
-                aria-label="Choisir une annonce ou une échéance à partager"
-                className="h-10 w-full rounded-lg border border-[var(--border-strong)] bg-[var(--surface-1)] px-3 text-sm text-[var(--text-1)] focus:border-[var(--accent)] focus:outline-none"
-              >
-                <option value="">Choisir un contenu de la classe…</option>
-                <optgroup label="Annonces">
-                  {shareOptions.announcements.map((item) => (
-                    <option key={item.id} value={`announcement:${item.id}`}>{item.title}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Échéances à venir">
-                  {shareOptions.deadlines.map((item) => (
-                    <option key={item.id} value={`deadline:${item.id}`}>{item.title}</option>
-                  ))}
-                </optgroup>
-              </select>
+              <>
+                <label
+                  htmlFor="share-class-content"
+                  className="block text-xs font-medium text-[var(--text-2)]"
+                >
+                  Choisir un contenu de la classe à partager
+                </label>
+                <select
+                  id="share-class-content"
+                  value={
+                    selectedShareEntity
+                      ? `${selectedShareEntity.type}:${selectedShareEntity.id}`
+                      : ''
+                  }
+                  onChange={(event) => {
+                    const [type, id] = event.target.value.split(':')
+                    setSelectedShareEntity(
+                      (type === 'announcement' || type === 'deadline') && id
+                        ? { type, id }
+                        : null,
+                    )
+                  }}
+                  aria-label="Choisir une annonce ou une échéance à partager"
+                  className="h-10 w-full rounded-lg border border-[var(--border-strong)] bg-[var(--surface-1)] px-3 text-sm text-[var(--text-1)] focus:border-[var(--accent)] focus:outline-none"
+                >
+                  <option value="">Choisir un contenu de la classe…</option>
+                  <optgroup label="Annonces">
+                    {shareOptions.announcements.length > 0 ? (
+                      shareOptions.announcements.map((item) => (
+                        <option key={item.id} value={`announcement:${item.id}`}>
+                          {item.title}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>
+                        Aucune annonce disponible
+                      </option>
+                    )}
+                  </optgroup>
+                  <optgroup label="Échéances à venir">
+                    {shareOptions.deadlines.length > 0 ? (
+                      shareOptions.deadlines.map((item) => (
+                        <option key={item.id} value={`deadline:${item.id}`}>
+                          {item.title}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>
+                        Aucune échéance à venir
+                      </option>
+                    )}
+                  </optgroup>
+                </select>
+                {shareOptions.announcements.length === 0 &&
+                shareOptions.deadlines.length === 0 ? (
+                  <p role="status" className="text-xs text-[var(--text-2)]">
+                    Aucun contenu disponible à partager pour le moment. Les annonces programmées
+                    ne sont visibles ici que par le délégué, et seules les échéances à venir
+                    sont proposées.
+                  </p>
+                ) : null}
+              </>
             )}
             {selectedShareEntity ? (
               <p className="text-xs text-[var(--text-2)]">

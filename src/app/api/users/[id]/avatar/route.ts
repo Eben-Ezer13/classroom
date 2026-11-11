@@ -52,6 +52,6 @@ export async function GET(
 
   return streamStoredFile(
     { filePath: target.avatarUrl, fileName: 'avatar', mimeType },
-    { disposition: 'inline', cacheControl: 'private, max-age=300', logLabel: 'avatar' },
+    { disposition: 'inline', cacheControl: 'private, no-store', logLabel: 'avatar' },
   )
 }

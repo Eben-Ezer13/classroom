@@ -342,7 +342,7 @@ function SidebarContent({
             firstName={user.firstName}
             lastName={user.lastName}
             src={user.avatarUrl}
-            size="md"
+            size="lg"
           />
           <div className="min-w-0">
             <p className="text-[13px] font-medium text-[var(--text-1)] truncate">
@@ -392,7 +392,7 @@ function UserMenu({ user, logout }: { user: ShellUser; logout: () => Promise<voi
           firstName={user.firstName}
           lastName={user.lastName}
           src={user.avatarUrl}
-          size="sm"
+          size="md"
         />
       </button>
 

@@ -28,7 +28,7 @@ export function Avatar({
         src={src}
         alt={label}
         className={cn(
-          'shrink-0 rounded-full object-cover object-[center_25%] bg-[var(--surface-3)]',
+          'shrink-0 rounded-full object-cover object-[center_25%] bg-[var(--surface-3)] ring-1 ring-[var(--border)]',
           SIZES[size],
           className,
         )}
