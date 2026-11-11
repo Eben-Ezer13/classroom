@@ -9,7 +9,14 @@ type AppBadgeNavigator = Navigator & {
   clearAppBadge?: () => Promise<void>
 }
 
-type PushState = 'loading' | 'unsupported' | 'off' | 'on' | 'denied'
+type PushState =
+  | 'loading'
+  | 'unsupported'
+  | 'unavailable'
+  | 'unconfigured'
+  | 'off'
+  | 'on'
+  | 'denied'
 type MessageTone = 'success' | 'warning' | 'danger'
 
 function applicationServerKey(value: string): ArrayBuffer {
@@ -35,11 +42,28 @@ export function PushNotificationsSettings() {
       return
     }
 
-    navigator.serviceWorker
-      .register('/sw.js', { scope: '/' })
-      .then((registration) => registration.pushManager.getSubscription())
-      .then((subscription) => setState(subscription ? 'on' : 'off'))
-      .catch(() => setState('unsupported'))
+    let active = true
+    void (async () => {
+      try {
+        const keyResponse = await fetch('/api/push/key', { cache: 'no-store' })
+        if (keyResponse.status === 503) {
+          if (active) setState('unconfigured')
+          return
+        }
+        if (!keyResponse.ok) {
+          if (active) setState('unavailable')
+          return
+        }
+        const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        const subscription = await registration.pushManager.getSubscription()
+        if (active) setState(subscription ? 'on' : 'off')
+      } catch {
+        if (active) setState('unavailable')
+      }
+    })()
+    return () => {
+      active = false
+    }
   }, [])
 
   async function enable() {
@@ -49,6 +73,7 @@ export function PushNotificationsSettings() {
       const keyResponse = await fetch('/api/push/key', { cache: 'no-store' })
       const keyData = await keyResponse.json()
       if (!keyResponse.ok || typeof keyData.publicKey !== 'string') {
+        if (keyResponse.status === 503) setState('unconfigured')
         throw new Error(keyData.error || 'Le service de notifications n’est pas encore configuré.')
       }
 
@@ -122,11 +147,20 @@ export function PushNotificationsSettings() {
       <p className="text-[12.5px] text-[var(--text-3)]">
         Sur iPhone ou iPad, ajoute d’abord Classroom à l’écran d’accueil depuis Safari ; les notifications push y sont disponibles dans l’application installée.
       </p>
-      {state === 'unsupported' ? (
+      {state === 'unconfigured' ? (
+        <Alert tone="warning">
+          Les notifications push ne sont pas configurées sur le serveur. L’administrateur doit définir
+          VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY et VAPID_SUBJECT dans les variables Vercel, puis redéployer.
+        </Alert>
+      ) : state === 'unavailable' ? (
+        <Alert tone="warning">
+          Impossible de vérifier la configuration des notifications. Vérifie ta connexion puis recharge cette page.
+        </Alert>
+      ) : state === 'unsupported' ? (
         <Alert tone="warning">Les notifications push ne sont pas prises en charge par ce navigateur. Essaie Chrome, Edge ou Safari récent en HTTPS.</Alert>
       ) : state === 'denied' ? (
         <Alert tone="warning">Les notifications sont bloquées dans les réglages du navigateur. Autorise Classroom, puis recharge cette page.</Alert>
-      ) : (
+      ) : state !== 'loading' ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-[12.5px] text-[var(--text-3)]">
             {state === 'on'
@@ -136,13 +170,13 @@ export function PushNotificationsSettings() {
           <Button
             type="button"
             variant={state === 'on' ? 'secondary' : 'primary'}
-            disabled={busy || state === 'loading'}
+            disabled={busy}
             onClick={state === 'on' ? disable : enable}
           >
             {busy ? 'Un instant…' : buttonLabel}
           </Button>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

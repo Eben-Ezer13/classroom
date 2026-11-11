@@ -183,9 +183,10 @@ export function AvatarForm() {
       return
     }
     const formData = new FormData(event.currentTarget)
+    const sourceSize = previewSize / scale
 
     const canvas = document.createElement('canvas')
-    const outputSize = 768
+    const outputSize = Math.max(1, Math.min(2048, Math.floor(sourceSize)))
     canvas.width = outputSize
     canvas.height = outputSize
     const context = canvas.getContext('2d')
@@ -194,7 +195,6 @@ export function AvatarForm() {
       return
     }
 
-    const sourceSize = previewSize / scale
     const sourceX = selectedImage.naturalWidth / 2 - offset.x / scale - sourceSize / 2
     const sourceY = selectedImage.naturalHeight / 2 - offset.y / scale - sourceSize / 2
     context.imageSmoothingEnabled = true
@@ -212,7 +212,7 @@ export function AvatarForm() {
     )
 
     const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, 'image/jpeg', 0.96),
+      canvas.toBlob(resolve, 'image/jpeg', 0.98),
     )
     if (!blob) {
       setCropError('La photo n’a pas pu être préparée. Réessaie avec une autre image.')
