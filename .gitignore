@@ -12,3 +12,4 @@ yarn-error.log*
 next-env.d.ts
 *.tsbuildinfo
 /storage
+.env*

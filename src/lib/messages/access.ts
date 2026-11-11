@@ -1,5 +1,6 @@
 import 'server-only'
 import { prisma } from '@/lib/db'
+import { canAccessConversation } from './policy.mjs'
 
 export async function getClassConversation(
   userId: string,
@@ -16,7 +17,14 @@ export async function getClassConversation(
       user: { isActive: true, deletedAt: null },
       classGroup: { isActive: true, deletedAt: null },
     },
-    select: { role: true },
+    select: {
+      userId: true,
+      classGroupId: true,
+      role: true,
+      isActive: true,
+      user: { select: { isActive: true, deletedAt: true } },
+      classGroup: { select: { isActive: true, deletedAt: true } },
+    },
   })
   if (!membership) return null
 
@@ -26,7 +34,17 @@ export async function getClassConversation(
     update: {},
     select: { id: true, classGroupId: true },
   })
-  if (requestedConversationId && requestedConversationId !== conversation.id) return null
+  if (
+    !canAccessConversation(
+      membership,
+      userId,
+      classGroupId,
+      conversation,
+      requestedConversationId,
+    )
+  ) {
+    return null
+  }
 
   const members = await prisma.membership.findMany({
     where: {

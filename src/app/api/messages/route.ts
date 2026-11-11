@@ -1,4 +1,5 @@
 import { after, NextResponse, type NextRequest } from 'next/server'
+import type { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { getCurrentUser } from '@/lib/auth/session'
 import { prisma } from '@/lib/db'
@@ -6,6 +7,7 @@ import { AppError } from '@/lib/errors'
 import { hitRateLimit, rateLimitKey } from '@/lib/rate-limit'
 import { messagesEnabled } from '@/lib/messages/config'
 import { getClassConversation } from '@/lib/messages/access'
+import { canManageMessages } from '@/lib/messages/policy.mjs'
 import { publishMessage } from '@/lib/messages/realtime'
 import { sendPushToUsers } from '@/lib/push'
 import {
@@ -79,6 +81,12 @@ export async function GET(request: NextRequest) {
   )
   if (!context) return NextResponse.json({ error: 'Conversation introuvable.' }, { status: 404 })
 
+  const beforeMessageId = request.nextUrl.searchParams.get('beforeMessageId')
+  const afterMessageId = request.nextUrl.searchParams.get('afterMessageId')
+  if (beforeMessageId && afterMessageId) {
+    return NextResponse.json({ error: 'Un seul curseur de pagination est accepté.' }, { status: 400 })
+  }
+
   if (request.nextUrl.searchParams.get('attachments') === '1') {
     const query = request.nextUrl.searchParams.get('q')?.trim().slice(0, 100) ?? ''
     const attachments = await prisma.messageAttachment.findMany({
@@ -110,10 +118,44 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const messages = await prisma.message.findMany({
-    where: { conversationId: context.conversation.id },
-    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    take: 50,
+  const cursorId = beforeMessageId ?? afterMessageId
+  const cursorMessage = cursorId
+    ? await prisma.message.findFirst({
+        where: { id: cursorId, conversationId: context.conversation.id },
+        select: { id: true, createdAt: true },
+      })
+    : null
+  if (cursorId && !cursorMessage) {
+    return NextResponse.json({ error: 'Curseur de message introuvable.' }, { status: 404 })
+  }
+
+  let messageWhere: Prisma.MessageWhereInput = {
+    conversationId: context.conversation.id,
+  }
+  if (beforeMessageId && cursorMessage) {
+    messageWhere = {
+      ...messageWhere,
+      OR: [
+        { createdAt: { lt: cursorMessage.createdAt } },
+        { createdAt: cursorMessage.createdAt, id: { lt: cursorMessage.id } },
+      ],
+    }
+  } else if (afterMessageId && cursorMessage) {
+    messageWhere = {
+      ...messageWhere,
+      OR: [
+        { createdAt: { gt: cursorMessage.createdAt } },
+        { createdAt: cursorMessage.createdAt, id: { gt: cursorMessage.id } },
+      ],
+    }
+  }
+
+  const queriedMessages = await prisma.message.findMany({
+    where: messageWhere,
+    orderBy: beforeMessageId
+      ? [{ createdAt: 'desc' }, { id: 'desc' }]
+      : [{ createdAt: afterMessageId ? 'asc' : 'desc' }, { id: afterMessageId ? 'asc' : 'desc' }],
+    take: 51,
     select: {
       id: true,
       conversationId: true,
@@ -153,6 +195,9 @@ export async function GET(request: NextRequest) {
       pins: { select: { id: true, pinnedById: true } },
     },
   })
+  const hasMoreOlder = !afterMessageId && queriedMessages.length > 50
+  const hasMoreNewer = Boolean(afterMessageId && queriedMessages.length > 50)
+  const messages = queriedMessages.slice(0, 50)
 
   const targetMessageId = request.nextUrl.searchParams.get('messageId')
   const targetMessage = targetMessageId
@@ -209,7 +254,11 @@ export async function GET(request: NextRequest) {
         message,
       ]),
     ).values(),
-  ].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+  ].sort(
+    (a, b) =>
+      a.createdAt.getTime() - b.createdAt.getTime() ||
+      a.id.localeCompare(b.id),
+  )
 
   const unreadIds = sortedMessages
     .filter((message) => message.authorId !== user.id)
@@ -259,6 +308,8 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(
     {
       conversationId: context.conversation.id,
+      hasMoreOlder,
+      hasMoreNewer,
       messages: sortedMessages.map((message) => ({
         ...message,
         mentionAll: /(?:^|\s)@tous(?:$|\s|[.,!?])/i.test(message.body),
@@ -355,7 +406,7 @@ export async function POST(request: NextRequest) {
 
   const mentionedUserIds = [...new Set(parsed.data.mentionedUserIds)]
   const mentionAll = /(?:^|\s)@tous(?:$|\s|[.,!?])/i.test(body)
-  if (mentionAll && context.role !== 'ADMIN') {
+  if (mentionAll && !canManageMessages(context.role)) {
     return NextResponse.json(
       { error: 'Seul le délégué peut mentionner toute la classe.' },
       { status: 403 },

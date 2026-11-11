@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth/session'
 import { prisma } from '@/lib/db'
 import { messagesEnabled } from '@/lib/messages/config'
 import { getClassConversation } from '@/lib/messages/access'
+import { canManageMessages } from '@/lib/messages/policy.mjs'
 import { publishMessageUpdate } from '@/lib/messages/realtime'
 import { discardStoredFiles, trackClassStorage } from '@/lib/storage'
 
@@ -48,7 +49,7 @@ export async function PATCH(
   const { id } = await params
   const result = await loadAuthorizedMessage(id, user.id, user.classGroupId)
   if (!result) return NextResponse.json({ error: 'Message introuvable.' }, { status: 404 })
-  if (result.context.role !== 'ADMIN') {
+  if (!canManageMessages(result.context.role)) {
     return NextResponse.json({ error: 'Seul le délégué peut épingler un message.' }, { status: 403 })
   }
 

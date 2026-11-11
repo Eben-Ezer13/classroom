@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth/session'
 import { prisma } from '@/lib/db'
 import { messagesEnabled } from '@/lib/messages/config'
 import { getClassConversation } from '@/lib/messages/access'
+import { canManageMessages } from '@/lib/messages/policy.mjs'
 import { publishMessageUpdate } from '@/lib/messages/realtime'
 
 export async function GET() {
@@ -14,7 +15,7 @@ export async function GET() {
   }
   const context = await getClassConversation(user.id, user.classGroupId)
   if (!context) return NextResponse.json({ error: 'Conversation introuvable.' }, { status: 404 })
-  if (context.role !== 'ADMIN') {
+  if (!canManageMessages(context.role)) {
     return NextResponse.json({ error: 'Accès réservé au délégué.' }, { status: 403 })
   }
 
@@ -57,7 +58,7 @@ export async function PATCH(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: 'Signalement invalide.' }, { status: 400 })
   const context = await getClassConversation(user.id, user.classGroupId)
   if (!context) return NextResponse.json({ error: 'Conversation introuvable.' }, { status: 404 })
-  if (context.role !== 'ADMIN') {
+  if (!canManageMessages(context.role)) {
     return NextResponse.json({ error: 'Action réservée au délégué.' }, { status: 403 })
   }
   const updated = await prisma.messageReport.updateMany({

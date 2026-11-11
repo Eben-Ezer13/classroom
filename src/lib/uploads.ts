@@ -9,6 +9,7 @@ import {
   SCHEDULE_DOC_MIME_TYPES,
 } from '@/lib/constants'
 import { formatFileSize } from '@/lib/utils'
+import { checkUploadFile } from './upload-policy.mjs'
 
 /**
  * Regles de televersement, partagees par le navigateur (retour immediat) et
@@ -146,26 +147,7 @@ export type FileCheck = { ok: true; mimeType: string } | { ok: false; message: s
 
 /** Verifie taille et extension, et renvoie le type MIME a enregistrer. */
 export function checkFile(file: { name: string; size: number }, rule: UploadRule): FileCheck {
-  if (file.size <= 0) return { ok: false, message: 'Le fichier est vide.' }
-  if (file.size > rule.maxSize) {
-    return {
-      ok: false,
-      message:
-        `Fichier trop volumineux (${formatFileSize(file.size)}). ` +
-        `Maximum autorisé : ${formatFileSize(rule.maxSize)}.`,
-    }
-  }
-  const extension = fileExtension(file.name)
-  const mimeType = Object.keys(rule.mimeTypes).find((type) =>
-    rule.mimeTypes[type].includes(extension),
-  )
-  if (!mimeType) {
-    return {
-      ok: false,
-      message: `Format non autorisé (${extension || 'sans extension'}). Formats acceptés : ${rule.formats}.`,
-    }
-  }
-  return { ok: true, mimeType }
+  return checkUploadFile(file, rule, formatFileSize)
 }
 
 /**

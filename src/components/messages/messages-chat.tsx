@@ -117,6 +117,16 @@ type TypingEvent = {
 
 type ActiveTyping = TypingEvent & { expiresAt: number }
 
+function compareMessages(a: MessageView, b: MessageView) {
+  const dateDifference = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  return dateDifference || a.id.localeCompare(b.id)
+}
+
+function mergeMessages(current: MessageView[], incoming: MessageView[]) {
+  return [...new Map([...current, ...incoming].map((message) => [message.id, message])).values()]
+    .sort(compareMessages)
+}
+
 export function MessagesChat({
   conversationId,
   currentUserId,
@@ -165,12 +175,16 @@ export function MessagesChat({
   const [reportReason, setReportReason] = useState('')
   const [typingUsers, setTypingUsers] = useState<Record<string, ActiveTyping>>({})
   const [loading, setLoading] = useState(true)
+  const [hasMoreOlder, setHasMoreOlder] = useState(false)
+  const [loadingOlder, setLoadingOlder] = useState(false)
   const [sending, setSending] = useState(false)
   const [realtimeConnected, setRealtimeConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [realtimeWarning, setRealtimeWarning] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const messagesRef = useRef<MessageView[]>([])
+  const preserveScrollRef = useRef<{ height: number; top: number } | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const focusedMessageRef = useRef<string | null>(null)
@@ -179,18 +193,13 @@ export function MessagesChat({
   const typingActiveRef = useRef(false)
 
   const appendMessage = useCallback((message: MessageView) => {
-    setMessages((current) => {
-      if (current.some((item) => item.id === message.id)) return current
-      return [...current, message].sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-      )
-    })
+    setMessages((current) => mergeMessages(current, [message]))
   }, [])
 
   useEffect(() => {
     let active = true
 
-    const refreshThread = async () => {
+    const refreshThread = async (replace = false) => {
       try {
         const response = await fetch(
           `/api/messages?conversationId=${encodeURIComponent(conversationId)}${
@@ -201,7 +210,20 @@ export function MessagesChat({
         const result = await response.json()
         if (!response.ok) throw new Error(result.error ?? 'Impossible de charger les messages.')
         if (!active) return
-        setMessages(result.messages as MessageView[])
+        const latestMessages = result.messages as MessageView[]
+        setMessages((current) => {
+          if (replace || current.length === 0 || latestMessages.length === 0) {
+            return latestMessages
+          }
+          const oldestLatest = latestMessages.reduce((oldest, message) =>
+            compareMessages(message, oldest) < 0 ? message : oldest,
+          )
+          const olderMessages = current.filter(
+            (message) => compareMessages(message, oldestLatest) < 0,
+          )
+          return mergeMessages(olderMessages, latestMessages)
+        })
+        setHasMoreOlder(Boolean(result.hasMoreOlder))
         setPinnedMessages(result.pinnedMessages as PinnedMessageView[])
         setMembers(result.members as MemberOption[])
         setUnreadCount(result.unreadCount as number)
@@ -215,7 +237,7 @@ export function MessagesChat({
       }
     }
 
-    void refreshThread()
+    void refreshThread(true)
 
     const key = process.env.NEXT_PUBLIC_PUSHER_KEY
     const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER
@@ -261,8 +283,48 @@ export function MessagesChat({
       setRealtimeConnected(connected)
       if (connected) {
         setRealtimeWarning(null)
+        void (async () => {
+          try {
+            let cursorId = messagesRef.current[messagesRef.current.length - 1]?.id
+            if (!cursorId) {
+              await refreshThread(true)
+              return
+            }
+            let hasMoreNewer = true
+            while (active && hasMoreNewer) {
+              const response = await fetch(
+                `/api/messages?conversationId=${encodeURIComponent(conversationId)}&afterMessageId=${encodeURIComponent(cursorId)}`,
+                { cache: 'no-store' },
+              )
+              if (response.status === 404) {
+                await refreshThread()
+                return
+              }
+              const result = await response.json()
+              if (!response.ok) throw new Error(result.error ?? 'Impossible de synchroniser les messages.')
+              if (!active) return
+              const newerMessages = result.messages as MessageView[]
+              if (newerMessages.length > 0) {
+                cursorId = newerMessages[newerMessages.length - 1].id
+                setMessages((current) => mergeMessages(current, newerMessages))
+              }
+              hasMoreNewer = Boolean(result.hasMoreNewer)
+            }
+            await refreshThread()
+          } catch (cause) {
+            if (active) {
+              setRealtimeWarning(
+                cause instanceof Error
+                  ? `Synchronisation différée : ${cause.message}`
+                  : 'Synchronisation des messages différée.',
+              )
+            }
+          }
+        })()
       } else if (state.current === 'failed' || state.current === 'unavailable') {
-        setRealtimeWarning('Connexion temps réel interrompue. Actualise la page pour réessayer.')
+        setRealtimeWarning(
+          'Connexion temps réel interrompue. Le fil sera synchronisé dès le rétablissement.',
+        )
       }
     }
     channel.bind('message', onMessage)
@@ -283,9 +345,44 @@ export function MessagesChat({
   }, [appendMessage, conversationId, currentUserId, focusMessageId, router])
 
   useEffect(() => {
-    const list = listRef.current
-    if (list) list.scrollTop = list.scrollHeight
+    messagesRef.current = messages
   }, [messages])
+
+  useEffect(() => {
+    const list = listRef.current
+    if (!list) return
+    const previousPosition = preserveScrollRef.current
+    if (previousPosition) {
+      list.scrollTop = previousPosition.top + list.scrollHeight - previousPosition.height
+      preserveScrollRef.current = null
+      return
+    }
+    list.scrollTop = list.scrollHeight
+  }, [messages])
+
+  async function loadOlderMessages() {
+    const oldestMessage = messages[0]
+    const list = listRef.current
+    if (!oldestMessage || !list || !hasMoreOlder || loadingOlder) return
+    setLoadingOlder(true)
+    setError(null)
+    preserveScrollRef.current = { height: list.scrollHeight, top: list.scrollTop }
+    try {
+      const response = await fetch(
+        `/api/messages?conversationId=${encodeURIComponent(conversationId)}&beforeMessageId=${encodeURIComponent(oldestMessage.id)}`,
+        { cache: 'no-store' },
+      )
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Impossible de charger les anciens messages.')
+      setMessages((current) => mergeMessages(current, result.messages as MessageView[]))
+      setHasMoreOlder(Boolean(result.hasMoreOlder))
+    } catch (cause) {
+      preserveScrollRef.current = null
+      setError(cause instanceof Error ? cause.message : 'Impossible de charger les anciens messages.')
+    } finally {
+      setLoadingOlder(false)
+    }
+  }
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -841,6 +938,16 @@ export function MessagesChat({
         aria-live="polite"
         aria-label="Messages de la classe"
       >
+        {hasMoreOlder ? (
+          <button
+            type="button"
+            onClick={() => void loadOlderMessages()}
+            disabled={loadingOlder}
+            className="mx-auto block rounded-full border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-2)] hover:bg-[var(--surface-3)] disabled:opacity-50"
+          >
+            {loadingOlder ? 'Chargement…' : 'Charger les anciens messages'}
+          </button>
+        ) : null}
         {loading ? (
           <p className="py-8 text-center text-sm text-[var(--text-3)]">Chargement des messages…</p>
         ) : messages.length === 0 ? (
