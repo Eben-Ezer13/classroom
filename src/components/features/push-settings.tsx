@@ -124,6 +124,7 @@ export function PushNotificationsSettings() {
       setState('on')
       setMessageTone('success')
       setMessage('Les notifications sur cet appareil sont activées.')
+      await sendTest()
     } catch (error) {
       setMessageTone('danger')
       setMessage(error instanceof Error ? error.message : 'Activation des notifications impossible.')
@@ -206,17 +207,25 @@ export function PushNotificationsSettings() {
             <Alert tone="success">Merci, la notification de test a bien été reçue.</Alert>
           ) : testState === 'missing' ? (
             <Alert tone="warning">Merci pour ton retour. Vérifie les autorisations de notification et réessaie.</Alert>
-          ) : testState === 'sent' ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="w-full text-[12.5px] text-[var(--text-3)]">As-tu reçu la notification ?</p>
-              <Button type="button" onClick={() => setTestState('received')}>Oui, reçue</Button>
-              <Button type="button" variant="secondary" onClick={() => setTestState('missing')}>Non, pas reçue</Button>
-            </div>
           ) : (
             <Button type="button" variant="secondary" disabled={testState === 'sending'} onClick={sendTest}>
               {testState === 'sending' ? 'Envoi…' : 'Envoyer une notification de test'}
             </Button>
           )}
+        </div>
+      ) : null}
+      {testState === 'sent' ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="push-test-title">
+          <div className="w-full max-w-sm space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-lg)]">
+            <div>
+              <h2 id="push-test-title" className="text-base font-semibold">As-tu reçu la notification ?</h2>
+              <p className="mt-1 text-sm text-[var(--text-3)]">Classroom vient d’envoyer une notification de test sur cet appareil.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" onClick={() => setTestState('received')}>Oui, reçue</Button>
+              <Button type="button" variant="secondary" onClick={() => setTestState('missing')}>Non, pas reçue</Button>
+            </div>
+          </div>
         </div>
       ) : null}
     </div>
