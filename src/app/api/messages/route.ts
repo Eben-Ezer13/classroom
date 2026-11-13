@@ -628,6 +628,48 @@ export async function POST(request: NextRequest) {
     )
   }
   const event = { ...message, mentionAll }
+  const messageAuthor = `${user.firstName} ${user.lastName}`
+  const pushMessageBody =
+    message.body.trim().slice(0, 160) ||
+    (message.sharedItem
+      ? `Contenu partagé : ${message.sharedItem.title}`
+      : message.linkPreview
+        ? `Lien partagé : ${message.linkPreview.title}`
+        : message.attachments.length > 0
+          ? `Pièce jointe : ${message.attachments[0].fileName}`
+          : 'Nouveau message dans le chat de classe.')
+  const otherMemberIds = activeMembers
+    .map((member) => member.userId)
+    .filter((userId) => userId !== user.id && !mentionTargetIds.includes(userId))
+
+  if (otherMemberIds.length > 0) {
+    after(async () => {
+      try {
+        const unread = await prisma.notification.groupBy({
+          by: ['userId'],
+          where: {
+            userId: { in: otherMemberIds },
+            classGroupId: context.conversation.classGroupId,
+            readAt: null,
+          },
+          _count: { _all: true },
+        })
+        const unreadCounts = Object.fromEntries(unread.map((row) => [row.userId, row._count._all]))
+        await sendPushToUsers(
+          otherMemberIds,
+          {
+            title: `Nouveau message de ${messageAuthor}`,
+            body: pushMessageBody,
+            url: `/messages?messageId=${encodeURIComponent(message.id)}`,
+            tag: `message-${message.id}`,
+          },
+          unreadCounts,
+        )
+      } catch (error) {
+        console.error('[messages] notification push de message impossible', error)
+      }
+    })
+  }
 
   if (mentionTargetIds.length > 0) {
     after(async () => {
@@ -648,7 +690,7 @@ export async function POST(request: NextRequest) {
           mentionTargetIds,
           {
             title: `${user.firstName} ${user.lastName} vous a mentionné`,
-            body: 'Ouvre Classroom pour consulter le message.',
+            body: pushMessageBody,
             url: `/messages?messageId=${encodeURIComponent(message.id)}`,
             tag: `message-mention-${message.id}`,
           },

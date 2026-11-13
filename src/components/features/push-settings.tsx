@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { Alert } from '@/components/ui/feedback'
 import { Button } from '@/components/ui/button'
-import { sendPushTestAction } from '@/app/actions/notifications'
 
 type AppBadgeNavigator = Navigator & {
   setAppBadge?: (count?: number) => Promise<void>
@@ -32,25 +31,6 @@ export function PushNotificationsSettings() {
   const [message, setMessage] = useState('')
   const [messageTone, setMessageTone] = useState<MessageTone>('success')
   const [busy, setBusy] = useState(false)
-  const [testState, setTestState] = useState<'idle' | 'sending' | 'sent' | 'received' | 'missing'>('idle')
-  const [testMessage, setTestMessage] = useState('')
-
-  async function sendTest() {
-    setTestState('sending')
-    setTestMessage('')
-    try {
-      const result = await sendPushTestAction()
-      if (!result.ok) {
-        setTestState('idle')
-        setTestMessage(result.error || 'Impossible d’envoyer la notification de test.')
-        return
-      }
-      setTestState('sent')
-    } catch (error) {
-      setTestState('idle')
-      setTestMessage(error instanceof Error ? error.message : 'Impossible d’envoyer la notification de test.')
-    }
-  }
 
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
@@ -124,7 +104,6 @@ export function PushNotificationsSettings() {
       setState('on')
       setMessageTone('success')
       setMessage('Les notifications sur cet appareil sont activées.')
-      await sendTest()
     } catch (error) {
       setMessageTone('danger')
       setMessage(error instanceof Error ? error.message : 'Activation des notifications impossible.')
@@ -196,36 +175,6 @@ export function PushNotificationsSettings() {
           >
             {busy ? 'Un instant…' : buttonLabel}
           </Button>
-        </div>
-      ) : null}
-      {state === 'on' ? (
-        <div className="space-y-2 rounded-xl border border-[var(--border)] p-3">
-          <p className="text-[13px] font-medium">Vérifier les notifications sur cet appareil</p>
-          <p className="text-[12.5px] text-[var(--text-3)]">Envoie une notification de test, puis indique si tu l’as reçue.</p>
-          {testMessage ? <Alert tone="warning">{testMessage}</Alert> : null}
-          {testState === 'received' ? (
-            <Alert tone="success">Merci, la notification de test a bien été reçue.</Alert>
-          ) : testState === 'missing' ? (
-            <Alert tone="warning">Merci pour ton retour. Vérifie les autorisations de notification et réessaie.</Alert>
-          ) : (
-            <Button type="button" variant="secondary" disabled={testState === 'sending'} onClick={sendTest}>
-              {testState === 'sending' ? 'Envoi…' : 'Envoyer une notification de test'}
-            </Button>
-          )}
-        </div>
-      ) : null}
-      {testState === 'sent' ? (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="push-test-title">
-          <div className="w-full max-w-sm space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-lg)]">
-            <div>
-              <h2 id="push-test-title" className="text-base font-semibold">As-tu reçu la notification ?</h2>
-              <p className="mt-1 text-sm text-[var(--text-3)]">Classroom vient d’envoyer une notification de test sur cet appareil.</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" onClick={() => setTestState('received')}>Oui, reçue</Button>
-              <Button type="button" variant="secondary" onClick={() => setTestState('missing')}>Non, pas reçue</Button>
-            </div>
-          </div>
         </div>
       ) : null}
     </div>

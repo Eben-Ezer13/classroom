@@ -118,6 +118,14 @@ async function sendPushAlerts(
   payload: NotifyPayload,
 ): Promise<void> {
   try {
+    const pushTitle =
+      payload.type === 'ANNONCE'
+        ? `Nouvelle annonce : ${payload.title}`
+        : payload.type === 'SONDAGE'
+          ? `Nouveau sondage : ${payload.body?.split(' — ')[0] || 'à consulter'}`
+          : payload.type === 'RESSOURCE'
+            ? 'Nouvelle ressource déposée'
+            : payload.title
     const ids = [...new Set(userIds)]
     const unread = await prisma.notification.groupBy({
       by: ['userId'],
@@ -133,10 +141,10 @@ async function sendPushAlerts(
     await sendPushToUsers(
       ids,
       {
-        title: payload.title,
-        // Les détails peuvent être privés (ex. réclamation) et apparaître
-        // sur un écran verrouillé ; le contenu complet reste dans l'app.
-        body: 'Une nouvelle information est disponible. Ouvre Classroom pour la consulter.',
+        title: pushTitle,
+        // Reprend le détail concret de l’événement (annonce, sondage,
+        // ressource, échéance…) au lieu d’un texte générique.
+        body: payload.body ?? payload.title,
         url: payload.url ?? '/notifications',
         tag: payload.entityId ? `${payload.type}-${payload.entityId}` : undefined,
       },
