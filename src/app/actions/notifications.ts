@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db'
 import { requireUser } from '@/lib/auth/guards'
 import { notificationScope } from '@/lib/notifications'
+import { sendPushToUsers } from '@/lib/push'
 
 /**
  * Les notifications appartiennent a un utilisateur : chaque requete filtre
@@ -41,4 +42,21 @@ export async function deleteNotificationAction(formData: FormData): Promise<void
     where: { id: notificationId, userId: user.id },
   })
 
+}
+
+/** Envoie une notification de vérification à l'utilisateur connecté. */
+export async function sendPushTestAction(): Promise<{ ok: boolean; error?: string }> {
+  const user = await requireUser()
+  const subscriptionCount = await prisma.pushSubscription.count({ where: { userId: user.id } })
+  if (subscriptionCount === 0) {
+    return { ok: false, error: 'Aucun appareil n’est activé pour les notifications. Active-les d’abord sur cet appareil.' }
+  }
+
+  await sendPushToUsers([user.id], {
+    title: 'Test de notification Classroom',
+    body: 'Si tu vois ce message, les notifications push fonctionnent sur cet appareil.',
+    url: '/profil',
+    tag: `classroom-push-test-${user.id}`,
+  })
+  return { ok: true }
 }

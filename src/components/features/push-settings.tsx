@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Alert } from '@/components/ui/feedback'
 import { Button } from '@/components/ui/button'
+import { sendPushTestAction } from '@/app/actions/notifications'
 
 type AppBadgeNavigator = Navigator & {
   setAppBadge?: (count?: number) => Promise<void>
@@ -31,6 +32,25 @@ export function PushNotificationsSettings() {
   const [message, setMessage] = useState('')
   const [messageTone, setMessageTone] = useState<MessageTone>('success')
   const [busy, setBusy] = useState(false)
+  const [testState, setTestState] = useState<'idle' | 'sending' | 'sent' | 'received' | 'missing'>('idle')
+  const [testMessage, setTestMessage] = useState('')
+
+  async function sendTest() {
+    setTestState('sending')
+    setTestMessage('')
+    try {
+      const result = await sendPushTestAction()
+      if (!result.ok) {
+        setTestState('idle')
+        setTestMessage(result.error || 'Impossible d’envoyer la notification de test.')
+        return
+      }
+      setTestState('sent')
+    } catch (error) {
+      setTestState('idle')
+      setTestMessage(error instanceof Error ? error.message : 'Impossible d’envoyer la notification de test.')
+    }
+  }
 
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
@@ -175,6 +195,28 @@ export function PushNotificationsSettings() {
           >
             {busy ? 'Un instant…' : buttonLabel}
           </Button>
+        </div>
+      ) : null}
+      {state === 'on' ? (
+        <div className="space-y-2 rounded-xl border border-[var(--border)] p-3">
+          <p className="text-[13px] font-medium">Vérifier les notifications sur cet appareil</p>
+          <p className="text-[12.5px] text-[var(--text-3)]">Envoie une notification de test, puis indique si tu l’as reçue.</p>
+          {testMessage ? <Alert tone="warning">{testMessage}</Alert> : null}
+          {testState === 'received' ? (
+            <Alert tone="success">Merci, la notification de test a bien été reçue.</Alert>
+          ) : testState === 'missing' ? (
+            <Alert tone="warning">Merci pour ton retour. Vérifie les autorisations de notification et réessaie.</Alert>
+          ) : testState === 'sent' ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="w-full text-[12.5px] text-[var(--text-3)]">As-tu reçu la notification ?</p>
+              <Button type="button" onClick={() => setTestState('received')}>Oui, reçue</Button>
+              <Button type="button" variant="secondary" onClick={() => setTestState('missing')}>Non, pas reçue</Button>
+            </div>
+          ) : (
+            <Button type="button" variant="secondary" disabled={testState === 'sending'} onClick={sendTest}>
+              {testState === 'sending' ? 'Envoi…' : 'Envoyer une notification de test'}
+            </Button>
+          )}
         </div>
       ) : null}
     </div>
