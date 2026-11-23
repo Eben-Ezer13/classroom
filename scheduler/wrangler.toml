@@ -1,0 +1,10 @@
+name = "classroom-reminder-cron"
+main = "./worker.ts"
+compatibility_date = "2026-11-20"
+
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+# Remplacer par l'URL de production, par exemple https://classroom.example.com/api/cron/reminders
+APP_CRON_URL = "https://classroom-one-mu.vercel.app/api/cron/reminders"

@@ -58,6 +58,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/projets', label: 'Projets', icon: IconProject, roles: ALL },
       { href: '/echeances', label: 'Échéances', icon: IconClock, roles: ALL },
+      { href: '/examens', label: 'Examens', icon: IconCalendar, roles: ALL },
       { href: '/annonces', label: 'Annonces', icon: IconMegaphone, roles: ALL },
       { href: '/sondages', label: 'Sondages', icon: IconPoll, roles: ALL },
     ],

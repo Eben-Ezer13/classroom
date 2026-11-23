@@ -6,12 +6,12 @@ import { IconMoon, IconSun } from '@/components/ui/icons'
 const STORAGE_KEY = 'cp-theme'
 
 /**
- * Applique le theme AVANT le premier rendu pour eviter le flash blanc.
- * Le script est volontairement inline et synchrone : c'est le seul moyen
- * fiable de peindre la bonne couleur des la premiere frame.
+ * Applique le theme avant le premier rendu. La page ne depend pas de ce
+ * script pour etre visible : certains navigateurs installes peuvent bloquer
+ * les scripts inline au demarrage.
  */
 export function ThemeScript() {
-  const code = `(function(){try{var t=localStorage.getItem('${STORAGE_KEY}');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark');}catch(e){}finally{document.documentElement.classList.remove('theme-pending');}})();`
+  const code = `(function(){try{var t=localStorage.getItem('${STORAGE_KEY}');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark');}catch(e){}})();`
   return <script dangerouslySetInnerHTML={{ __html: code }} />
 }
 

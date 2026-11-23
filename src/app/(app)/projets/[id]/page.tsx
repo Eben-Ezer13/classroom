@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { requirePageUser } from '@/lib/auth/guards'
 import { getCurrentUser } from '@/lib/auth/session'
 import { prisma } from '@/lib/db'
-import { canManageClass, canViewClass } from '@/lib/permissions'
+import { canManageArea, canViewClass } from '@/lib/permissions'
 import { getClassModules, getClassSemesters } from '@/lib/services/class-context'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
@@ -73,7 +73,7 @@ export default async function ProjectDetailPage({ params }: Props) {
   if (!project || !canViewClass(user, project.classGroupId)) notFound()
 
   // Seul un delegue de la classe DU PROJET peut en gerer le contenu.
-  const canManage = canManageClass(user, project.classGroupId)
+  const canManage = canManageArea(user, project.classGroupId, 'PROJETS')
   const remaining = project.dueAt.getTime() - Date.now()
   const overdue = remaining <= 0
   const urgent = remaining > 0 && remaining < 3 * 86_400_000

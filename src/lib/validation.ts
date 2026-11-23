@@ -415,6 +415,12 @@ export const deadlineSchema = z
     path: ['reminderAt'],
   })
 
+export const examSchema = z.object({
+  title: trimmed(2, 120, 'Le nom de l’examen'),
+  moduleId: optionalId,
+  startsAt: dateField('La date de l’examen'),
+})
+
 // ---------------------------------------------------------------------------
 // Sondages
 // ---------------------------------------------------------------------------

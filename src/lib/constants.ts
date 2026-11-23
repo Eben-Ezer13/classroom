@@ -138,6 +138,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
   RECLAMATION: 'Réclamation',
   MENTION: 'Mention',
   MEMBRE: 'Membre',
+  AUTORISATION: 'Autorisation',
   SYSTEME: 'Système',
 }
 

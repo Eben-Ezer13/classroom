@@ -38,6 +38,21 @@ export function canManageClass(user: SessionUser, classGroupId: string): boolean
   return membershipOf(user, classGroupId)?.role === 'ADMIN'
 }
 
+/** Un adjoint ne peut agir que dans une rubrique explicitement autorisee. */
+export function canManageArea(user: SessionUser, classGroupId: string, area: string): boolean {
+  const membership = membershipOf(user, classGroupId)
+  return membership?.role === 'ADMIN' || Boolean(
+    membership?.isDeputy && membership.delegatedPermissions.includes(area),
+  )
+}
+
+export function assertCanManageArea(user: SessionUser, classGroupId: string, area: string): void {
+  if (!canViewClass(user, classGroupId)) throw new NotFoundError()
+  if (!canManageArea(user, classGroupId, area)) {
+    throw new ForbiddenError('Cette tâche nécessite une autorisation du délégué principal.')
+  }
+}
+
 /** 404 plutot que 403 : on ne revele pas l'existence du contenu d'autrui. */
 export function assertCanViewClass(user: SessionUser, classGroupId: string): void {
   if (!canViewClass(user, classGroupId)) throw new NotFoundError()

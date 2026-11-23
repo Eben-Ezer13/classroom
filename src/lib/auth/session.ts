@@ -41,6 +41,8 @@ export type MembershipSummary = {
   levelName: string | null
   role: ClassRole
   memberCount: number
+  isDeputy: boolean
+  delegatedPermissions: string[]
 }
 
 export type SessionUser = {
@@ -160,6 +162,8 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
             select: {
               classGroupId: true,
               role: true,
+              isDeputy: true,
+              delegatedPermissions: true,
               studentId: true,
               classGroup: {
                 select: {
@@ -202,6 +206,8 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     levelName: m.classGroup.levelName,
     role: m.role,
     memberCount: m.classGroup._count.memberships,
+    isDeputy: m.isDeputy,
+    delegatedPermissions: m.delegatedPermissions,
   }))
 
   // La classe active doit correspondre a une appartenance REELLE. Si la

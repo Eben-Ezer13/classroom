@@ -124,7 +124,14 @@ enum NotificationType {
   SONDAGE
   RECLAMATION
   MEMBRE
+  AUTORISATION
   SYSTEME
+}
+
+enum PermissionRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 // =====================================================================
@@ -174,6 +181,9 @@ model ClassGroup {
   announcements     Announcement[]
   projects          Project[]
   deadlines         Deadline[]
+  exams             Exam[]
+  permissionRequests PermissionRequest[]
+  reminderDeliveries ReminderDelivery[]
   polls             Poll[]
   complaints        Complaint[]
   notifications     Notification[]
@@ -195,6 +205,10 @@ model Membership {
   userId       String
   classGroupId String
   role         ClassRole @default(MEMBER)
+  /// Etudiant de confiance choisi comme delegue adjoint.
+  isDeputy     Boolean   @default(false)
+  /// Autorisations metier accordees par le delegue principal.
+  delegatedPermissions String[] @default([])
   /// Numero etudiant, propre a la classe.
   studentId    String?
   isActive     Boolean   @default(true)
@@ -376,6 +390,7 @@ model Module {
   announcements Announcement[]
   projects      Project[]
   deadlines     Deadline[]
+  exams         Exam[]
 
   @@unique([classGroupId, semesterId, code])
   @@index([classGroupId])
@@ -428,6 +443,7 @@ model User {
   accounts            Account[]
   passwordResetTokens PasswordResetToken[]
   notifications       Notification[]
+  permissionRequests  PermissionRequest[]
   pushSubscriptions   PushSubscription[]
   conversationMemberships ConversationMember[]
   authoredMessages    Message[]                 @relation("MessageAuthor")
@@ -1034,6 +1050,58 @@ model Deadline {
   @@index([classGroupId, dueAt])
   @@index([moduleId])
   @@map("deadlines")
+}
+
+/// Dates d'examens affichees avec un compte a rebours permanent.
+model Exam {
+  id           String    @id @default(cuid())
+  classGroupId String
+  title        String
+  moduleId     String?
+  startsAt     DateTime
+  createdById  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  classGroup ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  module     Module?    @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+
+  @@index([classGroupId, startsAt])
+  @@map("exams")
+}
+
+/// Demande d'autorisation faite par le delegue adjoint.
+model PermissionRequest {
+  id           String                  @id @default(cuid())
+  classGroupId String
+  userId       String
+  permission   String
+  message      String?
+  status       PermissionRequestStatus @default(PENDING)
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime                @default(now())
+
+  classGroup ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([classGroupId, status, createdAt])
+  @@index([userId, status])
+  @@map("permission_requests")
+}
+
+/// Cle idempotente d'un rappel deja envoye par le cron.
+model ReminderDelivery {
+  id           String   @id @default(cuid())
+  classGroupId String
+  reminderKey  String   @unique
+  sentAt       DateTime @default(now())
+
+  classGroup ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+
+  @@index([classGroupId, sentAt])
+  @@map("reminder_deliveries")
 }
 
 // =====================================================================

@@ -4,9 +4,8 @@ import { prisma } from '@/lib/db'
 import { requireClassAdmin } from '@/lib/auth/guards'
 import {
   assertModuleInClass,
-  assertCanManageClass,
+  assertCanManageArea,
   assertSemesterInClass,
-  requireManagedClassId,
 } from '@/lib/permissions'
 import { recordAudit } from '@/lib/audit'
 import { notifyClass } from '@/lib/notifications'
@@ -25,13 +24,15 @@ export async function createProjectAction(
   formData: FormData,
 ): Promise<ActionState> {
   return runAction(async () => {
-    const { user } = await requireClassAdmin()
+    const { user } = await requireClassAdmin('PROJETS')
     const parsed = parseForm(projectSchema, formData)
     if (!parsed.success) {
       return { ok: false, message: parsed.message, fieldErrors: parsed.fieldErrors }
     }
     const data = parsed.data
-    const classGroupId = requireManagedClassId(user, data.classGroupId)
+    const classGroupId = data.classGroupId ?? user.classGroupId
+    if (!classGroupId) throw new NotFoundError('Classe introuvable.')
+    assertCanManageArea(user, classGroupId, 'PROJETS')
 
     await assertSemesterInClass(data.semesterId, classGroupId)
     await assertModuleInClass(data.moduleId, classGroupId)
@@ -97,7 +98,7 @@ export async function updateProjectAction(
   formData: FormData,
 ): Promise<ActionState> {
   return runAction(async () => {
-    const { user } = await requireClassAdmin()
+    const { user } = await requireClassAdmin('PROJETS')
     const projectId = String(formData.get('projectId') ?? '')
     const parsed = parseForm(projectSchema, formData)
     if (!parsed.success) {
@@ -110,7 +111,7 @@ export async function updateProjectAction(
       select: { id: true, classGroupId: true, dueAt: true },
     })
     if (!existing) throw new NotFoundError('Projet introuvable.')
-    assertCanManageClass(user, existing.classGroupId)
+    assertCanManageArea(user, existing.classGroupId, 'PROJETS')
 
     await assertSemesterInClass(data.semesterId, existing.classGroupId)
     await assertModuleInClass(data.moduleId, existing.classGroupId)
@@ -178,7 +179,7 @@ export async function updateProjectAction(
 
 export async function deleteProjectAction(formData: FormData): Promise<ActionState> {
   return runAction(async () => {
-    const { user } = await requireClassAdmin()
+    const { user } = await requireClassAdmin('PROJETS')
     const projectId = String(formData.get('projectId') ?? '')
 
     const existing = await prisma.project.findFirst({
@@ -186,7 +187,7 @@ export async function deleteProjectAction(formData: FormData): Promise<ActionSta
       select: { id: true, classGroupId: true, title: true },
     })
     if (!existing) throw new NotFoundError('Projet introuvable.')
-    assertCanManageClass(user, existing.classGroupId)
+    assertCanManageArea(user, existing.classGroupId, 'PROJETS')
 
     await prisma.$transaction([
       prisma.project.update({ where: { id: projectId }, data: { deletedAt: new Date() } }),
@@ -215,7 +216,7 @@ export async function addProjectLinkAction(
   formData: FormData,
 ): Promise<ActionState> {
   return runAction(async () => {
-    const { user } = await requireClassAdmin()
+    const { user } = await requireClassAdmin('PROJETS')
     const parsed = parseForm(projectLinkSchema, formData)
     if (!parsed.success) {
       return { ok: false, message: parsed.message, fieldErrors: parsed.fieldErrors }
@@ -226,7 +227,7 @@ export async function addProjectLinkAction(
       select: { id: true, classGroupId: true },
     })
     if (!project) throw new NotFoundError('Projet introuvable.')
-    assertCanManageClass(user, project.classGroupId)
+    assertCanManageArea(user, project.classGroupId, 'PROJETS')
 
     await prisma.projectLink.create({
       data: {
@@ -242,7 +243,7 @@ export async function addProjectLinkAction(
 
 export async function deleteProjectLinkAction(formData: FormData): Promise<ActionState> {
   return runAction(async () => {
-    const { user } = await requireClassAdmin()
+    const { user } = await requireClassAdmin('PROJETS')
     const linkId = String(formData.get('linkId') ?? '')
 
     const link = await prisma.projectLink.findUnique({
@@ -250,7 +251,7 @@ export async function deleteProjectLinkAction(formData: FormData): Promise<Actio
       select: { id: true, projectId: true, project: { select: { classGroupId: true } } },
     })
     if (!link) throw new NotFoundError('Lien introuvable.')
-    assertCanManageClass(user, link.project.classGroupId)
+    assertCanManageArea(user, link.project.classGroupId, 'PROJETS')
 
     await prisma.projectLink.delete({ where: { id: linkId } })
     return { ok: true, message: 'Lien supprimé.' }

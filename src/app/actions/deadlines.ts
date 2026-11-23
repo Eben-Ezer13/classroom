@@ -3,10 +3,9 @@
 import { prisma } from '@/lib/db'
 import { requireClassAdmin } from '@/lib/auth/guards'
 import {
-  assertCanManageClass,
+  assertCanManageArea,
   assertModuleInClass,
   assertProjectInClass,
-  requireManagedClassId,
 } from '@/lib/permissions'
 import { recordAudit } from '@/lib/audit'
 import { notifyClass } from '@/lib/notifications'
@@ -20,13 +19,15 @@ export async function createDeadlineAction(
   formData: FormData,
 ): Promise<ActionState> {
   return runAction(async () => {
-    const { user } = await requireClassAdmin()
+    const { user } = await requireClassAdmin('ECHEANCES')
     const parsed = parseForm(deadlineSchema, formData)
     if (!parsed.success) {
       return { ok: false, message: parsed.message, fieldErrors: parsed.fieldErrors }
     }
     const data = parsed.data
-    const classGroupId = requireManagedClassId(user, data.classGroupId)
+    const classGroupId = data.classGroupId ?? user.classGroupId
+    if (!classGroupId) throw new NotFoundError('Classe introuvable.')
+    assertCanManageArea(user, classGroupId, 'ECHEANCES')
     await assertModuleInClass(data.moduleId, classGroupId)
     await assertProjectInClass(data.projectId, classGroupId)
 
@@ -77,7 +78,7 @@ export async function updateDeadlineAction(
   formData: FormData,
 ): Promise<ActionState> {
   return runAction(async () => {
-    const { user } = await requireClassAdmin()
+    const { user } = await requireClassAdmin('ECHEANCES')
     const deadlineId = String(formData.get('deadlineId') ?? '')
     const parsed = parseForm(deadlineSchema, formData)
     if (!parsed.success) {
@@ -90,7 +91,7 @@ export async function updateDeadlineAction(
       select: { id: true, classGroupId: true, dueAt: true, reminderAt: true },
     })
     if (!existing) throw new NotFoundError('Échéance introuvable.')
-    assertCanManageClass(user, existing.classGroupId)
+    assertCanManageArea(user, existing.classGroupId, 'ECHEANCES')
     await assertModuleInClass(data.moduleId, existing.classGroupId)
 
     const dueChanged = existing.dueAt.getTime() !== data.dueAt.getTime()
@@ -144,7 +145,7 @@ export async function updateDeadlineAction(
 
 export async function deleteDeadlineAction(formData: FormData): Promise<ActionState> {
   return runAction(async () => {
-    const { user } = await requireClassAdmin()
+    const { user } = await requireClassAdmin('ECHEANCES')
     const deadlineId = String(formData.get('deadlineId') ?? '')
 
     const existing = await prisma.deadline.findFirst({
@@ -152,7 +153,7 @@ export async function deleteDeadlineAction(formData: FormData): Promise<ActionSt
       select: { id: true, classGroupId: true, title: true },
     })
     if (!existing) throw new NotFoundError('Échéance introuvable.')
-    assertCanManageClass(user, existing.classGroupId)
+    assertCanManageArea(user, existing.classGroupId, 'ECHEANCES')
 
     await prisma.deadline.update({
       where: { id: deadlineId },

@@ -172,7 +172,7 @@ export async function leaveClassAction(formData: FormData): Promise<ActionState>
     await prisma.$transaction(async (tx) => {
       await tx.membership.update({
         where: { id: membership.id },
-        data: { isActive: false },
+        data: { isActive: false, isDeputy: false, delegatedPermissions: [] },
       })
       const fallback = await tx.membership.findFirst({
         where: { userId: user.id, isActive: true, classGroupId: { not: classGroupId } },
@@ -375,7 +375,10 @@ export async function changeMemberRoleAction(formData: FormData): Promise<Action
     try {
       await prisma.membership.update({
         where: { id: membership.id },
-        data: { role: parsed.data.role },
+        data: {
+          role: parsed.data.role,
+          ...(parsed.data.role === 'ADMIN' ? { isDeputy: false, delegatedPermissions: [] } : {}),
+        },
       })
     } catch (error) {
       // Contraintes PostgreSQL : un etudiant n'a qu'une classe active, et une
@@ -580,7 +583,7 @@ export async function removeMemberAction(formData: FormData): Promise<ActionStat
     await prisma.$transaction(async (tx) => {
       await tx.membership.update({
         where: { id: membership.id },
-        data: { isActive: false },
+        data: { isActive: false, isDeputy: false, delegatedPermissions: [] },
       })
       // Le membre retire ne doit plus arriver sur cet espace a sa prochaine
       // visite : sa classe active bascule sur une autre de ses classes.

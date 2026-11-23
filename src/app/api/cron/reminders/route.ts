@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'crypto'
 import { NextResponse } from 'next/server'
-import { dispatchDeadlineReminders, purgeExpiredRecords } from '@/lib/services/maintenance'
+import { dispatchDeadlineReminders, dispatchScheduledReminders, purgeExpiredRecords } from '@/lib/services/maintenance'
 
 export const maxDuration = 60
 
@@ -13,7 +13,8 @@ function isAuthorized(header: string | null, secret: string): boolean {
 }
 
 /**
- * Taches quotidiennes : rappels d'echeance et purge des donnees expirees.
+ * Rappels d'échéance et de projets à la minute, rappels d'examens trois
+ * fois par jour. La purge technique reste quotidienne.
  *
  * Declenchee par un Cron Vercel (voir vercel.json). Vercel signe ses appels
  * avec CRON_SECRET : sans en-tete valide, la route repond 401, ce qui evite
@@ -35,11 +36,16 @@ export async function GET(request: Request) {
   }
 
   const remindersSent = await dispatchDeadlineReminders()
-  const purged = await purgeExpiredRecords()
+  const scheduledRemindersSent = await dispatchScheduledReminders()
+  const localTime = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Africa/Casablanca', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).format(new Date())
+  const purged = localTime === '03:00' ? await purgeExpiredRecords() : null
 
   return NextResponse.json({
     ok: true,
     remindersSent,
+    scheduledRemindersSent,
     purged,
     at: new Date().toISOString(),
   })

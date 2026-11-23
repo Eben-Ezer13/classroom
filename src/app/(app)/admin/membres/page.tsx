@@ -18,6 +18,8 @@ import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { IconUsers } from '@/components/ui/icons'
 import { formatDate, formatRelative, normalizeSearch } from '@/lib/utils'
 import { CopyInviteLinkButton } from '@/components/features/invite-link-share'
+import { assignDeputyAction, reviewDeputyPermissionAction } from '@/app/actions/deputy'
+import { ActionForm } from '@/components/ui/confirm-form'
 import {
   CopyButton,
   EditStudentIdButton,
@@ -47,7 +49,7 @@ export default async function AdminMembersPage({
   const q = normalizeSearch(params.q)
   const includeInactive = params.inactifs === '1'
 
-  const [members, stats, profile, invitations] = await Promise.all([
+  const [members, stats, profile, invitations, permissionRequests] = await Promise.all([
     listClassMembers(classId, { q, includeInactive }),
     classMemberStats(classId),
     getClassProfile(classId),
@@ -65,6 +67,11 @@ export default async function AdminMembersPage({
       },
       orderBy: { createdAt: 'desc' },
       take: 20,
+    }),
+    prisma.permissionRequest.findMany({
+      where: { classGroupId: classId, status: 'PENDING' },
+      select: { id: true, permission: true, message: true, createdAt: true, user: { select: { firstName: true, lastName: true } } },
+      orderBy: { createdAt: 'asc' },
     }),
   ])
 
@@ -190,6 +197,37 @@ export default async function AdminMembersPage({
           </Table>
         </Card>
       ) : null}
+
+      <Card className="mb-4" id="autorisations">
+        <CardHeader title="Délégué adjoint et autorisations" description="Désignez un étudiant. Il pourra demander un accès précis, que vous accordez ici." />
+        <CardBody className="space-y-4">
+          {members.filter((member) => member.role === 'MEMBER' && member.isActive).map((member) => (
+            <div key={member.membershipId} className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
+              <div>
+                <p className="text-sm font-medium text-[var(--text-1)]">{member.firstName} {member.lastName}{member.isDeputy ? ' · adjoint' : ''}</p>
+                <p className="text-xs text-[var(--text-3)]">{member.delegatedPermissions.length ? `Accès : ${member.delegatedPermissions.map((permission) => permission === 'ECHEANCES' ? 'échéances' : 'projets').join(', ')}` : 'Aucun accès délégué'}</p>
+              </div>
+              <ActionForm action={assignDeputyAction} hidden={{ membershipId: member.membershipId, enabled: String(!member.isDeputy) }}>
+                <Button size="sm" variant={member.isDeputy ? 'secondary' : 'ghost'}>{member.isDeputy ? 'Retirer l’adjoint' : 'Désigner adjoint'}</Button>
+              </ActionForm>
+            </div>
+          ))}
+          {permissionRequests.length ? (
+            <div className="space-y-3 pt-2">
+              <h3 className="text-sm font-semibold text-[var(--text-1)]">Demandes en attente</h3>
+              {permissionRequests.map((request) => (
+                <div key={request.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[var(--surface-2)] p-3">
+                  <div><p className="text-sm font-medium">{request.user.firstName} {request.user.lastName} · {request.permission === 'ECHEANCES' ? 'gestion des échéances' : 'gestion des projets'}</p>{request.message ? <p className="text-xs text-[var(--text-2)]">{request.message}</p> : null}</div>
+                  <div className="flex gap-2">
+                    <ActionForm action={reviewDeputyPermissionAction} hidden={{ requestId: request.id, approve: 'true' }}><Button size="sm">Accorder</Button></ActionForm>
+                    <ActionForm action={reviewDeputyPermissionAction} hidden={{ requestId: request.id, approve: 'false' }}><Button size="sm" variant="ghost">Refuser</Button></ActionForm>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : <p className="text-xs text-[var(--text-3)]">Aucune demande d’autorisation en attente.</p>}
+        </CardBody>
+      </Card>
 
       <FilterBar action="/admin/membres" hasFilters={Boolean(q) || includeInactive}>
         <FilterField label="Recherche" htmlFor="q" className="min-w-[220px] flex-1">

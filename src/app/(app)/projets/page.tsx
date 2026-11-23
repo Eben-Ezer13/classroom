@@ -8,12 +8,14 @@ import {
   getDefaultSemesterId,
 } from '@/lib/services/class-context'
 import { PageHeader } from '@/components/layout/page-header'
-import { Card, CardBody } from '@/components/ui/card'
+import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/feedback'
 import { Badge } from '@/components/ui/badge'
 import { NoClassState } from '@/components/ui/no-class'
 import { IconProject } from '@/components/ui/icons'
 import { cn, formatCountdown, formatDateTime } from '@/lib/utils'
+import { canManageArea } from '@/lib/permissions'
+import { DeputyPermissionRequest } from '@/components/features/deputy-permission-request'
 import { AddProjectButton, ProjectActions } from './project-controls'
 
 export const metadata: Metadata = { title: 'Projets' }
@@ -36,7 +38,8 @@ export default async function ProjectsPage({
   }
 
   // Seul le delegue de la classe active peut gerer le contenu.
-  const canManage = user.role === 'ADMIN'
+  const canManage = canManageArea(user, user.classGroupId, 'PROJETS')
+  const isDeputy = user.memberships.find((membership) => membership.classGroupId === user.classGroupId)?.isDeputy
   const showPast = params.vue === 'termines'
   const now = new Date()
 
@@ -90,6 +93,8 @@ export default async function ProjectsPage({
           ) : null
         }
       />
+
+      {isDeputy && !canManage ? <Card className="mb-4"><CardHeader title="Demander un accès" description="Le délégué principal recevra une notification et pourra accorder l’accès." /><CardBody><DeputyPermissionRequest /></CardBody></Card> : null}
 
       <div className="flex items-center gap-1 mb-4">
         <Link

@@ -378,6 +378,8 @@ export type ClassMember = {
   email: string
   avatarUrl: string | null
   role: 'ADMIN' | 'MEMBER'
+  isDeputy: boolean
+  delegatedPermissions: string[]
   studentId: string | null
   isActive: boolean
   joinedAt: Date
@@ -420,6 +422,8 @@ export async function listClassMembers(
     select: {
       id: true,
       role: true,
+      isDeputy: true,
+      delegatedPermissions: true,
       studentId: true,
       isActive: true,
       joinedAt: true,
@@ -447,6 +451,8 @@ export async function listClassMembers(
     email: row.user.email,
     avatarUrl: row.user.avatarUrl ? `/api/users/${row.userId}/avatar` : null,
     role: row.role,
+    isDeputy: row.isDeputy,
+    delegatedPermissions: row.delegatedPermissions,
     studentId: row.studentId,
     isActive: row.isActive,
     joinedAt: row.joinedAt,

@@ -64,7 +64,6 @@
   --shadow-md: 0 4px 16px -4px rgb(16 19 26 / 0.1), 0 1px 3px rgb(16 19 26 / 0.05);
   --shadow-lg: 0 20px 40px -16px rgb(16 19 26 / 0.18), 0 2px 8px rgb(16 19 26 / 0.06);
 }
-
 .dark {
   color-scheme: dark;
 
@@ -256,10 +255,4 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-/* Masque le contenu tant que le theme n'est pas applique : evite le flash
-   blanc au chargement en mode sombre. */
-html.theme-pending body {
-  visibility: hidden;
 }

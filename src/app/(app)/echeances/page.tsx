@@ -4,6 +4,7 @@ import { requirePageUser } from '@/lib/auth/guards'
 import { prisma } from '@/lib/db'
 import { getDeadlineBuckets } from '@/lib/services/dashboard'
 import { getClassModules } from '@/lib/services/class-context'
+import { canManageArea } from '@/lib/permissions'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { EmptyState, StatTile } from '@/components/ui/feedback'
@@ -13,6 +14,7 @@ import { IconClock } from '@/components/ui/icons'
 import { cn, endOfDay } from '@/lib/utils'
 import { AddDeadlineButton, DeadlineActions } from './deadline-controls'
 import type { Prisma } from '@prisma/client'
+import { DeputyPermissionRequest } from '@/components/features/deputy-permission-request'
 
 export const metadata: Metadata = { title: 'Échéances' }
 
@@ -41,7 +43,7 @@ export default async function DeadlinesPage({
   }
 
   // Seul le delegue de la classe active peut gerer le contenu.
-  const canManage = user.role === 'ADMIN'
+  const canManage = canManageArea(user, user.classGroupId, 'ECHEANCES')
   const view = VIEWS.find((v) => v.key === params.vue)?.key ?? 'a-venir'
   const now = new Date()
 
@@ -96,6 +98,10 @@ export default async function DeadlinesPage({
           ) : null
         }
       />
+
+      {user.memberships.find((membership) => membership.classGroupId === user.classGroupId)?.isDeputy && !canManage ? (
+        <Card className="mb-4"><CardHeader title="Demander un accès" description="Le délégué principal recevra une notification et pourra accorder l’accès." /><CardBody><DeputyPermissionRequest /></CardBody></Card>
+      ) : null}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <StatTile label="Aujourd’hui" value={buckets.today} tone="danger" />

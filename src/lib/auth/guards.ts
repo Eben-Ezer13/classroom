@@ -2,6 +2,7 @@ import 'server-only'
 import { redirect } from 'next/navigation'
 import { getCurrentUser, type SessionUser } from '@/lib/auth/session'
 import { ForbiddenError, UnauthorizedError } from '@/lib/errors'
+import { canManageArea } from '@/lib/permissions'
 
 export type { ClassRole, PlatformRole, SessionUser } from '@/lib/auth/session'
 
@@ -60,9 +61,9 @@ export async function requireClassContext(): Promise<ClassContext> {
 }
 
 /** Reserve aux delegues (ADMIN) de la classe active. */
-export async function requireClassAdmin(): Promise<ClassContext> {
+export async function requireClassAdmin(area?: string): Promise<ClassContext> {
   const context = await requireClassContext()
-  if (!context.isAdmin) {
+  if (!context.isAdmin && (!area || !canManageArea(context.user, context.classId, area))) {
     throw new ForbiddenError(
       'Action réservée au délégué de la classe.',
     )
@@ -78,9 +79,9 @@ export async function requirePageClassContext(): Promise<ClassContext> {
 }
 
 /** Variante page reservee au delegue : renvoie au tableau de bord sinon. */
-export async function requirePageClassAdmin(): Promise<ClassContext> {
+export async function requirePageClassAdmin(area?: string): Promise<ClassContext> {
   const context = await requirePageClassContext()
-  if (!context.isAdmin) redirect('/dashboard')
+  if (!context.isAdmin && (!area || !canManageArea(context.user, context.classId, area))) redirect('/dashboard')
   return context
 }
 
